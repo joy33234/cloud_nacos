@@ -686,3 +686,27 @@ create table gen_table_column (
   update_time       datetime                                   comment '更新时间',
   primary key (column_id)
 ) engine=innodb auto_increment=1 comment = '代码生成业务表字段';
+
+
+
+-- 13、okx参数配置表
+-- ----------------------------
+drop table if exists okx_setting;
+create table okx_setting (
+  Setting_id         int(5)          not null auto_increment    comment '参数主键',
+  Setting_name       varchar(100)    default ''                 comment '参数名称',
+  Setting_key        varchar(100)    default ''                 comment '参数键名',
+  Setting_value      varchar(500)    default ''                 comment '参数键值',
+  Setting_type       char(1)         default 'N'                comment '系统内置（Y是 N否）',
+  create_by         varchar(64)     default ''                 comment '创建者',
+  create_time       datetime                                   comment '创建时间',
+  update_by         varchar(64)     default ''                 comment '更新者',
+  update_time       datetime                                   comment '更新时间',
+  remark            varchar(500)    default null               comment '备注',
+  primary key (Setting_id)
+) engine=innodb auto_increment=100 comment = '参数配置表';
+
+insert into okx_setting values(1, '主框架页-默认皮肤样式名称',     'sys.index.skinName',       'skin-blue',     'Y', 'admin', sysdate(), '', null, '蓝色 skin-blue、绿色 skin-green、紫色 skin-purple、红色 skin-red、黄色 skin-yellow' );
+insert into okx_setting values(2, '用户管理-账号初始密码',         'sys.user.initPassword',    '123456',        'Y', 'admin', sysdate(), '', null, '初始化密码 123456' );
+insert into okx_setting values(3, '主框架页-侧边栏主题',           'sys.index.sideTheme',      'theme-dark',    'Y', 'admin', sysdate(), '', null, '深色主题theme-dark，浅色主题theme-light' );
+insert into okx_setting values(4, '账号自助-是否开启用户注册功能', 'sys.account.registerUser', 'false',         'Y', 'admin', sysdate(), '', null, '是否开启注册用户功能（true开启，false关闭）');
