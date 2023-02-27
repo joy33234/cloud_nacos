@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.okx.mapper.SettingMapper">
+    
+    <resultMap type="com.ruoyi.okx.domain.OkxSetting" id="SettingResult">
+    	<id     property="settingId"      column="setting_id"      />
+        <result property="settingName"    column="setting_name"    />
+        <result property="settingKey"     column="setting_key"     />
+        <result property="settingValue"   column="setting_value"   />
+        <result property="createBy"      column="create_by"      />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"      column="update_by"      />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+
+    <sql id="selectSettingVo">
+        select setting_id, setting_name, setting_key, setting_value,  create_by, create_time, update_by, update_time, remark
+		from okx_setting
+    </sql>
+
+<!--    &lt;!&ndash; 查询条件 &ndash;&gt;-->
+<!--	<sql id="sqlwhereSearch">-->
+<!--		<where>-->
+<!--			<if test="settingId !=null">-->
+<!--				and setting_id = #{settingId}-->
+<!--			</if>-->
+<!--			<if test="settingKey !=null and settingKey != ''">-->
+<!--				and setting_key = #{settingKey}-->
+<!--			</if>-->
+<!--		</where>-->
+<!--	</sql>-->
+
+<!--    <select id="selectSetting" parameterType="OkxSetting" resultMap="SettingResult">-->
+<!--        <include refid="selectSettingVo"/>-->
+<!--        <include refid="sqlwhereSearch"/>-->
+<!--    </select>-->
+
+    <select id="selectSettingList" parameterType="com.ruoyi.okx.domain.OkxSetting" resultMap="SettingResult">
+        <include refid="selectSettingVo"/>
+        <where>
+			<if test="settingName != null and settingName != ''">
+				AND setting_name like concat('%', #{settingName}, '%')
+			</if>
+
+			<if test="settingKey != null and settingKey != ''">
+				AND setting_key like concat('%', #{settingKey}, '%')
+			</if>
+			<if test="params.beginTime != null and params.beginTime != ''"><!-- 开始时间检索 -->
+				and date_format(create_time,'%y%m%d') &gt;= date_format(#{params.beginTime},'%y%m%d')
+			</if>
+			<if test="params.endTime != null and params.endTime != ''"><!-- 结束时间检索 -->
+				and date_format(create_time,'%y%m%d') &lt;= date_format(#{params.endTime},'%y%m%d')
+			</if>
+		</where>
+    </select>
+
+<!--    <select id="selectSettingListByIds" parameterType="Long" resultMap="SettingResult">-->
+<!--        <include refid="selectSettingVo"/>-->
+<!--        <where>-->
+<!--            <if test="settingIds != null ">-->
+<!--                setting_id in-->
+<!--                <foreach item="settingId" collection="array" open="(" separator="," close=")">-->
+<!--                    #{settingId}-->
+<!--                </foreach>-->
+<!--            </if>-->
+<!--        </where>-->
+<!--    </select>-->
+
+<!--    <select id="checkSettingKeyUnique" parameterType="String" resultMap="SettingResult">-->
+<!--        <include refid="selectSettingVo"/>-->
+<!--        where setting_key = #{settingKey} limit 1-->
+<!--    </select>-->
+
+<!--    <insert id="insertSetting" parameterType="OkxSetting">-->
+<!--        insert into okx_setting (-->
+<!--			<if test="settingName != null and settingName != '' ">setting_name,</if>-->
+<!--			<if test="settingKey != null and settingKey != '' ">setting_key,</if>-->
+<!--			<if test="settingValue != null and settingValue != '' ">setting_value,</if>-->
+<!--			<if test="createBy != null and createBy != ''">create_by,</if>-->
+<!--			<if test="remark != null and remark != ''">remark,</if>-->
+<!-- 			create_time-->
+<!--        )values(-->
+<!--			<if test="settingName != null and settingName != ''">#{settingName},</if>-->
+<!--			<if test="settingKey != null and settingKey != ''">#{settingKey},</if>-->
+<!--			<if test="settingValue != null and settingValue != ''">#{settingValue},</if>-->
+<!--			<if test="createBy != null and createBy != ''">#{createBy},</if>-->
+<!--			<if test="remark != null and remark != ''">#{remark},</if>-->
+<!-- 			sysdate()-->
+<!--		)-->
+<!--    </insert>-->
+
+<!--    <update id="updateSetting" parameterType="OkxSetting">-->
+<!--        update okx_setting-->
+<!--        <set>-->
+<!--            <if test="settingName != null and settingName != ''">setting_name = #{settingName},</if>-->
+<!--            <if test="settingKey != null and settingKey != ''">setting_key = #{settingKey},</if>-->
+<!--            <if test="settingValue != null and settingValue != ''">setting_value = #{settingValue},</if>-->
+<!--            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>-->
+<!--            <if test="remark != null">remark = #{remark},</if>-->
+<!-- 			update_time = sysdate()-->
+<!--        </set>-->
+<!--        where setting_id = #{settingId}-->
+<!--    </update>-->
+
+<!--    <delete id="deleteSettingById" parameterType="Long">-->
+<!--        delete from okx_setting where setting_id = #{settingId}-->
+<!--    </delete>-->
+
+<!--    <delete id="deleteSettingByIds" parameterType="Long">-->
+<!--        delete from okx_setting where setting_id in-->
+<!--        <foreach item="settingId" collection="array" open="(" separator="," close=")">-->
+<!--        	#{settingId}-->
+<!--        </foreach>-->
+<!--    </delete>-->
+
+</mapper>

@@ -13,6 +13,7 @@
         <module>ruoyi-gen</module>
         <module>ruoyi-job</module>
         <module>ruoyi-file</module>
+        <module>okx</module>
     </modules>
 
     <artifactId>ruoyi-modules</artifactId>
@@ -21,5 +22,6 @@
     <description>
         ruoyi-modules业务模块
     </description>
+
 
 </project>
