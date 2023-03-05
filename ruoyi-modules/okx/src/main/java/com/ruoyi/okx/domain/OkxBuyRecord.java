@@ -4,7 +4,6 @@ import com.ruoyi.common.core.web.domain.CommonEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Transient;
 
 import java.math.BigDecimal;
 
@@ -43,5 +42,9 @@ public class OkxBuyRecord extends CommonEntity {
     private Integer accountId;
 
     private String accountName;
+
+    private Integer marketStatus;
+
+    private String modeType;
 
 }

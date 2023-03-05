@@ -10,7 +10,7 @@ public enum OkxOrdTypeEnum {
 
     MARKET("market", "市价");
 
-    private String side;
+    private String value;
 
     private String desc;
 
@@ -19,16 +19,16 @@ public enum OkxOrdTypeEnum {
     static {
         typeEnumMap = Maps.newHashMap();
         for (OkxOrdTypeEnum statusEnum : values())
-            typeEnumMap.put(statusEnum.getSide(), statusEnum);
+            typeEnumMap.put(statusEnum.getValue(), statusEnum);
     }
 
-    OkxOrdTypeEnum(String side, String desc) {
-        this.side = side;
+    OkxOrdTypeEnum(String value, String desc) {
+        this.value = value;
         this.desc = desc;
     }
 
-    public String getSide() {
-        return this.side;
+    public String getValue() {
+        return this.value;
     }
 
     public String getDesc() {

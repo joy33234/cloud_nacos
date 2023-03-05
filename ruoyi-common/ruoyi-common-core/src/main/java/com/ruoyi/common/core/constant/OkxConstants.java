@@ -39,6 +39,11 @@ public class OkxConstants
      */
     public static final String MARKET_LOW_BUY_PERCENT = "market_low_buy_percent";
 
+    /**
+     * 大盘下跌买入-卖出上涨值
+     */
+    public static final String MARKET_LOW_SELL_PERCENT = "market_low_sell_percent";
+
 
     /**
      * 大盘上涨最高值百分比卖出值
@@ -46,9 +51,11 @@ public class OkxConstants
     public static final String MARKET_RISE_SELL_PERCENT = "market_rise_sell_percent";
 
     /**
-     * 大盘上涨最高百分比卖出值
+     * 大盘上涨最高值百分比卖出值
      */
     public static final String MARKET_RISE_MAX_SELL_PERCENT = "market_rise_max_sell_percent";
+
+
 
 
     /**

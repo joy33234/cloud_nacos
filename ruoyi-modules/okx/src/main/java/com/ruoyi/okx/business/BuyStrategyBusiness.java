@@ -69,22 +69,4 @@ public class BuyStrategyBusiness extends ServiceImpl<BuyStrategyMapper, OkxBuySt
 //        return true;
 //    }
 
-
-    public List<OkxBuyStrategy> list(OkxBuyStrategy strategy) {
-        LambdaQueryWrapper<OkxBuyStrategy> wrapper = new LambdaQueryWrapper();
-//        wrapper.eq((null != buyRecordDO.getCoin()), OkxAccount::getCoin, buyRecordDO.getCoin());
-//        wrapper.between((account.getCreateTime() != null), OkxAccount::getUpdateTime, account.getCreateTime(), account.getEndTime());
-        return strategyMapper.selectList(wrapper);
-    }
-
-    public String checkKeyUnique(OkxBuyStrategy strategy)
-    {
-        OkxBuyStrategy dbStrategy = this.getById(strategy.getId());
-        if (StringUtils.isNotNull(dbStrategy) && dbStrategy.getName().equals(strategy.getName()))
-        {
-            return UserConstants.NOT_UNIQUE;
-        }
-        return UserConstants.UNIQUE;
-    }
-
 }

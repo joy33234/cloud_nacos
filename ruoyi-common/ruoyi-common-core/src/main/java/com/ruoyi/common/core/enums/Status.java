@@ -7,18 +7,18 @@ package com.ruoyi.common.core.enums;
  */
 public enum Status
 {
-    OK("0", "正常"), DISABLE("1", "停用"), DELETED("2", "删除");
+    OK(0, "正常"), DISABLE(1, "停用"), DELETED(2, "删除");
 
-    private final String code;
+    private final Integer code;
     private final String info;
 
-    Status(String code, String info)
+    Status(Integer code, String info)
     {
         this.code = code;
         this.info = info;
     }
 
-    public String getCode()
+    public Integer getCode()
     {
         return code;
     }

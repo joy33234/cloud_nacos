@@ -185,3 +185,23 @@ create table okx_strategy (
 
 
 insert into okx_strategy values(1, 1, '1,2,3' ,'网格','admin' ,sysdate(), '', null, 'remark');
+
+
+
+
+drop table if exists okx_buy_strategy;
+create table okx_buy_strategy (
+  id                int(5)         not null auto_increment    comment '参数主键',
+  fall_days         int(5)     not null     comment '天数',
+  fall_percent     decimal(8,8)       not null     comment '百分比',
+  times         int(5)     not null     comment '倍数',
+  create_by         varchar(64)     default ''                 comment '创建者',
+  create_time       datetime                                   comment '创建时间',
+  update_by         varchar(64)     default ''                 comment '更新者',
+  update_time       datetime                                   comment '更新时间',
+  remark            varchar(500)    default null               comment '备注',
+  primary key (id)
+) engine=innodb auto_increment=1 comment = '策略';
+
+
+insert into okx_buy_strategy values(1,  1 , 0.1, 2, 'admin' ,sysdate(), '', null, 'remark');

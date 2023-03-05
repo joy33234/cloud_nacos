@@ -85,7 +85,7 @@ public class StrategyBusiness extends ServiceImpl<OkxStrategyMapper, OkxStrategy
             return false;
         }
         //网络系统 现有数量与买入数量不能超过最高手持数量
-        okxSettings.stream().filter(item -> item.getSettingKey().equals(ModeTypeEnum.GRID.getValue())).collect(Collectors.toList()).stream().findFirst().ifPresent(obj -> {
+        okxSettings.stream().filter(item -> item.getSettingValue().equals(ModeTypeEnum.GRID.getValue())).collect(Collectors.toList()).stream().findFirst().ifPresent(obj -> {
             BigDecimal total = coin.getCount().add(buyRecord.getQuantity());
             BigDecimal onlySellTimes = total.divide(coin.getUnit());
             if (onlySellTimes.compareTo(buyMaxTime) > 0) {
@@ -118,7 +118,7 @@ public class StrategyBusiness extends ServiceImpl<OkxStrategyMapper, OkxStrategy
         }
         OkxBuyRecord buyRecord = buyRecordBusiness.getById(sellRecord.getBuyRecordId());
         if (sellRecord.getPrice().compareTo(buyRecord.getPrice().add(buyRecord.getPrice().multiply(new BigDecimal(OkxConstants.GRIDE_MIN_PERCENT_FOR_SELL)))) < 0
-            && tradeDto.getOrdType().equals(OkxOrdTypeEnum.LIMIT.getSide())) {
+            && tradeDto.getOrdType().equals(OkxOrdTypeEnum.LIMIT.getValue())) {
             log.warn("卖出失败-未涨1%{}, coin:{},buyPrice:{}, sellPrice:{}", sellRecord.getAccountId(), sellRecord.getCoin(), buyRecord.getPrice(), sellRecord.getPrice());
             return false;
         }

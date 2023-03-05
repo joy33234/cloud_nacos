@@ -25,5 +25,5 @@ public class ServiceNameConstants
     /**
      * okx模块的serviceid
      */
-    public static final String OKX_SERVICE = "ruoyi-okx";
+    public static final String OKX_SERVICE = "okx";
 }
