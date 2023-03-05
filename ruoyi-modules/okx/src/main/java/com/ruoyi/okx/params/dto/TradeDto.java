@@ -34,4 +34,8 @@ public class TradeDto implements Serializable {
     private OkxAccount account;
 
     private String ordType;
+
+    private Integer marketStatus;
+
+    private String modeType;
 }

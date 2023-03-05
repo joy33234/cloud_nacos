@@ -28,6 +28,7 @@ import com.ruoyi.okx.mapper.CoinTickerMapper;
 import com.ruoyi.okx.params.dto.RiseDto;
 import com.ruoyi.okx.service.SettingService;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.compress.utils.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,8 +76,12 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
                 return false;
             }
             Date now = new Date();
-            JSONArray jsonArray = json.getJSONArray("data");
+            LambdaQueryWrapper<OkxCoinTicker> wrapper1 = new LambdaQueryWrapper();
+            wrapper1.ge(OkxCoinTicker::getCreateTime, DateUtil.getMinTime(now));
+            wrapper1.le(OkxCoinTicker::getCreateTime, DateUtil.getMaxTime(now));
+            List<OkxCoinTicker> dbTickerList = this.tickerMapper.selectList(wrapper1);
 
+            JSONArray jsonArray = json.getJSONArray("data");
             List<OkxCoinTicker> tickerList = new LinkedList<>();
             List<JSONObject> jsonObjectList = new LinkedList<>();
             for (int i = 0; i < jsonArray.size(); i++) {
@@ -87,14 +92,9 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
                     ticker.setCoin(arr[0]);
                     ticker.setOpen24h(item.getBigDecimal("sodUtc8"));
 
-                    LambdaQueryWrapper<OkxCoinTicker> wrapper1 = new LambdaQueryWrapper();
-                    wrapper1.eq((null != ticker.getCoin()), OkxCoinTicker::getCoin, ticker.getCoin());
-                    wrapper1.ge(OkxCoinTicker::getCreateTime, DateUtil.getMinTime(now));
-                    wrapper1.le(OkxCoinTicker::getCreateTime, DateUtil.getMaxTime(now));
-                    List<OkxCoinTicker> dbTickerList = this.tickerMapper.selectList(wrapper1);
-
-                    if (CollectionUtils.isNotEmpty(dbTickerList) && dbTickerList.get(0) != null) {
-                        ticker.setId((dbTickerList.get(0)).getId());
+                    Optional<OkxCoinTicker> dbticker = dbTickerList.stream().filter(obj -> obj.getCoin().equals(ticker.getCoin())).findFirst();
+                    if (dbticker.isPresent()) {
+                        ticker.setId((dbticker.get().getId()));
                     } else {
                         ticker.setCreateTime(now);
                         //暂停止买入新发币
@@ -150,8 +150,8 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
             okxCoins.stream().filter(item -> item.getCoin().equals(tickers.get(finalI).getCoin())).findFirst().ifPresent(obj -> {
                 obj.setVolCcy24h(items.get(finalI).getBigDecimal("vol24h"));
                 obj.setVolUsdt24h(items.get(finalI).getBigDecimal("volCcy24h"));
-                obj.setHightest(items.get(finalI).getBigDecimal("high24h").setScale(12, RoundingMode.HALF_UP));
-                obj.setLowest(items.get(finalI).getBigDecimal("low24h").setScale(12, RoundingMode.HALF_UP));
+                obj.setHightest(items.get(finalI).getBigDecimal("high24h").setScale(8, RoundingMode.HALF_UP));
+                obj.setLowest(items.get(finalI).getBigDecimal("low24h").setScale(8, RoundingMode.HALF_UP));
                 obj.setRise((tickers.get(finalI).getIns().compareTo(BigDecimal.ZERO) >= 0));
                 obj.setUpdateTime(now);
                 //交易额低于配置值-关闭交易

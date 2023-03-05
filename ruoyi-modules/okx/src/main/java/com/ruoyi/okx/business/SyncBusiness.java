@@ -52,50 +52,49 @@ public class SyncBusiness {
     @Resource
     private CommonBusiness commonBusiness;
 
-    @Async
     public boolean syncCurrencies() {
         try {
-            OkxAccount account = accountBusiness.list().get(0);
-            Map<String, String> map = accountBusiness.getAccountMap(account);
-            String str = HttpUtil.getOkx("/api/v5/asset/currencies", null, map);
-            JSONObject json = JSONObject.parseObject(str);
-            if (json == null || !json.getString("code").equals("0")) {
-                log.error("获取币种信息异常 str:{}", str);
-                return false;
-            }
-            Date now = new Date();
-            JSONArray jsonArray = json.getJSONArray("data");
-            List<OkxCoin> saveCoins = Lists.newArrayList();
-            List<OkxCoin> updateCoins = Lists.newArrayList();
-            for (int i = 0; i < jsonArray.size(); i++) {
-                JSONObject item = jsonArray.getJSONObject(i);
-                OkxCoin coin = coinBusiness.findOne(item.getString("ccy"));
-                if (coin == null) {
-                    coin = new OkxCoin();
-                    coin.setCreateTime(now);
-                    coin.setLowest(BigDecimal.ZERO);
-                    coin.setHightest(BigDecimal.ZERO);
-                    coin.setUnit(BigDecimal.ZERO);
-                    coin.setRise(false);
-                    coin.setStandard(BigDecimal.ZERO);
-                    coin.setStatus(CoinStatusEnum.OPEN.getStatus());
-                    coin.setVolCcy24h(BigDecimal.ZERO);
-                    coin.setVolUsdt24h(BigDecimal.ZERO);
-                    coin.setCount(BigDecimal.ZERO);
-                    coin.setCoin(item.getString("ccy"));
-                    coin.setUpdateTime(now);
-                    saveCoins.add(coin);
-                } else {
-                    coin.setUpdateTime(now);
-                    updateCoins.add(coin);
-                }
-            }
-            if (CollectionUtils.isNotEmpty(saveCoins)){
-                coinBusiness.saveBatch(saveCoins);
-            }
-            if (CollectionUtils.isNotEmpty(updateCoins)){
-                coinBusiness.updateList(updateCoins);
-            }
+//            OkxAccount account = accountBusiness.list().get(0);
+//            Map<String, String> map = accountBusiness.getAccountMap(account);
+//            String str = HttpUtil.getOkx("/api/v5/asset/currencies", null, map);
+//            JSONObject json = JSONObject.parseObject(str);
+//            if (json == null || !json.getString("code").equals("0")) {
+//                log.error("获取币种信息异常 str:{}", str);
+//                return false;
+//            }
+//            Date now = new Date();
+//            JSONArray jsonArray = json.getJSONArray("data");
+//            List<OkxCoin> saveCoins = Lists.newArrayList();
+//            List<OkxCoin> updateCoins = Lists.newArrayList();
+//            for (int i = 0; i < jsonArray.size(); i++) {
+//                JSONObject item = jsonArray.getJSONObject(i);
+//                OkxCoin coin = coinBusiness.findOne(item.getString("ccy"));
+//                if (coin == null) {
+//                    coin = new OkxCoin();
+//                    coin.setCreateTime(now);
+//                    coin.setLowest(BigDecimal.ZERO);
+//                    coin.setHightest(BigDecimal.ZERO);
+//                    coin.setUnit(BigDecimal.ZERO);
+//                    coin.setRise(false);
+//                    coin.setStandard(BigDecimal.ZERO);
+//                    coin.setStatus(CoinStatusEnum.OPEN.getStatus());
+//                    coin.setVolCcy24h(BigDecimal.ZERO);
+//                    coin.setVolUsdt24h(BigDecimal.ZERO);
+//                    coin.setCount(BigDecimal.ZERO);
+//                    coin.setCoin(item.getString("ccy"));
+//                    coin.setUpdateTime(now);
+//                    saveCoins.add(coin);
+//                } else {
+//                    coin.setUpdateTime(now);
+//                    updateCoins.add(coin);
+//                }
+//            }
+//            if (CollectionUtils.isNotEmpty(saveCoins)){
+//                coinBusiness.saveBatch(saveCoins);
+//            }
+//            if (CollectionUtils.isNotEmpty(updateCoins)){
+//                coinBusiness.updateList(updateCoins);
+//            }
         } catch (Exception e) {
             log.error("syncCurrencies error:", e);
             return false;
@@ -134,7 +133,6 @@ public class SyncBusiness {
         return true;
     }
 
-    @Async
     public boolean syncCoinBalance() {
         try {
             List<OkxCoin> allCoinList = coinBusiness.list();
@@ -263,7 +261,6 @@ public class SyncBusiness {
         });
     }
 
-    @Async
     public boolean cancelOrder(String instId, String okxOrderId, Map<String, String> map) {
         Map<String, String> params = new HashMap<>(2);
         params.put("instId", instId);

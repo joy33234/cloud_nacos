@@ -2,7 +2,6 @@ package com.ruoyi.job.task;
 
 import com.ruoyi.common.core.constant.SecurityConstants;
 import com.ruoyi.common.core.utils.StringUtils;
-import com.ruoyi.system.api.RemoteLogService;
 import com.ruoyi.system.api.RemoteOkxService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -11,8 +10,8 @@ import org.springframework.stereotype.Component;
  * 定时任务调度测试
  * 
  */
-@Component("okbTask")
-public class OkbTask
+@Component("okxTask")
+public class OkxTask
 {
 
     @Autowired
@@ -39,7 +38,7 @@ public class OkbTask
     }
 
     public void syncCoinMin(){
-        System.out.println("syncCoinMin");
+        System.out.println("syncCoinMin执行无参方法");
         remoteOkxService.syncMin(SecurityConstants.INNER);
     }
 
@@ -49,12 +48,12 @@ public class OkbTask
     }
 
     public void syncOrderBuy(){
-        System.out.println("执行无参方法");
+        System.out.println("syncOrderBuy-执行无参方法");
         remoteOkxService.syncBuyOrder(SecurityConstants.INNER);
     }
 
     public void syncOrderSell(){
-        System.out.println("执行无参方法");
+        System.out.println("syncOrderSell-执行无参方法");
         remoteOkxService.syncSellOrder(SecurityConstants.INNER);
     }
 }

@@ -25,6 +25,7 @@ import com.ruoyi.okx.domain.OkxAccount;
 import com.ruoyi.okx.enums.OrderStatusEnum;
 import com.ruoyi.okx.mapper.BuyRecordMapper;
 import com.ruoyi.okx.params.DO.BuyRecordDO;
+import io.swagger.models.auth.In;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -48,11 +49,13 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
         return buyRecordMapper.selectList(wrapper);
     }
 
-    public List<OkxBuyRecord> findSuccessRecord(String coin, Integer accountId) {
+    public List<OkxBuyRecord> findSuccessRecord(String coin, Integer accountId, String modeType, Integer marketStatus) {
         LambdaQueryWrapper<OkxBuyRecord> wrapper = new LambdaQueryWrapper();
         wrapper.in(OkxBuyRecord::getStatus, Arrays.asList(new Integer[] { OrderStatusEnum.SUCCESS.getStatus(), OrderStatusEnum.PARTIALLYFILLED.getStatus() }));
-        wrapper.eq(OkxBuyRecord::getCoin, coin);
-        wrapper.eq(OkxBuyRecord::getAccountId, accountId);
+        wrapper.eq((StringUtils.isNotEmpty(coin)), OkxBuyRecord::getCoin, coin);
+        wrapper.eq((accountId != null), OkxBuyRecord::getAccountId, accountId);
+        wrapper.eq((StringUtils.isNotEmpty(modeType)), OkxBuyRecord::getModeType, modeType);
+        wrapper.eq((marketStatus != null), OkxBuyRecord::getMarketStatus, marketStatus);
         return this.buyRecordMapper.selectList(wrapper);
     }
 
