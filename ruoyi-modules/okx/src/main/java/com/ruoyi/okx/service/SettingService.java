@@ -26,10 +26,10 @@ public interface SettingService
     /**
      * 查询参数配置信息
      *
-     * @param configIds 参数配置ID
+     * @param settingIds 参数配置ID
      * @return 参数配置信息
      */
-    public List<OkxSetting> selectSettingByIds(Long[] configIds);
+    public List<OkxSetting> selectSettingByIds(Long[] settingIds);
 
 
     /**

@@ -1,5 +1,6 @@
 package com.ruoyi.okx.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.ruoyi.common.core.constant.CacheConstants;
 import com.ruoyi.common.core.constant.UserConstants;
 import com.ruoyi.common.core.text.Convert;
@@ -54,9 +55,9 @@ public class SettingServiceImpl implements SettingService
     }
 
     @Override
-    public List<OkxSetting> selectSettingByIds(Long[] configIds)
+    public List<OkxSetting> selectSettingByIds(Long[] settingIds)
     {
-        return settingMapper.selectSettingListByIds(configIds);
+        return settingMapper.selectSettingListByIds(settingIds);
     }
 
     /**

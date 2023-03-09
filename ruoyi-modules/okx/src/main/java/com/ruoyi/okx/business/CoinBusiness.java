@@ -56,7 +56,7 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
         BigDecimal remainCount = coin.getCount().subtract(count);
         if (remainCount.compareTo(BigDecimal.ZERO) >= 0) {
             coin.setCount(remainCount);
-            return updateList(Arrays.asList(new OkxCoin[] { coin }));
+            return this.save(coin);
         }
         log.info("account:{},{}卖出数量:{}异常", new Object[] { accountId, coinStr, count });
         return false;
@@ -83,9 +83,10 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
 
     @Transactional(rollbackFor = {Exception.class})
     public boolean updateList(List<OkxCoin> coins) {
-        coins.stream().forEach(item -> {
-            this.updateById(item);
-        });
+//        coins.stream().forEach(item -> {
+ //           coinMapper.updateById(item);
+  //      });
+        this.saveOrUpdateBatch(coins);
         return true;
     }
 

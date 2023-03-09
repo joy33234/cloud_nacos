@@ -1,5 +1,6 @@
 package com.ruoyi.okx.domain;
 
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.ruoyi.common.core.web.domain.CommonEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,7 +13,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class OkxBuyRecord extends CommonEntity {
-
+    @TableId
     private Integer id;
 
     private String coin;
