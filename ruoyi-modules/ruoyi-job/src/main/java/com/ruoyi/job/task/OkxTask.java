@@ -37,9 +37,9 @@ public class OkxTask
         remoteOkxService.syncTicker(SecurityConstants.INNER);
     }
 
-    public void syncCoinMin(){
-        System.out.println("syncCoinMin执行无参方法");
-        remoteOkxService.syncMin(SecurityConstants.INNER);
+    public void syncUnit(){
+        System.out.println("syncUnit");
+        remoteOkxService.syncUnit(SecurityConstants.INNER);
     }
 
     public void syncCount(){
