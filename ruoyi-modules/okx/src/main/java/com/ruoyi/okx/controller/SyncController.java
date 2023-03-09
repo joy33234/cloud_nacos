@@ -38,7 +38,7 @@ public class SyncController extends BaseController
     @GetMapping(value = "/buy/order")
     public AjaxResult syncBuy()
     {
-        return success(syncBusiness.syncOrder());
+        return success(syncBusiness.syncBuyOrder());
     }
 
     /**
@@ -47,7 +47,7 @@ public class SyncController extends BaseController
     @GetMapping(value = "/sell/order")
     public AjaxResult syncSell()
     {
-        return success(syncBusiness.syncOrder());
+        return success(syncBusiness.syncSellOrder());
     }
 
 
@@ -84,10 +84,10 @@ public class SyncController extends BaseController
     /**
      * 根据参数获取详细信息
      */
-    @GetMapping(value = "/min")
+    @GetMapping(value = "/unit")
     public AjaxResult syncMin()
     {
-        return success(syncBusiness.syncCoinMin());
+        return success(syncBusiness.syncUnit());
     }
 
 }

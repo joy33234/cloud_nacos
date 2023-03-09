@@ -2,8 +2,6 @@ package com.ruoyi.system.api.factory;
 
 import com.ruoyi.common.core.domain.R;
 import com.ruoyi.system.api.RemoteOkxService;
-import com.ruoyi.system.api.domain.SysUser;
-import com.ruoyi.system.api.model.LoginUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.openfeign.FallbackFactory;
@@ -27,40 +25,40 @@ public class RemoteOkxFallbackFactory implements FallbackFactory<RemoteOkxServic
         {
 
             @Override
-            public R<Boolean> syncCurrencies(String source)
+            public R<Void> syncCurrencies(String source)
             {
                 return R.fail("同步帐户币种数量失败:" + throwable.getMessage());
             }
 
             @Override
-            public R<Boolean> syncTicker(String source)
+            public R<Void> syncTicker(String source)
             {
                 return R.fail("同步币种信息数量失败:" + throwable.getMessage());
             }
 
 
             @Override
-            public R<Boolean> syncMin(String source)
+            public R<Void> syncUnit(String source)
             {
-                return R.fail("同步帐户币种数量失败:" + throwable.getMessage());
+                return R.fail("同步帐户币种unit失败:" + throwable.getMessage());
             }
 
 
             @Override
-            public R<Boolean> syncCount(String source)
+            public R<Void> syncCount(String source)
             {
                 return R.fail("同步帐户币种数量失败:" + throwable.getMessage());
             }
 
             @Override
-            public R<Boolean> syncBuyOrder(String source)
+            public R<Void> syncBuyOrder(String source)
             {
                 return R.fail("同步订单信息失败:" + throwable.getMessage());
             }
 
 
             @Override
-            public R<Boolean> syncSellOrder(String source)
+            public R<Void> syncSellOrder(String source)
             {
                 return R.fail("同步订单信息失败:" + throwable.getMessage());
             }
