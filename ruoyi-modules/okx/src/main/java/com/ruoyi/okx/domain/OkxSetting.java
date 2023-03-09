@@ -1,5 +1,6 @@
 package com.ruoyi.okx.domain;
 
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.ruoyi.common.core.annotation.Excel;
 import com.ruoyi.common.core.annotation.Excel.ColumnType;
 import com.ruoyi.common.core.web.domain.CommonEntity;
@@ -21,6 +22,7 @@ public class OkxSetting extends CommonEntity
 
     /** 参数主键 */
     @Excel(name = "参数主键", cellType = ColumnType.NUMERIC)
+    @TableId
     private Long settingId;
 
     /** 参数名称 */
