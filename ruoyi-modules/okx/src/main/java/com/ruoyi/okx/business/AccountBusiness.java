@@ -1,10 +1,7 @@
 package com.ruoyi.okx.business;
 
 
-import com.alibaba.fastjson.JSON;
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.core.constant.UserConstants;
 import com.ruoyi.common.core.exception.ServiceException;
@@ -31,12 +28,11 @@ public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
 
     public List<OkxAccount> list(OkxAccountDO account) {
         LambdaQueryWrapper<OkxAccount> wrapper = new LambdaQueryWrapper();
-//        wrapper.eq((null != buyRecordDO.getCoin()), OkxAccount::getCoin, buyRecordDO.getCoin());
-//        wrapper.between((account.getCreateTime() != null), OkxAccount::getUpdateTime, account.getCreateTime(), account.getEndTime());
-//        OkxAccount okxAccount = accountMapper.selectById(1);
-//        log.info(JSON.toJSONString(okxAccount));
-//        accountMapper.selectList(wrapper);
-        return list();
+        wrapper.eq((null != account.getApikey()), OkxAccount::getApikey, account.getApikey());
+        wrapper.eq((null != account.getSecretkey()), OkxAccount::getSecretkey, account.getSecretkey());
+        wrapper.eq((null != account.getPassword()), OkxAccount::getPassword, account.getPassword());
+        wrapper.eq((null != account.getName()), OkxAccount::getName, account.getName());
+        return this.list(wrapper);
     }
 
     public boolean save(OkxAccount account) {
@@ -81,8 +77,7 @@ public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
     public String checkKeyUnique(OkxAccountDO accountDO)
     {
         OkxAccount account = this.getById(accountDO.getId());
-        if (StringUtils.isNotNull(account) && account.getApikey().equals(accountDO.getApikey()))
-        {
+        if (StringUtils.isNotNull(account) && account.getApikey().equals(accountDO.getApikey())){
             return UserConstants.NOT_UNIQUE;
         }
         return UserConstants.UNIQUE;

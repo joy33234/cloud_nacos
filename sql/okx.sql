@@ -136,9 +136,11 @@ insert into okx_sell_record values(1,1,'test', 'buy1555',3.3, 3.3, 1, 1.1 ,2, 's
 drop table if exists okx_account;
 create table okx_account (
   id         int(5)          not null auto_increment    comment '参数主键',
+  name         varchar(100)          default ''    comment '姓名',
   apikey         varchar(100)          default ''    comment '币种主键',
   secretkey         varchar(100)          default ''    comment '币种主键',
   password         varchar(100)          default ''    comment '币种主键',
+  setting_ids         varchar(100)          default ''    comment '策略',
   create_by         varchar(64)     default ''                 comment '创建者',
   create_time       datetime                                   comment '创建时间',
   update_by         varchar(64)     default ''                 comment '更新者',
@@ -147,7 +149,7 @@ create table okx_account (
   primary key (id)
 ) engine=innodb auto_increment=100 comment = '币种行情';
 
-insert into okx_account values(1,'t1123sfest', 'bsf3uw3y4s1r555', 'sf3fsfw3sf','admin', sysdate(), '', null, 'remark');
+insert into okx_account values(1,'张三','t1123sfest', 'bsf3uw3y4s1r555', 'sf3fsfw3sf',null,'admin', sysdate(), '', null, 'remark');
 
 
 

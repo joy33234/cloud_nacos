@@ -39,6 +39,7 @@ public class SettingController extends BaseController
     {
         startPage();
         List<OkxSetting> list = settingService.selectSettingList(setting);
+        list.stream().forEach(item -> item.setDesc(item.getSettingName() + "-" + item.getSettingValue()));
         return getDataTable(list);
     }
 
