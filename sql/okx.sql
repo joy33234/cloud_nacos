@@ -61,6 +61,8 @@ create table okx_buy_record (
   times          decimal(18,8)    not null default 0               comment '系统内置（Y是 N否）',
   account_id         int(5)          not null default 0              comment '帐号ID',
   account_name        varchar(64)          not null default ''              comment '帐号名称',
+  market_status        int(5)           not null default 0              comment '帐号名称',
+  mode_type        varchar(64)          not null default ''              comment '帐号名称',
   create_by         varchar(64)     default ''                 comment '创建者',
   create_time       datetime                                   comment '创建时间',
   update_by         varchar(64)     default ''                 comment '更新者',
@@ -70,7 +72,7 @@ create table okx_buy_record (
   INDEX create_time(create_time)
 ) engine=innodb auto_increment=100 comment = '币种';
 
-insert into okx_buy_record values(1,'test', 'buy1', 'okxbuy1', 'soxxd', 1, 1.1 ,2, 1, 8, 1, 1,1, 1,'张三','admin', sysdate(), '', null, 'remark');
+insert into okx_buy_record values(1,'test', 'buy1', 'okxbuy1', 'soxxd', 1, 1.1 ,2, 1, 8, 1, 1,1, 1,'张三', 1,'market','admin', sysdate(), '', null, 'remark');
 
 
 
@@ -161,7 +163,7 @@ create table okx_account_count (
   update_time       datetime                                   comment '更新时间',
   remark            varchar(500)    default null               comment '备注',
   primary key (id)
-) engine=innodb auto_increment=100 comment = '币种行情';
+) engine=innodb auto_increment=1 comment = '币种行情';
 
 insert into okx_account_count values(1, 1, 'testcoin', 1.5562, 'admin', sysdate(), '', null, 'remark');
 
