@@ -2,37 +2,22 @@ package com.ruoyi.okx.business;
 
 
 import com.alibaba.fastjson.JSON;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.core.constant.OkxConstants;
-import com.ruoyi.common.core.constant.UserConstants;
 import com.ruoyi.okx.domain.*;
-import com.ruoyi.okx.domain.OkxStrategy;
 import com.ruoyi.okx.enums.CoinStatusEnum;
-import com.ruoyi.okx.enums.ModeTypeEnum;
 import com.ruoyi.okx.enums.OkxOrdTypeEnum;
-import com.ruoyi.okx.mapper.OkxStrategyMapper;
 import com.ruoyi.okx.params.dto.TradeDto;
 import com.ruoyi.okx.service.SettingService;
-import com.ruoyi.okx.utils.DtoUtils;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Component
-public class StrategyBusiness extends ServiceImpl<OkxStrategyMapper, OkxStrategy> {
+public class StrategyBusiness  {
     private static final Logger log = LoggerFactory.getLogger(StrategyBusiness.class);
-
-    @Resource
-    private OkxStrategyMapper mapper;
 
     @Resource
     private SettingService settingService;
@@ -42,33 +27,6 @@ public class StrategyBusiness extends ServiceImpl<OkxStrategyMapper, OkxStrategy
 
     @Resource
     private CoinBusiness coinBusiness;
-
-   
-    public List<OkxStrategy> list(OkxStrategy strategy) {
-        LambdaQueryWrapper<OkxStrategy> wrapper = new LambdaQueryWrapper();
-        if (strategy != null && strategy.getAccountId() != null) {
-            wrapper.eq((null != strategy.getAccountId()), OkxStrategy::getAccountId, strategy.getAccountId());
-        }
-        if (strategy != null && strategy.getId() != null) {
-            wrapper.eq((null != strategy.getId()), OkxStrategy::getId, strategy.getId());
-        }
-        if (StringUtils.isNotEmpty(strategy.getSettingIds())) {
-            wrapper.like((null != strategy.getSettingIds()), OkxStrategy::getSettingIds, strategy.getSettingIds());
-        }
-        return mapper.selectList(wrapper);
-    }
-
-    public boolean save(OkxStrategy strategy) {
-        return mapper.insert(strategy) > 0 ? true : false;
-    }
-
-    public boolean update(OkxStrategy strategy) {
-        return mapper.updateById(strategy) > 0 ? true : false;
-    }
-
-    public boolean delete(OkxStrategy strategy) {
-        return mapper.deleteById(strategy) > 0 ? true : false;
-    }
 
 
     public boolean checkBuy(OkxBuyRecord buyRecord, OkxCoin coin) {
@@ -125,41 +83,4 @@ public class StrategyBusiness extends ServiceImpl<OkxStrategyMapper, OkxStrategy
         return true;
     }
 
-    public String checkKeyUnique(OkxStrategy strategy){
-        OkxStrategy dbStrategy = this.getById(strategy.getId());
-        if (dbStrategy != null && dbStrategy.getStrategyName().equals(strategy.getStrategyName())){
-            return UserConstants.NOT_UNIQUE;
-        }
-        return UserConstants.UNIQUE;
-    }
-
-    public List<OkxSetting> listByStrategyId(Integer strategyId) {
-        String IdsStr = list(new OkxStrategy(strategyId,null,null,null)).get(0).getSettingIds();
-        //转换long类型的数组
-        Long[] IdsArr =  DtoUtils.StringToLong(IdsStr.split(","));
-        return settingService.selectSettingByIds(IdsArr);
-    }
-
-    public List<OkxSetting> listByAccountId(Integer accountId) {
-        String IdsStr = list(new OkxStrategy(null,accountId,null,null)).get(0).getSettingIds();
-        //转换long类型的数组
-        Long[] IdsArr =  DtoUtils.StringToLong(IdsStr.split(","));
-        return settingService.selectSettingByIds(IdsArr);
-    }
-
-    public ModeTypeEnum getModeType(Integer accountId) {
-        OkxSetting setting = listByAccountId(accountId).stream().filter(item -> item.getSettingKey().equals("mode_type")).findFirst().get();
-        return ModeTypeEnum.getModeType(setting.getSettingValue());
-
-    }
-
-    public boolean isGrid(Integer accountId) {
-        List<OkxSetting> list = listByAccountId(accountId).stream().filter(item -> item.getSettingValue().equals(ModeTypeEnum.GRID.getValue())).collect(Collectors.toList());
-        return CollectionUtils.isNotEmpty(list) ;
-    }
-
-    public boolean isMarket(Integer accountId) {
-        List<OkxSetting> list = listByAccountId(accountId).stream().filter(item -> item.getSettingValue().equals(ModeTypeEnum.MARKET.getValue())).collect(Collectors.toList());
-        return CollectionUtils.isNotEmpty(list) ;
-    }
 }
