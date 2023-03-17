@@ -3,7 +3,6 @@ package com.ruoyi.okx.business;
 
 import cn.hutool.core.lang.UUID;
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
@@ -14,8 +13,6 @@ import com.ruoyi.common.core.constant.OkxConstants;
 import com.ruoyi.common.core.constant.RedisConstants;
 import com.ruoyi.common.core.enums.Status;
 import com.ruoyi.common.core.exception.ServiceException;
-import com.ruoyi.common.core.utils.HttpUtil;
-import com.ruoyi.common.core.utils.TokenUtil;
 import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.*;
 import com.ruoyi.okx.enums.*;
@@ -29,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class TradeBusiness {
@@ -59,53 +57,52 @@ public class TradeBusiness {
      * @param map
      * @throws Exception
      */
-    public void trade(List<TradeDto> list, OkxCoin coin, Map<String, String> map) throws Exception {
-        Date now = new Date();
-        Integer accountId = Integer.valueOf(map.get("id"));
-        String accountName = map.get("accountName");
-        for (TradeDto tradeDto:list) {
-            if (tradeDto.getSide().equals(OkxSideEnum.BUY.getSide())) {
-                OkxBuyRecord buyRecord =
-                        new OkxBuyRecord(null, tradeDto.getCoin(), tradeDto.getInstId(), tradeDto.getPx(), tradeDto.getSz(),
-                                tradeDto.getPx().multiply(tradeDto.getSz()).setScale(8, RoundingMode.HALF_UP), BigDecimal.ZERO, BigDecimal.ZERO,
-                                OrderStatusEnum.PENDING.getStatus(), UUID.randomUUID().toString(), "", tradeDto.getBuyStrategyId(), tradeDto.getTimes(), accountId,accountName,tradeDto.getMarketStatus(),tradeDto.getModeType());
-                if (!strategyBusiness.checkBuy(buyRecord, coin)){
-                    return;
-                }
-                String okxOrderId = tradeOkx(tradeDto, now, map);
-                if (okxOrderId == null)
-                    return;
-                buyRecord.setOkxOrderId(okxOrderId);
-                buyRecord.setCreateTime(now);
-                buyRecord.setUpdateTime(now);
-                buyRecordBusiness.save(buyRecord);
-            } else {
-                OkxSellRecord sellRecord = new OkxSellRecord(null, tradeDto.getBuyRecordId(), tradeDto.getCoin(), tradeDto.getInstId(), tradeDto.getPx(), tradeDto.getSz(),
-                        tradeDto.getPx().multiply(tradeDto.getSz()).setScale(8, RoundingMode.HALF_UP), BigDecimal.ZERO, OrderStatusEnum.PENDING.getStatus(),
-                        UUID.randomUUID().toString(), "", tradeDto.getSellStrategyId(), tradeDto.getBuyStrategyId(), tradeDto.getTimes(), accountId,accountName);
-                if (!strategyBusiness.checkSell(sellRecord, coin, tradeDto))
-                    return;
-                String okxOrderId = tradeOkx(tradeDto, now, map);
-                if (okxOrderId == null) {
-                    log.info("tradeDto：{}, okxOrderId：{}", JSON.toJSONString(tradeDto), okxOrderId);
-                    return;
-                }
-                sellRecord.setOkxOrderId(okxOrderId);
-                sellRecord.setCreateTime(now);
-                sellRecord.setUpdateTime(now);
-                sellRecord.setStatus(OrderStatusEnum.PENDING.getStatus());
-                try {
-                    if (this.sellRecordBusiness.save(sellRecord)) {
-                        this.buyRecordBusiness.updateBySell(sellRecord.getBuyRecordId(), OrderStatusEnum.SELLING.getStatus());
-                        log.info("sellRecord:{}", JSON.toJSONString(sellRecord));
+    @Transactional(rollbackFor = Exception.class)
+    public void trade(List<TradeDto> list, OkxCoin coin, Map<String, String> map) {
+        try {
+            Date now = new Date();
+            Integer accountId = Integer.valueOf(map.get("id"));
+            String accountName = map.get("accountName");
+            for (TradeDto tradeDto:list) {
+                if (tradeDto.getSide().equals(OkxSideEnum.BUY.getSide())) {
+                    OkxBuyRecord buyRecord =
+                            new OkxBuyRecord(null, tradeDto.getCoin(), tradeDto.getInstId(), tradeDto.getPx(), tradeDto.getSz(),
+                                    tradeDto.getPx().multiply(tradeDto.getSz()).setScale(8, RoundingMode.HALF_UP), BigDecimal.ZERO, BigDecimal.ZERO,
+                                    OrderStatusEnum.PENDING.getStatus(), UUID.randomUUID().toString(), "", tradeDto.getBuyStrategyId(), tradeDto.getTimes(), accountId,accountName,tradeDto.getMarketStatus(),tradeDto.getModeType());
+                    if (!strategyBusiness.checkBuy(buyRecord, coin)){
+                        return;
                     }
-                } catch (Exception e) {
-                    log.error("sellRecord:{},tradeDto:{}", JSON.toJSONString(sellRecord), JSON.toJSONString(tradeDto));
-                    e.printStackTrace();
+                    String okxOrderId = tradeOkx(tradeDto, now, map);
+                    if (okxOrderId == null)
+                        return;
+                    buyRecord.setOkxOrderId(okxOrderId);
+                    buyRecord.setCreateTime(now);
+                    buyRecord.setUpdateTime(now);
+                    buyRecordBusiness.save(buyRecord);
+                } else {
+                    OkxSellRecord sellRecord = new OkxSellRecord(null, tradeDto.getBuyRecordId(), tradeDto.getCoin(), tradeDto.getInstId(), tradeDto.getPx(), tradeDto.getSz(),
+                            tradeDto.getPx().multiply(tradeDto.getSz()).setScale(8, RoundingMode.HALF_UP), BigDecimal.ZERO, OrderStatusEnum.PENDING.getStatus(),
+                            UUID.randomUUID().toString(), "", tradeDto.getSellStrategyId(), tradeDto.getBuyStrategyId(), tradeDto.getTimes(), accountId,accountName);
+                    if (!strategyBusiness.checkSell(sellRecord, coin, tradeDto)) {
+                        return;
+                    }
+                    String okxOrderId = tradeOkx(tradeDto, now, map);
+                    if (okxOrderId == null) {
+                        log.info("tradeDto：{}, okxOrderId：{}", JSON.toJSONString(tradeDto), okxOrderId);
+                        return;
+                    }
+                    sellRecord.setOkxOrderId(okxOrderId);
+                    sellRecord.setCreateTime(now);
+                    sellRecord.setUpdateTime(now);
+                    sellRecord.setStatus(OrderStatusEnum.PENDING.getStatus());
+                    if (this.sellRecordBusiness.save(sellRecord)) {
+                        buyRecordBusiness.updateBySell(sellRecord.getBuyRecordId(), OrderStatusEnum.SELLING.getStatus());
+                    }
                 }
             }
+        } catch (Exception e) {
+            log.error("okx trade error:{}", e);
         }
-
     }
 
     public String tradeOkx(TradeDto tradeDto, Date now, Map<String, String> map) {
@@ -336,7 +333,7 @@ public class TradeBusiness {
 //        OkxBuyRecord buyRecord = new OkxBuyRecord(null, ticker.getCoin(), ticker.getInstId(), ticker.getLast(), sz, new BigDecimal(OkxConstants.NEW_COIN_MAX_USDT), BigDecimal.ZERO, BigDecimal.ZERO, OrderStatusEnum.NEW.getStatus(), UUID.randomUUID().toString(), dataJSON.getString("ordId"), Integer.valueOf(0), 0, Integer.valueOf(map.get("id")),map.get("accountName"));
 //        buyRecord.setCreateTime(now);
 //        buyRecord.setUpdateTime(now);
-//        this.buyRecordBusiness.save(buyRecord);
+//        buyRecordBusiness.save(buyRecord);
 //        return dataJSON.getString("ordId");
 //    }
 

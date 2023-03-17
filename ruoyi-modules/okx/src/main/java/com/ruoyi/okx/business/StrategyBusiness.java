@@ -117,7 +117,7 @@ public class StrategyBusiness extends ServiceImpl<OkxStrategyMapper, OkxStrategy
             }
         }
         OkxBuyRecord buyRecord = buyRecordBusiness.getById(sellRecord.getBuyRecordId());
-        if (sellRecord.getPrice().compareTo(buyRecord.getPrice().add(buyRecord.getPrice().multiply(new BigDecimal(OkxConstants.GRIDE_MIN_PERCENT_FOR_SELL)))) < 0
+        if (sellRecord.getPrice().compareTo(buyRecord.getPrice().add(buyRecord.getPrice().multiply(new BigDecimal(settingService.selectSettingByKey(OkxConstants.GRIDE_MIN_PERCENT_FOR_SELL))))) < 0
             && tradeDto.getOrdType().equals(OkxOrdTypeEnum.LIMIT.getValue())) {
             log.warn("卖出失败-未涨1%{}, coin:{},buyPrice:{}, sellPrice:{}", sellRecord.getAccountId(), sellRecord.getCoin(), buyRecord.getPrice(), sellRecord.getPrice());
             return false;
