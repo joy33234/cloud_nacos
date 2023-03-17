@@ -2,6 +2,7 @@ package com.ruoyi.okx.mapper;
 
 
 import com.ruoyi.okx.domain.OkxSetting;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -26,7 +27,7 @@ public interface SettingMapper
      * @param settingIds 参数配置信息
      * @return 参数配置信息
      */
-    public List<OkxSetting> selectSettingListByIds(Long[] settingIds);
+    public List<OkxSetting> selectSettingListByIds(@Param("settingIds") Long[] settingIds);
 
     /**
      * 查询参数配置列表

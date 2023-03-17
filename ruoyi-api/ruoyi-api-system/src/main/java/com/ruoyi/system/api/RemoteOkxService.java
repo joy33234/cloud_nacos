@@ -3,9 +3,7 @@ package com.ruoyi.system.api;
 import com.ruoyi.common.core.constant.SecurityConstants;
 import com.ruoyi.common.core.constant.ServiceNameConstants;
 import com.ruoyi.common.core.domain.R;
-import com.ruoyi.system.api.domain.SysUser;
 import com.ruoyi.system.api.factory.RemoteUserFallbackFactory;
-import com.ruoyi.system.api.model.LoginUser;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,7 +22,7 @@ public interface RemoteOkxService
      * @return 结果
      */
     @GetMapping("/sync/currencies")
-    public R<Boolean> syncCurrencies(@RequestHeader(SecurityConstants.FROM_SOURCE) String source);
+    public R<Void> syncCurrencies(@RequestHeader(SecurityConstants.FROM_SOURCE) String source);
 
     /**
      * 同步所有币种
@@ -33,7 +31,7 @@ public interface RemoteOkxService
      * @return 结果
      */
     @GetMapping("/sync/ticker")
-    public R<Boolean> syncTicker(@RequestHeader(SecurityConstants.FROM_SOURCE) String source);
+    public R<Void> syncTicker(@RequestHeader(SecurityConstants.FROM_SOURCE) String source);
 
 
 
@@ -43,8 +41,8 @@ public interface RemoteOkxService
      * @param source 请求来源
      * @return 结果
      */
-    @GetMapping("/sync/min")
-    public R<Boolean> syncMin(@RequestHeader(SecurityConstants.FROM_SOURCE) String source);
+    @GetMapping("/sync/unit")
+    public R<Void> syncUnit(@RequestHeader(SecurityConstants.FROM_SOURCE) String source);
 
 
 
@@ -56,7 +54,7 @@ public interface RemoteOkxService
      * @return 结果
      */
     @GetMapping("/sync/count")
-    public R<Boolean> syncCount(@RequestHeader(SecurityConstants.FROM_SOURCE) String source);
+    public R<Void> syncCount(@RequestHeader(SecurityConstants.FROM_SOURCE) String source);
 
 
     /**
@@ -66,7 +64,7 @@ public interface RemoteOkxService
      * @return 结果
      */
     @GetMapping("/sync/buy/order")
-    public R<Boolean> syncBuyOrder(@RequestHeader(SecurityConstants.FROM_SOURCE) String source);
+    public R<Void> syncBuyOrder(@RequestHeader(SecurityConstants.FROM_SOURCE) String source);
 
 
     /**
@@ -76,7 +74,7 @@ public interface RemoteOkxService
      * @return 结果
      */
     @GetMapping("/sync/sell/order")
-    public R<Boolean> syncSellOrder(@RequestHeader(SecurityConstants.FROM_SOURCE) String source);
+    public R<Void> syncSellOrder(@RequestHeader(SecurityConstants.FROM_SOURCE) String source);
 
 
 }

@@ -56,17 +56,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		</where>
     </select>
 
-<!--    <select id="selectSettingListByIds" parameterType="Long" resultMap="SettingResult">-->
-<!--        <include refid="selectSettingVo"/>-->
-<!--        <where>-->
-<!--            <if test="settingIds != null ">-->
-<!--                setting_id in-->
-<!--                <foreach item="settingId" collection="array" open="(" separator="," close=")">-->
-<!--                    #{settingId}-->
-<!--                </foreach>-->
-<!--            </if>-->
-<!--        </where>-->
-<!--    </select>-->
+    <select id="selectSettingListByIds" parameterType="Long" resultMap="SettingResult">
+        <include refid="selectSettingVo"/>
+        <where>
+            <if test="settingIds != null ">
+                setting_id in
+                <foreach item="settingId" collection="settingIds" open="(" separator="," close=")">
+                    #{settingId}
+                </foreach>
+            </if>
+        </where>
+    </select>
 
 <!--    <select id="checkSettingKeyUnique" parameterType="String" resultMap="SettingResult">-->
 <!--        <include refid="selectSettingVo"/>-->
