@@ -19,4 +19,6 @@ public class OkxAccount extends CommonEntity {
     private String secretkey;
 
     private String password;
+
+    private String settingIds;
 }

@@ -1,21 +1,12 @@
 package com.ruoyi.okx.controller;
 
-import com.ruoyi.common.core.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.web.controller.BaseController;
 import com.ruoyi.common.core.web.domain.AjaxResult;
-import com.ruoyi.common.core.web.page.TableDataInfo;
-import com.ruoyi.common.log.annotation.Log;
-import com.ruoyi.common.log.enums.BusinessType;
-import com.ruoyi.common.security.annotation.RequiresPermissions;
-import com.ruoyi.okx.business.CoinBusiness;
 import com.ruoyi.okx.business.SyncBusiness;
 import com.ruoyi.okx.business.TickerBusiness;
-import com.ruoyi.okx.domain.OkxCoin;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletResponse;
-import java.util.List;
 
 /**
  * 参数配置 信息操作处理

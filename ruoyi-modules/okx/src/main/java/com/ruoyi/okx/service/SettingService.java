@@ -94,4 +94,12 @@ public interface SettingService
      */
     public String checkSettingKeyUnique(OkxSetting config);
 
+
+    /**
+     * 检验策略settingid唯一
+     * @param settingIds
+     * @return
+     */
+    public boolean checkSettingKeyUnique(Long[] settingIds);
+
 }

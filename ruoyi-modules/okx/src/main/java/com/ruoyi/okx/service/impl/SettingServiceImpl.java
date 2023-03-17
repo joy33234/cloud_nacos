@@ -1,6 +1,7 @@
 package com.ruoyi.okx.service.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.ruoyi.common.core.constant.CacheConstants;
 import com.ruoyi.common.core.constant.UserConstants;
 import com.ruoyi.common.core.text.Convert;
@@ -9,6 +10,7 @@ import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.OkxSetting;
 import com.ruoyi.okx.mapper.SettingMapper;
 import com.ruoyi.okx.service.SettingService;
+import com.ruoyi.okx.utils.DtoUtils;
 import org.apache.poi.ss.formula.functions.T;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PostConstruct;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 参数配置 服务层实现
@@ -197,6 +200,27 @@ public class SettingServiceImpl implements SettingService
             return UserConstants.NOT_UNIQUE;
         }
         return UserConstants.UNIQUE;
+    }
+
+    /**
+     * 校验参数键名是否唯一
+     *
+     * @param settingIds 参数配置信息
+     * @return 结果
+     */
+    @Override
+    public boolean checkSettingKeyUnique(Long[] settingIds){
+        if (StringUtils.isEmpty(settingIds)) {
+            return true;
+        }
+        List<OkxSetting> settingList = settingMapper.selectSettingListByIds(settingIds);
+        for (OkxSetting setting:settingList) {
+            List<OkxSetting> tempList = settingList.stream().filter(item -> item.getSettingKey().equals(setting.getSettingKey())).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(tempList) && tempList.size() > 1) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

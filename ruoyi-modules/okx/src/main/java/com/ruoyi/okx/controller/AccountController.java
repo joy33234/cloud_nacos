@@ -1,7 +1,6 @@
 package com.ruoyi.okx.controller;
 
 import com.ruoyi.common.core.constant.UserConstants;
-import com.ruoyi.common.core.utils.StringUtils;
 import com.ruoyi.common.core.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.web.controller.BaseController;
 import com.ruoyi.common.core.web.domain.AjaxResult;
@@ -9,24 +8,24 @@ import com.ruoyi.common.core.web.page.TableDataInfo;
 import com.ruoyi.common.log.annotation.Log;
 import com.ruoyi.common.log.enums.BusinessType;
 import com.ruoyi.common.security.annotation.RequiresPermissions;
+import com.ruoyi.common.security.utils.SecurityUtils;
 import com.ruoyi.okx.business.AccountBusiness;
 import com.ruoyi.okx.business.StrategyBusiness;
 import com.ruoyi.okx.domain.OkxAccount;
 import com.ruoyi.okx.domain.OkxSetting;
-import com.ruoyi.okx.domain.OkxStrategy;
 import com.ruoyi.okx.params.DO.OkxAccountDO;
 import com.ruoyi.okx.service.SettingService;
 import com.ruoyi.okx.utils.DtoUtils;
-import com.ruoyi.system.api.domain.SysRole;
-import com.ruoyi.system.api.domain.SysUser;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -79,10 +78,10 @@ public class AccountController extends BaseController
         List<OkxSetting> settingList = settingService.selectSettingList(new OkxSetting());
         settingList.stream().forEach(item -> item.setDesc(item.getSettingName() + "-" + item.getSettingValue()));
         ajax.put("settings", settingList);
-        if (StringUtils.isNotNull(accountId)) {
-            List<OkxStrategy> strategies = strategyBusiness.list(new OkxStrategy(accountId.intValue()));
-            ajax.put(AjaxResult.DATA_TAG, accountBusiness.getById(accountId));
-            ajax.put("settingIds", CollectionUtils.isEmpty(strategies) ? Lists.newArrayList() : Arrays.asList(strategies.get(0).getSettingIds().split(","))
+        if (ObjectUtils.isNotEmpty(accountId)) {
+            OkxAccount okxAccount = accountBusiness.getById(accountId);
+            ajax.put(AjaxResult.DATA_TAG, okxAccount);
+            ajax.put("settingIds", StringUtils.isEmpty(okxAccount.getSettingIds()) ? Lists.newArrayList() : Arrays.asList(okxAccount.getSettingIds().split(","))
                     .parallelStream()
                     .map(a -> Long.parseLong(a.trim()))
                     .collect(Collectors.toList()));
@@ -98,11 +97,17 @@ public class AccountController extends BaseController
     @PostMapping
     public AjaxResult add(@Validated @RequestBody OkxAccountDO accountDO)
     {
-        if (UserConstants.NOT_UNIQUE.equals(accountBusiness.checkKeyUnique(accountDO)))
-        {
+        if (UserConstants.NOT_UNIQUE.equals(accountBusiness.checkKeyUnique(accountDO))){
             return error("新增参数'" + accountDO.getApikey() + "'失败，参数键名已存在");
         }
-        return toAjax(accountBusiness.save(DtoUtils.transformBean(accountDO,OkxAccount.class)));
+        if (!settingService.checkSettingKeyUnique(accountDO.getSettingIds())) {
+            return error("配置策略失败，参数键名不唯一");
+        }
+        OkxAccount okxAccount = DtoUtils.transformBean(accountDO, OkxAccount.class);
+        okxAccount.setSettingIds(StringUtils.join(accountDO.getSettingIds(),","));
+        okxAccount.setCreateTime(new Date());
+        okxAccount.setCreateBy(SecurityUtils.getUsername());
+        return toAjax(accountBusiness.save(okxAccount));
     }
 
     /**
@@ -113,11 +118,14 @@ public class AccountController extends BaseController
     @PutMapping
     public AjaxResult edit(@Validated @RequestBody OkxAccountDO accountDO)
     {
-        if (UserConstants.NOT_UNIQUE.equals(accountBusiness.checkKeyUnique(accountDO)))
-        {
-            return error("修改参数'" + accountDO.getApikey() + "'失败，参数键名已存在");
+        if (!settingService.checkSettingKeyUnique(accountDO.getSettingIds())) {
+            return error("配置策略失败，参数键名不唯一");
         }
-        return toAjax(accountBusiness.update(DtoUtils.transformBean(accountDO, OkxAccount.class)));
+        OkxAccount okxAccount = DtoUtils.transformBean(accountDO, OkxAccount.class);
+        okxAccount.setSettingIds(StringUtils.join(accountDO.getSettingIds(),","));
+        okxAccount.setUpdateBy(SecurityUtils.getUsername());
+        okxAccount.setUpdateTime(new Date());
+        return toAjax(accountBusiness.update(okxAccount));
     }
 
     /**
