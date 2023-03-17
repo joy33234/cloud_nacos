@@ -127,9 +127,6 @@ public class SyncCoinBusiness {
         for (int i = 0; i < items.size(); i++) {
             int finalI = i;
             okxCoins.stream().filter(item -> item.getCoin().equals(tickers.get(finalI).getCoin())).findFirst().ifPresent(obj -> {
-                if (finalI == 1) {
-                    System.out.println(JSON.toJSONString(items.get(finalI)));
-                }
                 obj.setVolCcy24h(items.get(finalI).getBigDecimal("vol24h").setScale(8, RoundingMode.DOWN));
                 obj.setVolUsdt24h(items.get(finalI).getBigDecimal("volCcy24h").setScale(8, RoundingMode.DOWN));
                 obj.setHightest(items.get(finalI).getBigDecimal("high24h").setScale(8, RoundingMode.HALF_UP));
@@ -143,9 +140,6 @@ public class SyncCoinBusiness {
                     obj.setStatus(CoinStatusEnum.OPEN.getStatus());
                 }
                 obj.setStandard(coinBusiness.calculateStandard(tickers.get(finalI)));
-                if (finalI == 1) {
-                    System.out.println(JSON.toJSONString(obj));
-                }
             });
         }
         //更新涨跌数据
@@ -164,19 +158,17 @@ public class SyncCoinBusiness {
      * @param now
      */
     public void refreshRiseCount(List<OkxCoin> okxCoins, Date now){
-        RiseDto riseDto = redisService.getCacheObject(RedisConstants.OKX_TICKER_MARKET);
-
         Integer riseCount = okxCoins.stream().filter(item -> (item.isRise() == true)).collect(Collectors.toList()).size();
         BigDecimal risePercent = new BigDecimal(riseCount).divide(new BigDecimal(okxCoins.size()), 4,BigDecimal.ROUND_DOWN);
         BigDecimal lowPercent = BigDecimal.ONE.subtract(risePercent).setScale(4);
-
+        log.info("riseDto-1  riseCount:{}, risePercent:{}  ,lowPercent:{}",riseCount, risePercent, lowPercent);
+        
+        RiseDto riseDto = redisService.getCacheObject(RedisConstants.OKX_TICKER_MARKET);
+        log.info("riseDto-1:{}",JSON.toJSONString(riseDto));
         if (riseDto == null) {
-            if (new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_RISE_BUY_PERCENT)).compareTo(risePercent) > 0
-                    || new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_LOW_BUY_PERCENT)).compareTo(lowPercent) > 0){
-                return;
-            }
             riseDto = new RiseDto();
         }
+        log.info("riseDto-2:{}",JSON.toJSONString(riseDto));
         riseDto.setRiseCount(riseCount);
         riseDto.setRisePercent(risePercent);
         if (risePercent.compareTo(riseDto.getHighest()) > 0) {
@@ -188,6 +180,7 @@ public class SyncCoinBusiness {
         }
         riseDto.setLowPercent(lowPercent);
         long diff = DateUtil.diffSecond(now, DateUtil.getMaxTime(now));
+        log.info("riseDto-3:{}",JSON.toJSONString(riseDto));
         redisService.setCacheObject(RedisConstants.OKX_TICKER_MARKET, riseDto, diff, TimeUnit.SECONDS);
     }
 }
