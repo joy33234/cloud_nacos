@@ -7,8 +7,11 @@ import com.ruoyi.common.core.constant.UserConstants;
 import com.ruoyi.common.core.exception.ServiceException;
 import com.ruoyi.common.core.utils.StringUtils;
 import com.ruoyi.okx.domain.OkxAccount;
+import com.ruoyi.okx.domain.OkxSetting;
 import com.ruoyi.okx.mapper.OkxAccountMapper;
 import com.ruoyi.okx.params.DO.OkxAccountDO;
+import com.ruoyi.okx.service.SettingService;
+import com.ruoyi.okx.utils.DtoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -24,6 +27,9 @@ public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
 
     @Resource
     private OkxAccountMapper accountMapper;
+
+    @Resource
+    private SettingService settingService;
 
 
     public List<OkxAccount> list(OkxAccountDO account) {
@@ -81,5 +87,16 @@ public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
             return UserConstants.NOT_UNIQUE;
         }
         return UserConstants.UNIQUE;
+    }
+
+    /**
+     * 查询参数配置信息
+     *
+     * @param accountId 参数配置ID
+     * @return 参数配置信息
+     */
+    public List<OkxSetting> listByAccountId(Integer accountId) {
+        String settingIds = this.getById(accountId).getSettingIds();
+        return settingService.selectSettingByIds(DtoUtils.StringToLong(settingIds.split(",")));
     }
 }

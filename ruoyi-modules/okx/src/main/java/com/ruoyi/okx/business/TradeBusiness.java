@@ -48,6 +48,9 @@ public class TradeBusiness {
     private BuyStrategyBusiness buyStrategyBusiness;
 
     @Resource
+    private AccountBusiness accountBusiness;
+
+    @Resource
     private RedisService redisService;
 
     /**
@@ -140,7 +143,7 @@ public class TradeBusiness {
             boolean riseBuy = false;
             boolean fallBuy = false;
             //赋值用户订单类型和交易模式
-            strategyBusiness.listByAccountId(Integer.valueOf(map.get("id"))).stream()
+            accountBusiness.listByAccountId(Integer.valueOf(map.get("id"))).stream()
                     .filter(item -> item.getSettingKey().equals(OkxConstants.ORD_TYPE) || item.getSettingKey().equals(OkxConstants.MODE_TYPE))
                     .collect(Collectors.toList()).stream().forEach(obj -> map.put(obj.getSettingKey(), obj.getSettingValue()));
 
