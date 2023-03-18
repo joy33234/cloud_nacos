@@ -242,8 +242,9 @@ public class TradeBusiness {
 
             List<OkxBuyRecord> tempBuyRecords = buyRecords.stream().filter(item -> item.getModeType().equals(ModeTypeEnum.MARKET.getValue())).collect(Collectors.toList());
             //卖出 —— 大盘上涨时买入的
-            if (riseDto.getRisePercent().compareTo(new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_RISE_MAX_SELL_PERCENT))) > 0
-                    || (riseDto.getHighest().compareTo(riseDto.getRisePercent()) > 0 && riseDto.getHighest().multiply(new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_RISE_SELL_PERCENT))).compareTo(riseDto.getRisePercent()) <= 0)) {
+            if (CollectionUtils.isNotEmpty(tempBuyRecords) &&
+                    (riseDto.getRisePercent().compareTo(new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_RISE_MAX_SELL_PERCENT))) > 0
+                    || (riseDto.getHighest().compareTo(riseDto.getRisePercent()) > 0 && riseDto.getHighest().multiply(new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_RISE_SELL_PERCENT))).compareTo(riseDto.getRisePercent()) <= 0))) {
                 tempBuyRecords.stream().filter(obj -> obj.getMarketStatus() == MarketStatusEnum.RISE.getStatus()).forEach(item -> {
                     TradeDto temp =  DtoUtils.transformBean(tradeDto, TradeDto.class);
                     temp.setSz(item.getQuantity().subtract(item.getFee().abs()).setScale(8, RoundingMode.HALF_UP));
