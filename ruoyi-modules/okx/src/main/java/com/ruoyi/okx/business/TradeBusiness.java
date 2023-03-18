@@ -68,6 +68,7 @@ public class TradeBusiness {
             String accountName = map.get("accountName");
             for (TradeDto tradeDto:list) {
                 if (tradeDto.getSide().equals(OkxSideEnum.BUY.getSide())) {
+                    log.info("tradeDto:{}",JSON.toJSONString(tradeDto));
                     OkxBuyRecord buyRecord =
                             new OkxBuyRecord(null, tradeDto.getCoin(), tradeDto.getInstId(), tradeDto.getPx(), tradeDto.getSz(),
                                     tradeDto.getPx().multiply(tradeDto.getSz()).setScale(8, RoundingMode.HALF_UP), BigDecimal.ZERO, BigDecimal.ZERO,
@@ -158,12 +159,12 @@ public class TradeBusiness {
                 }
                 List<OkxBuyRecord> tempBuyRecords = buyRecords.stream().filter(item -> item.getCoin().equals(ticker.getCoin())).collect(Collectors.toList());
                 //获取交易参数
-                List<TradeDto> list = getTradeDto( OkxCoin.get(), ticker, map, riseDto, tempBuyRecords, riseBuy, fallBuy);
-                if (CollectionUtils.isEmpty(list)) {
+                List<TradeDto> tradeDtoList = getTradeDto( OkxCoin.get(), ticker, map, riseDto, tempBuyRecords, riseBuy, fallBuy);
+                if (CollectionUtils.isEmpty(tradeDtoList)) {
                     continue;
                 }
                 //交易
-                trade(list, OkxCoin.get(), map);
+                trade(tradeDtoList, OkxCoin.get(), map);
             }
             //大盘交易
             if (map.get(OkxConstants.MODE_TYPE).equals(ModeTypeEnum.MARKET.getValue()) && (riseBuy || fallBuy)) {
@@ -203,8 +204,9 @@ public class TradeBusiness {
                     temp.setBuyStrategyId(item.getStrategyId());
                     temp.setSide(OkxSideEnum.SELL.getSide());
                     temp.setBuyRecordId(item.getId());
-                    BigDecimal price = ticker.getLast().subtract(coin.getStandard().multiply(new BigDecimal(9.0E-4D)));
+                    temp.setPx(ticker.getLast().setScale(8, RoundingMode.DOWN));
                     if (OkxOrdTypeEnum.LIMIT.getValue().equals(temp.getOrdType())) {
+                        BigDecimal price = ticker.getLast().subtract(coin.getStandard().multiply(new BigDecimal(9.0E-4D)));
                         temp.setPx(price.setScale(8, RoundingMode.HALF_UP));
                     }
                     list.add(temp);
@@ -219,7 +221,8 @@ public class TradeBusiness {
                 tradeDto.setSz(coin.getUnit().multiply(BigDecimal.valueOf(buyStrategy.getTimes())).setScale(8, RoundingMode.HALF_UP));
                 tradeDto.setTimes(buyStrategy.getTimes());
                 tradeDto.setBuyStrategyId(buyStrategy.getId());
-                //设置价格
+                tradeDto.setPx(ticker.getLast().setScale(8, RoundingMode.DOWN));
+                //limit-设置价格
                 if (OkxOrdTypeEnum.LIMIT.getValue().equals(tradeDto.getOrdType())) {
                     BigDecimal buyPrice = ticker.getLast().add(ticker.getLast().multiply(new BigDecimal("9.0E-4")));
                     tradeDto.setPx(buyPrice.setScale(8, RoundingMode.HALF_UP));
@@ -245,8 +248,9 @@ public class TradeBusiness {
                     temp.setSide(OkxSideEnum.SELL.getSide());
                     temp.setBuyRecordId(item.getId());
                     temp.setMarketStatus(MarketStatusEnum.RISE.getStatus());
-                    BigDecimal price = ticker.getLast().subtract(coin.getStandard().multiply(new BigDecimal(9.0E-4D)));
+                    temp.setPx(ticker.getLast().setScale(8, RoundingMode.DOWN));
                     if (OkxOrdTypeEnum.LIMIT.getValue().equals(temp.getOrdType())) {
+                        BigDecimal price = ticker.getLast().subtract(coin.getStandard().multiply(new BigDecimal(9.0E-4D)));
                         temp.setPx(price.setScale(8, RoundingMode.HALF_UP));
                     }
                     list.add(temp);
@@ -266,8 +270,9 @@ public class TradeBusiness {
                         temp.setSide(OkxSideEnum.SELL.getSide());
                         temp.setBuyRecordId(item.getId());
                         temp.setMarketStatus(MarketStatusEnum.FALL.getStatus());
-                        BigDecimal price = ticker.getLast().subtract(coin.getStandard().multiply(new BigDecimal(9.0E-4D)));
+                        temp.setPx(ticker.getLast().setScale(8, RoundingMode.DOWN));
                         if (OkxOrdTypeEnum.LIMIT.getValue().equals(temp.getOrdType())) {
+                            BigDecimal price = ticker.getLast().subtract(coin.getStandard().multiply(new BigDecimal(9.0E-4D)));
                             temp.setPx(price.setScale(8, RoundingMode.HALF_UP));
                         }
                         list.add(temp);
@@ -282,6 +287,7 @@ public class TradeBusiness {
             if (!riseDto.getRiseBuy() && riseDto.getRisePercent().compareTo(new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_RISE_BUY_PERCENT))) > 0) {
                 tradeDto.setTimes(Integer.valueOf(settingService.selectSettingByKey(OkxConstants.MARKET_BUY_TIMES)));
                 tradeDto.setSz(coin.getUnit().multiply(BigDecimal.valueOf(tradeDto.getTimes())).setScale(8, RoundingMode.HALF_UP));
+                tradeDto.setPx(ticker.getLast().setScale(8, RoundingMode.DOWN));
                 //设置价格
                 if (OkxOrdTypeEnum.LIMIT.getValue().equals(tradeDto.getOrdType())) {
                     BigDecimal buyPrice = ticker.getLast().add(ticker.getLast().multiply(new BigDecimal(9.0E-4D)));
@@ -296,6 +302,7 @@ public class TradeBusiness {
             if (!riseDto.getFallBuy() && riseDto.getLowPercent().compareTo(new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_LOW_BUY_PERCENT))) > 0) {
                 tradeDto.setTimes(Integer.valueOf(settingService.selectSettingByKey(OkxConstants.MARKET_BUY_TIMES)));
                 tradeDto.setSz(coin.getUnit().multiply(BigDecimal.valueOf(tradeDto.getTimes())).setScale(8, RoundingMode.HALF_UP));
+                tradeDto.setPx(ticker.getLast());
                 //设置价格
                 if (OkxOrdTypeEnum.LIMIT.getValue().equals(tradeDto.getOrdType())) {
                     BigDecimal buyPrice = ticker.getLast().add(ticker.getLast().multiply(new BigDecimal(9.0E-4D)));
