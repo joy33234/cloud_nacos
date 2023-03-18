@@ -22,6 +22,7 @@ import com.ruoyi.okx.domain.OkxCoinTicker;
 import com.ruoyi.okx.mapper.CoinTickerMapper;
 import com.ruoyi.okx.service.SettingService;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.compress.utils.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,7 +64,6 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
     public boolean syncTicker() {
         try {
             Long start = System.currentTimeMillis();
-
             Map<String, String> accountMap = accountBusiness.getAccountMap();
             redisLock.lock(RedisConstants.OKX_TICKER,10,3,1000);
 
@@ -72,12 +72,16 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
             if (json == null || !json.getString("code").equals("0")) {
                 return false;
             }
+            List<OkxCoinTicker> dbTickerList = Lists.newArrayList();
             Date now = new Date();
-            LambdaQueryWrapper<OkxCoinTicker> wrapper1 = new LambdaQueryWrapper();
-            wrapper1.ge(OkxCoinTicker::getCreateTime, DateUtil.getMinTime(now));
-            wrapper1.le(OkxCoinTicker::getCreateTime, DateUtil.getMaxTime(now));
-            List<OkxCoinTicker> dbTickerList = this.tickerMapper.selectList(wrapper1);
-
+            for (int i = 0; i <= 29; i++) {
+                LambdaQueryWrapper<OkxCoinTicker> wrapper1 = new LambdaQueryWrapper();
+                Date day =  DateUtil.addDate(now, i-29);
+                wrapper1.ge(OkxCoinTicker::getCreateTime, DateUtil.getMinTime(day));
+                wrapper1.le(OkxCoinTicker::getCreateTime, DateUtil.getMaxTime(day));
+                List<OkxCoinTicker> tempList = this.tickerMapper.selectList(wrapper1);
+                dbTickerList.addAll(tempList);
+            }
             JSONArray jsonArray = json.getJSONArray("data");
             List<OkxCoinTicker> tickerList = new LinkedList<>();
             List<JSONObject> jsonObjectList = new LinkedList<>();
@@ -89,7 +93,8 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
                     ticker.setCoin(arr[0]);
                     ticker.setOpen24h(item.getBigDecimal("sodUtc8"));
 
-                    Optional<OkxCoinTicker> dbticker = dbTickerList.stream().filter(obj -> obj.getCoin().equals(ticker.getCoin())).findFirst();
+                    Optional<OkxCoinTicker> dbticker = dbTickerList.stream().filter(obj -> obj.getCoin().equals(ticker.getCoin()))
+                            .filter(obj -> obj.getCreateTime().getTime() >= DateUtil.getMinTime(now).getTime()).findFirst();
                     if (dbticker.isPresent()) {
                         ticker.setId((dbticker.get().getId()));
                     } else {
@@ -104,10 +109,7 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
                     ticker.setAverage(ticker.getHigh24h().add(ticker.getLow24h()).divide(new BigDecimal(2), 8, RoundingMode.HALF_UP));
                     ticker.setIns(ticker.getLast().subtract(ticker.getOpen24h()).divide(ticker.getOpen24h(), 8, RoundingMode.HALF_UP));
                     //计算月平均值
-                    LambdaQueryWrapper<OkxCoinTicker> wrapper = new LambdaQueryWrapper();
-                    wrapper.eq((null != ticker.getCoin()), OkxCoinTicker::getCoin, ticker.getCoin());
-                    wrapper.ge(OkxCoinTicker::getCreateTime, DateUtil.getMinTime(DateUtil.addDate(new Date(), -30)));
-                    List<OkxCoinTicker> allTickerList = this.tickerMapper.selectList(wrapper).stream().filter(o -> o.getCoin().equals(ticker.getCoin())).collect(Collectors.toList());
+                    List<OkxCoinTicker> allTickerList = dbTickerList.stream().filter(obj -> obj.getCoin().equals(ticker.getCoin())).collect(Collectors.toList());
                     if (CollectionUtils.isNotEmpty(allTickerList)) {
                         BigDecimal monthAverage = (allTickerList.stream().map(OkxCoinTicker::getAverage).reduce(BigDecimal.ZERO, BigDecimal::add)).divide(new BigDecimal(allTickerList.size()), 8, RoundingMode.HALF_UP);
                         ticker.setMonthAverage(monthAverage);
@@ -124,8 +126,7 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
                 }
             }
             saveOrUpdateBatch(tickerList);
-
-            syncCoinBusiness.updateCoin(jsonObjectList, tickerList, now, accountMap);
+            //syncCoinBusiness.updateCoin(jsonObjectList, tickerList, now, accountMap);
             redisLock.releaseLock(RedisConstants.OKX_TICKER);
             System.out.println("执行完时间:" + (System.currentTimeMillis()-start));
         } catch (Exception e) {
