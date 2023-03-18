@@ -126,7 +126,7 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
                 }
             }
             saveOrUpdateBatch(tickerList);
-            //syncCoinBusiness.updateCoin(jsonObjectList, tickerList, now, accountMap);
+            syncCoinBusiness.updateCoin(jsonObjectList, tickerList, now, accountMap);
             redisLock.releaseLock(RedisConstants.OKX_TICKER);
             System.out.println("执行完时间:" + (System.currentTimeMillis()-start));
         } catch (Exception e) {

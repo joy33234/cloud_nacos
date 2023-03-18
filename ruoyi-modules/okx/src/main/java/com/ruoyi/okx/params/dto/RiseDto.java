@@ -29,9 +29,9 @@ public class RiseDto {
 
     private BigDecimal lowest = BigDecimal.ZERO;
 
-    private Boolean riseBuy = false; //当日大盘上涨是否交易过
+    private Boolean riseBought = false; //当日大盘上涨是否交易过
 
-    private Boolean fallBuy = false; //当日大盘下跌是否交易过
+    private Boolean fallBought = false; //当日大盘下跌是否交易过
 
 
 }
