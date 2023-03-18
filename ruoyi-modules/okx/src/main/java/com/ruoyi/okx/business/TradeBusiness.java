@@ -13,6 +13,7 @@ import com.ruoyi.common.core.constant.OkxConstants;
 import com.ruoyi.common.core.constant.RedisConstants;
 import com.ruoyi.common.core.enums.Status;
 import com.ruoyi.common.core.exception.ServiceException;
+import com.ruoyi.common.core.utils.StringUtils;
 import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.*;
 import com.ruoyi.okx.enums.*;
@@ -68,7 +69,6 @@ public class TradeBusiness {
             String accountName = map.get("accountName");
             for (TradeDto tradeDto:list) {
                 if (tradeDto.getSide().equals(OkxSideEnum.BUY.getSide())) {
-                    log.info("tradeDto:{}",JSON.toJSONString(tradeDto));
                     OkxBuyRecord buyRecord =
                             new OkxBuyRecord(null, tradeDto.getCoin(), tradeDto.getInstId(), tradeDto.getPx(), tradeDto.getSz(),
                                     tradeDto.getPx().multiply(tradeDto.getSz()).setScale(8, RoundingMode.HALF_UP), BigDecimal.ZERO, BigDecimal.ZERO,
@@ -141,8 +141,7 @@ public class TradeBusiness {
         try {
             RiseDto riseDto = redisService.getCacheObject(RedisConstants.OKX_TICKER_MARKET);
             Integer accountId = Integer.valueOf(map.get("id"));
-            boolean riseBuy = false;
-            boolean fallBuy = false;
+
             //赋值用户订单类型和交易模式
             accountBusiness.listByAccountId(accountId).stream()
                     .filter(item -> item.getSettingKey().equals(OkxConstants.ORD_TYPE) || item.getSettingKey().equals(OkxConstants.MODE_TYPE))
@@ -161,27 +160,26 @@ public class TradeBusiness {
                 }
                 List<OkxBuyRecord> tempBuyRecords = buyRecords.stream().filter(item -> item.getCoin().equals(ticker.getCoin())).collect(Collectors.toList());
                 //获取交易参数
-                List<TradeDto> tradeDtoList = getTradeDto( OkxCoin.get(), ticker, map, riseDto, tempBuyRecords, riseBuy, fallBuy);
+                List<TradeDto> tradeDtoList = getTradeDto( OkxCoin.get(), ticker, map, riseDto, tempBuyRecords);
                 if (CollectionUtils.isEmpty(tradeDtoList)) {
                     continue;
                 }
                 //交易
                 trade(tradeDtoList, OkxCoin.get(), map);
             }
-            log.info("riseBuy:{} fallBuy:{}",riseBuy, fallBuy);
 
             //大盘交易
-            if (map.get(OkxConstants.MODE_TYPE).equals(ModeTypeEnum.MARKET.getValue()) && (riseBuy || fallBuy)) {
-                if (riseBuy) {
-                    riseDto.setRiseBought(riseBuy);
+            if (map.get(OkxConstants.MODE_TYPE).equals(ModeTypeEnum.MARKET.getValue())
+                    && (StringUtils.isNotEmpty(map.get("riseBuy")) || StringUtils.isNotEmpty(map.get("fallBuy")))) {
+                if (StringUtils.isNotEmpty(map.get("riseBuy"))) {
+                    riseDto.setRiseBought(true);
                 }
-                if (fallBuy) {
-                    riseDto.setFallBought(fallBuy);
+                if (StringUtils.isNotEmpty(map.get("fallBuy"))) {
+                    riseDto.setFallBought(true);
                 }
-                if (riseBuy && fallBuy) {
+                if (StringUtils.isNotEmpty(map.get("riseBuy")) && StringUtils.isNotEmpty(map.get("fallBuy"))) {
                     riseDto.setStatus(Status.DISABLE.getCode());
                 }
-                log.info("riseDto:{}",JSON.toJSONString(riseDto));
                 redisService.setCacheObject(RedisConstants.OKX_TICKER_MARKET, riseDto);
             }
         } catch (Exception e) {
@@ -190,7 +188,7 @@ public class TradeBusiness {
         }
     }
 
-    private List<TradeDto> getTradeDto( OkxCoin coin, OkxCoinTicker ticker, Map<String, String> map,RiseDto riseDto,List<OkxBuyRecord> buyRecords,boolean riseBuy,boolean fallBuy) {
+    private List<TradeDto> getTradeDto( OkxCoin coin, OkxCoinTicker ticker, Map<String, String> map,RiseDto riseDto,List<OkxBuyRecord> buyRecords) {
         List<TradeDto> list = Lists.newArrayList();
         TradeDto tradeDto =  DtoUtils.transformBean(ticker, TradeDto.class);
         tradeDto.setUnit(coin.getUnit());
@@ -303,7 +301,7 @@ public class TradeBusiness {
                 tradeDto.setMarketStatus(MarketStatusEnum.RISE.getStatus());
                 tradeDto.setSide(OkxSideEnum.BUY.getSide());
                 list.add(tradeDto);
-                riseBuy = true;
+                map.put("riseBuy","true");
             }
 
             //大盘下跌-买入
@@ -319,7 +317,7 @@ public class TradeBusiness {
                 tradeDto.setMarketStatus(MarketStatusEnum.FALL.getStatus());
                 tradeDto.setSide(OkxSideEnum.BUY.getSide());
                 list.add(tradeDto);
-                fallBuy = true;
+                map.put("fallBuy","true");
             }
         }
         return list;
