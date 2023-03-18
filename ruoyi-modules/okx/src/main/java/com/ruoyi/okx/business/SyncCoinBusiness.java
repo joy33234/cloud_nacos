@@ -128,14 +128,10 @@ public class SyncCoinBusiness {
         Integer riseCount = okxCoins.stream().filter(item -> (item.isRise() == true)).collect(Collectors.toList()).size();
         BigDecimal risePercent = new BigDecimal(riseCount).divide(new BigDecimal(okxCoins.size()), 4,BigDecimal.ROUND_DOWN);
         BigDecimal lowPercent = BigDecimal.ONE.subtract(risePercent).setScale(4);
-        log.info("riseDto-1  riseCount:{}, risePercent:{}  ,lowPercent:{}",riseCount, risePercent, lowPercent);
-        
         RiseDto riseDto = redisService.getCacheObject(RedisConstants.OKX_TICKER_MARKET);
-        log.info("riseDto-1:{}",JSON.toJSONString(riseDto));
         if (riseDto == null) {
             riseDto = new RiseDto();
         }
-        log.info("riseDto-2:{}",JSON.toJSONString(riseDto));
         riseDto.setRiseCount(riseCount);
         riseDto.setRisePercent(risePercent);
         if (risePercent.compareTo(riseDto.getHighest()) > 0) {
@@ -147,7 +143,6 @@ public class SyncCoinBusiness {
         }
         riseDto.setLowPercent(lowPercent);
         long diff = DateUtil.diffSecond(now, DateUtil.getMaxTime(now));
-        log.info("riseDto-3:{}",JSON.toJSONString(riseDto));
         redisService.setCacheObject(RedisConstants.OKX_TICKER_MARKET, riseDto, diff, TimeUnit.SECONDS);
     }
 }
