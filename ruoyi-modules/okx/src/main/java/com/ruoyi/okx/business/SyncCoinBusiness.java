@@ -103,9 +103,10 @@ public class SyncCoinBusiness {
                 //交易额低于配置值-关闭交易
                 if (usdt24h.compareTo(obj.getVolUsdt24h()) > 0) {
                     obj.setStatus(CoinStatusEnum.CLOSE.getStatus());
-                } else if (obj.getStatus().intValue() == CoinStatusEnum.CLOSE.getStatus().intValue()) {
-                    obj.setStatus(CoinStatusEnum.OPEN.getStatus());
                 }
+//                else if (obj.getStatus().intValue() == CoinStatusEnum.CLOSE.getStatus().intValue()) {
+//                    obj.setStatus(CoinStatusEnum.OPEN.getStatus());
+//                }
                 obj.setStandard(coinBusiness.calculateStandard(tickers.get(finalI)));
             });
         }
