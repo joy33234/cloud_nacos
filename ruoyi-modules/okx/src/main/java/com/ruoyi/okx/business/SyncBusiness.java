@@ -130,8 +130,9 @@ public class SyncBusiness {
         try {
             List<OkxCoin> allCoinList = coinBusiness.list();
             int pages = allCoinList.size() / 20;
-            if (allCoinList.size() % 20 != 0)
+            if (allCoinList.size() % 20 != 0) {
                 pages++;
+            }
             //所有帐户
             List<OkxAccount> accounts = accountBusiness.list();
             Long start = System.currentTimeMillis();
