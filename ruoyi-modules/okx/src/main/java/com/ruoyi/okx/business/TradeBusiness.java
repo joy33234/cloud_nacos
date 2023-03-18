@@ -306,6 +306,7 @@ public class TradeBusiness {
                 tradeDto.setMarketStatus(MarketStatusEnum.RISE.getStatus());
                 tradeDto.setSide(OkxSideEnum.BUY.getSide());
                 list.add(tradeDto);
+                riseBuy = true;
             }
             log.info("tradeDto-5:{}",JSON.toJSONString(list));
 
@@ -322,6 +323,7 @@ public class TradeBusiness {
                 tradeDto.setMarketStatus(MarketStatusEnum.FALL.getStatus());
                 tradeDto.setSide(OkxSideEnum.BUY.getSide());
                 list.add(tradeDto);
+                fallBuy = true;
             }
             log.info("tradeDto-6:{}",JSON.toJSONString(list));
         }
