@@ -168,6 +168,8 @@ public class TradeBusiness {
                 //交易
                 trade(tradeDtoList, OkxCoin.get(), map);
             }
+            log.info("riseBuy:{} fallBuy:{}",riseBuy, fallBuy);
+
             //大盘交易
             if (map.get(OkxConstants.MODE_TYPE).equals(ModeTypeEnum.MARKET.getValue()) && (riseBuy || fallBuy)) {
                 if (riseBuy) {
@@ -179,6 +181,7 @@ public class TradeBusiness {
                 if (riseBuy && fallBuy) {
                     riseDto.setStatus(Status.DISABLE.getCode());
                 }
+                log.info("riseDto:{}",JSON.toJSONString(riseDto));
                 redisService.setCacheObject(RedisConstants.OKX_TICKER_MARKET, riseDto);
             }
         } catch (Exception e) {
@@ -192,7 +195,6 @@ public class TradeBusiness {
         TradeDto tradeDto =  DtoUtils.transformBean(ticker, TradeDto.class);
         tradeDto.setUnit(coin.getUnit());
         tradeDto.setOrdType(map.get(OkxConstants.ORD_TYPE));
-        log.info("tradeDto-1:{}",JSON.toJSONString(tradeDto));
         String modeType = map.get(OkxConstants.MODE_TYPE);
         if (modeType.equals(ModeTypeEnum.GRID.getValue())) {
             tradeDto.setModeType(ModeTypeEnum.GRID.getValue());
@@ -236,8 +238,6 @@ public class TradeBusiness {
             if (riseDto == null) {
                 return list;
             }
-            log.info("tradeDto-2:{}",JSON.toJSONString(tradeDto));
-
             tradeDto.setModeType(ModeTypeEnum.MARKET.getValue());
 
             List<OkxBuyRecord> tempBuyRecords = buyRecords.stream().filter(item -> item.getModeType().equals(ModeTypeEnum.MARKET.getValue())).collect(Collectors.toList());
@@ -262,7 +262,6 @@ public class TradeBusiness {
                 });
                 return list;
             }
-            log.info("tradeDto-3:{}",JSON.toJSONString(list));
 
             //卖出 —— 大盘下跌时买入的
             List<OkxBuyRecord> tempFallBuyRecords = tempBuyRecords.stream().filter(obj -> obj.getMarketStatus() == MarketStatusEnum.FALL.getStatus()).collect(Collectors.toList());
@@ -287,8 +286,6 @@ public class TradeBusiness {
                 });
                 return list;
             }
-            log.info("tradeDto-4:{}",JSON.toJSONString(list));
-
             if (riseDto.getStatus() == Status.DISABLE.getCode()) {
                 return list;
             }
@@ -308,7 +305,6 @@ public class TradeBusiness {
                 list.add(tradeDto);
                 riseBuy = true;
             }
-            log.info("tradeDto-5:{}",JSON.toJSONString(list));
 
             //大盘下跌-买入
             if (!riseDto.getFallBought() && riseDto.getLowPercent().compareTo(new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_LOW_BUY_PERCENT))) > 0) {
@@ -325,7 +321,6 @@ public class TradeBusiness {
                 list.add(tradeDto);
                 fallBuy = true;
             }
-            log.info("tradeDto-6:{}",JSON.toJSONString(list));
         }
         return list;
     }
