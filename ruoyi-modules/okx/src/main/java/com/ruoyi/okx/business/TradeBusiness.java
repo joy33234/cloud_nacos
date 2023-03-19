@@ -263,7 +263,6 @@ public class TradeBusiness {
                 return list;
             }
 
-
             //卖出 —— 大盘上涨时买入的
             if (CollectionUtils.isNotEmpty(tempBuyRecords) &&
                     (riseDto.getRisePercent().compareTo(new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_RISE_MAX_SELL_PERCENT))) > 0
@@ -281,6 +280,8 @@ public class TradeBusiness {
                         BigDecimal price = ticker.getLast().subtract(coin.getStandard().multiply(new BigDecimal(9.0E-4D)));
                         temp.setPx(price.setScale(8, RoundingMode.HALF_UP));
                     }
+                    log.info("list-2:{}",JSON.toJSONString(list));
+
                     list.add(temp);
                 });
                 return list;
@@ -305,6 +306,7 @@ public class TradeBusiness {
                             temp.setPx(price.setScale(8, RoundingMode.HALF_UP));
                         }
                         list.add(temp);
+                        log.info("list-3:{}",JSON.toJSONString(list));
                     }
                 });
                 return list;
