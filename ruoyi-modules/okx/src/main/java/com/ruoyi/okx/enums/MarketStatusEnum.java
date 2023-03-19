@@ -8,6 +8,7 @@ import java.util.Map;
 public enum MarketStatusEnum {
     RISE(0, "上涨"),
     FALL(1, "下跌"),
+
     STABLE(2, "平稳");
 
     private Integer status;
