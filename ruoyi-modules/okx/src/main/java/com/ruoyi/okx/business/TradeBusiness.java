@@ -165,7 +165,6 @@ public class TradeBusiness {
                 }
                 //交易
                 trade(tradeDtoList, OkxCoin.get(), map);
-                log.info("trade-success-coin:{}",ticker.getCoin());
             }
 
             //大盘交易
@@ -239,11 +238,9 @@ public class TradeBusiness {
             tradeDto.setModeType(ModeTypeEnum.MARKET.getValue());
 
             List<OkxBuyRecord> tempBuyRecords = buyRecords.stream().filter(item -> item.getModeType().equals(ModeTypeEnum.MARKET.getValue())).collect(Collectors.toList());
-            log.info("tempBuyRecords.size:{}",tempBuyRecords.size());
             //当天以前的订单卖出
             Date todayMinTime = DateUtil.getMinTime(new Date());
-            List<OkxBuyRecord> beforeBuyRecords = tempBuyRecords.stream().filter(item -> item.getCreateTime().getTime() > todayMinTime.getTime()).collect(Collectors.toList());
-            log.info("beforeBuyRecords.size:{}",beforeBuyRecords.size());
+            List<OkxBuyRecord> beforeBuyRecords = tempBuyRecords.stream().filter(item -> todayMinTime.getTime() > item.getCreateTime().getTime()).collect(Collectors.toList());
             if (CollectionUtils.isNotEmpty(beforeBuyRecords)) {
                 beforeBuyRecords.stream().forEach(item -> {
                     BigDecimal riseIns = ticker.getLast().subtract(item.getPrice()).divide(item.getPrice(),8, RoundingMode.DOWN);
@@ -263,7 +260,6 @@ public class TradeBusiness {
                         list.add(temp);
                     }
                 });
-                log.info("list.size:{}", JSON.toJSONString(list));
                 return list;
             }
 
