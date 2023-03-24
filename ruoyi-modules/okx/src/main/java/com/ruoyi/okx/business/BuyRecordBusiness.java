@@ -132,7 +132,7 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
 //        this.syncOrderFee(map);
     }
     @Transactional(rollbackFor = {Exception.class})
-    public boolean syncOrderStatus(Map<String, String> map) throws ServiceException {
+    public void syncOrderStatus(Map<String, String> map) throws ServiceException {
         List<OkxBuyRecord> list = findPendings(Integer.valueOf(map.get("id")));
         list.stream().forEach(item -> {
             if (item.getStatus() == OrderStatusEnum.CREATED.getStatus()) {
@@ -179,7 +179,6 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
 //            log.error("同步订单异常", e);
 //            throw new ServiceException("同步订单异常");
 //        }
-        return true;
     }
 
     public void syncOrderFee(Map<String, String> map) {
