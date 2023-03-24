@@ -34,19 +34,6 @@ public interface RemoteOkxService
     public R<Void> syncTicker(@RequestHeader(SecurityConstants.FROM_SOURCE) String source);
 
 
-
-    /**
-     * 同步所有币种
-     *
-     * @param source 请求来源
-     * @return 结果
-     */
-    @GetMapping("/sync/unit")
-    public R<Void> syncUnit(@RequestHeader(SecurityConstants.FROM_SOURCE) String source);
-
-
-
-
     /**
      * 同步帐户币种数量
      *

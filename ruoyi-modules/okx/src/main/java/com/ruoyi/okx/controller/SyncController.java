@@ -71,14 +71,4 @@ public class SyncController extends BaseController
         return success(syncBusiness.syncCurrencies());
     }
 
-
-    /**
-     * 根据参数获取详细信息
-     */
-    @GetMapping(value = "/unit")
-    public AjaxResult syncMin()
-    {
-        return success(syncBusiness.syncUnit());
-    }
-
 }

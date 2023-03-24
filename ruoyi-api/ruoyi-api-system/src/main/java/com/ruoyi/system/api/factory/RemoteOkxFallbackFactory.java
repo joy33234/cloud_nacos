@@ -36,14 +36,6 @@ public class RemoteOkxFallbackFactory implements FallbackFactory<RemoteOkxServic
                 return R.fail("同步币种信息数量失败:" + throwable.getMessage());
             }
 
-
-            @Override
-            public R<Void> syncUnit(String source)
-            {
-                return R.fail("同步帐户币种unit失败:" + throwable.getMessage());
-            }
-
-
             @Override
             public R<Void> syncCount(String source)
             {

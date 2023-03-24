@@ -25,6 +25,7 @@ import com.ruoyi.okx.domain.OkxAccount;
 import com.ruoyi.okx.enums.OrderStatusEnum;
 import com.ruoyi.okx.mapper.BuyRecordMapper;
 import com.ruoyi.okx.params.DO.BuyRecordDO;
+import com.ruoyi.okx.utils.Constant;
 import io.swagger.models.auth.In;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -132,7 +133,11 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
     @Transactional(rollbackFor = {Exception.class})
     public boolean syncOrderStatus(Map<String, String> map) {
         List<OkxBuyRecord> list = findPendings(Integer.valueOf(map.get("id")));
-        list.stream().forEach(item -> item.setStatus(OrderStatusEnum.SUCCESS.getStatus()));
+        list.stream().forEach(item -> {
+            if (item.getStatus() == OrderStatusEnum.CREATED.getStatus()) {
+                item.setStatus(OrderStatusEnum.SUCCESS.getStatus());
+            }
+        });
         this.saveOrUpdateBatch(list);
 
 //        try {
@@ -161,8 +166,8 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
 //                        return false;
 //                    }
 //                }
-//                buyRecord.setFee(data.getBigDecimal("fee").setScale(8, RoundingMode.HALF_UP).abs());
-//                buyRecord.setFeeUsdt(data.getBigDecimal("fee").multiply(buyRecord.getPrice().setScale(8, RoundingMode.HALF_UP)).abs());
+//                buyRecord.setFee(data.getBigDecimal("fee").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP).abs());
+//                buyRecord.setFeeUsdt(data.getBigDecimal("fee").multiply(buyRecord.getPrice().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP)).abs());
 //                updateById(buyRecord);
 //                if (buyRecord.getStatus().equals(OrderStatusEnum.SUCCESS)) {
 //                    this.coinBusiness.addCount(buyRecord.getCoin(), buyRecord.getAccountId(), buyRecord.getQuantity());
@@ -200,7 +205,7 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
                     log.info("同步订单手续费:{},buyRecord:{}", str, JSON.toJSONString(buyRecord));
                 }
                 buyRecord.setFee(fee);
-                buyRecord.setFeeUsdt(buyRecord.getFee().multiply(buyRecord.getPrice()).setScale(8, RoundingMode.HALF_UP));
+                buyRecord.setFeeUsdt(buyRecord.getFee().multiply(buyRecord.getPrice()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                 updateById(buyRecord);
                 Thread.sleep(50);
             } catch (Exception e) {

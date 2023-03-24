@@ -5,11 +5,14 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
+import com.ruoyi.common.core.constant.CacheConstants;
 import com.ruoyi.common.core.utils.DateUtil;
 import com.ruoyi.common.core.utils.HttpUtil;
+import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.*;
 import com.ruoyi.okx.enums.CoinStatusEnum;
 import com.ruoyi.okx.enums.OrderStatusEnum;
+import com.ruoyi.okx.utils.Constant;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +48,9 @@ public class SyncBusiness {
     @Resource
     private SyncCoinBusiness syncCoinCountBusiness;
 
+    @Resource
+    private RedisService redisService;
+
     public boolean syncCurrencies() {
         try {
             OkxAccount account = accountBusiness.list().get(0);
@@ -58,10 +64,9 @@ public class SyncBusiness {
             Date now = new Date();
             JSONArray jsonArray = json.getJSONArray("data");
             List<OkxCoin> saveCoins = Lists.newArrayList();
-            List<OkxCoin> updateCoins = Lists.newArrayList();
             for (int i = 0; i < jsonArray.size(); i++) {
                JSONObject item = jsonArray.getJSONObject(i);
-                OkxCoin coin = coinBusiness.findOne(item.getString("ccy"));
+                OkxCoin coin = redisService.getCacheObject(CacheConstants.OKX_COIN_KEY + item.getString("ccy"));
                 if (coin == null) {
                     coin = new OkxCoin();
                     coin.setCreateTime(now);
@@ -77,53 +82,40 @@ public class SyncBusiness {
                     coin.setCoin(item.getString("ccy"));
                     coin.setUpdateTime(now);
                     saveCoins.add(coin);
-                } else {
-                    coin.setUpdateTime(now);
-                    updateCoins.add(coin);
                 }
             }
             if (CollectionUtils.isNotEmpty(saveCoins)){
-                coinBusiness.saveBatch(saveCoins.stream().distinct().collect(Collectors.toList()));
-            }
-            if (CollectionUtils.isNotEmpty(updateCoins)){
-                coinBusiness.updateList(updateCoins.stream().distinct().collect(Collectors.toList()));
+                //set unit
+                JSONArray unitArray = getUnit(map);
+                for (OkxCoin okxCoin:saveCoins) {
+                    for (int i = 0; i < unitArray.size(); i++) {
+                        JSONObject item = unitArray.getJSONObject(i);
+                        String[] arr = item.getString("instId").split("-");
+                        if (arr[1].equals("USDT") && arr[0].equalsIgnoreCase(okxCoin.getCoin())) {
+                            okxCoin.setUnit(item.getBigDecimal("minSz"));
+                        }
+                    }
+                }
+                if(coinBusiness.saveBatch(saveCoins.stream().distinct().collect(Collectors.toList()))) {
+                    coinBusiness.loadingCache();
+                }
             }
         } catch (Exception e) {
             log.error("syncCurrencies error:", e);
             return false;
         }
         return true;
+
     }
 
-    public boolean syncUnit() {
-        try {
-            OkxAccount account = accountBusiness.list().get(0);
-            Map<String, String> map = accountBusiness.getAccountMap(account);
-            String str = HttpUtil.getOkx("/api/v5/public/instruments?instType=SPOT", null, map);
-            JSONObject json = JSONObject.parseObject(str);
-            if (json == null || !json.getString("code").equals("0")) {
-                log.error("str:{}", str);
-                return false;
-            }
-            List<OkxCoin> coins = Lists.newArrayList();
-            Date now = new Date();
-            JSONArray jsonArray = json.getJSONArray("data");
-            for (int i = 0; i < jsonArray.size(); i++) {
-                JSONObject item = jsonArray.getJSONObject(i);
-                String[] arr = item.getString("instId").split("-");
-                if (arr[1].equals("USDT")) {
-                    OkxCoin coin = coinBusiness.findOne(arr[0]);
-                    coin.setUnit(item.getBigDecimal("minSz"));
-                    coin.setUpdateTime(now);
-                    coin.setRemark("更新unit");
-                    coins.add(coin);
-                }
-            }
-            coinBusiness.updateList(coins);
-        } catch (Exception e) {
-            log.error("syncCurrencies error:", e);
+    private JSONArray getUnit(Map<String, String> map) {
+        String str = HttpUtil.getOkx("/api/v5/public/instruments?instType=SPOT", null, map);
+        JSONObject json = JSONObject.parseObject(str);
+        if (json == null || !json.getString("code").equals("0")) {
+            log.error("str:{}", str);
+            return new JSONArray();
         }
-        return true;
+        return json.getJSONArray("data");
     }
 
     public boolean syncCoinBalance() {
@@ -192,7 +184,7 @@ public class SyncBusiness {
             JSONObject data = json.getJSONArray("data").getJSONObject(0);
             sellRecord.setStatus((commonBusiness.getOrderStatus(data.getString("state")) == null) ? sellRecord.getStatus() : commonBusiness.getOrderStatus(data.getString("state")));
             if (sellRecord.getStatus().equals(OrderStatusEnum.SUCCESS.getStatus())) {
-                sellRecord.setFee(data.getBigDecimal("fee").setScale(12, RoundingMode.HALF_UP).abs());
+                sellRecord.setFee(data.getBigDecimal("fee").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP).abs());
                 boolean update = sellRecordBusiness.updateById(sellRecord);
                 if (update) {
                     this.coinBusiness.reduceCount(sellRecord.getCoin(), sellRecord.getAccountId(), sellRecord.getQuantity());

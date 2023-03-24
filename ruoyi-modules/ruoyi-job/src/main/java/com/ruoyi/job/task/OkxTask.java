@@ -37,10 +37,6 @@ public class OkxTask
         remoteOkxService.syncTicker(SecurityConstants.INNER);
     }
 
-    public void syncUnit(){
-        System.out.println("syncUnit");
-        remoteOkxService.syncUnit(SecurityConstants.INNER);
-    }
 
     public void syncCount(){
         System.out.println("syncCount执行无参方法");

@@ -14,6 +14,7 @@ import com.ruoyi.okx.domain.OkxCoinTicker;
 import com.ruoyi.okx.enums.CoinStatusEnum;
 import com.ruoyi.okx.params.dto.RiseDto;
 import com.ruoyi.okx.service.SettingService;
+import com.ruoyi.okx.utils.Constant;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.scheduling.annotation.Async;
@@ -94,10 +95,10 @@ public class SyncCoinBusiness {
         for (int i = 0; i < items.size(); i++) {
             int finalI = i;
             okxCoins.stream().filter(item -> item.getCoin().equals(tickers.get(finalI).getCoin())).findFirst().ifPresent(obj -> {
-                obj.setVolCcy24h(items.get(finalI).getBigDecimal("vol24h").setScale(8, RoundingMode.DOWN));
-                obj.setVolUsdt24h(items.get(finalI).getBigDecimal("volCcy24h").setScale(8, RoundingMode.DOWN));
-                obj.setHightest(items.get(finalI).getBigDecimal("high24h").setScale(8, RoundingMode.HALF_UP));
-                obj.setLowest(items.get(finalI).getBigDecimal("low24h").setScale(8, RoundingMode.HALF_UP));
+                obj.setVolCcy24h(items.get(finalI).getBigDecimal("vol24h").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
+                obj.setVolUsdt24h(items.get(finalI).getBigDecimal("volCcy24h").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
+                obj.setHightest(items.get(finalI).getBigDecimal("high24h").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+                obj.setLowest(items.get(finalI).getBigDecimal("low24h").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                 obj.setRise((tickers.get(finalI).getIns().compareTo(BigDecimal.ZERO) >= 0));
                 obj.setUpdateTime(now);
                 //交易额低于配置值-关闭交易
