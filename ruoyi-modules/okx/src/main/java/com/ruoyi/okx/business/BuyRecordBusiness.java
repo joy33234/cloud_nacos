@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.Resource;
 
+import com.ruoyi.common.core.exception.ServiceException;
 import com.ruoyi.common.core.utils.DateUtil;
 import com.ruoyi.common.core.utils.HttpUtil;
 import com.ruoyi.okx.domain.OkxBuyRecord;
@@ -131,14 +132,14 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
 //        this.syncOrderFee(map);
     }
     @Transactional(rollbackFor = {Exception.class})
-    public boolean syncOrderStatus(Map<String, String> map) {
+    public boolean syncOrderStatus(Map<String, String> map) throws ServiceException {
         List<OkxBuyRecord> list = findPendings(Integer.valueOf(map.get("id")));
         list.stream().forEach(item -> {
             if (item.getStatus() == OrderStatusEnum.CREATED.getStatus()) {
                 item.setStatus(OrderStatusEnum.SUCCESS.getStatus());
             }
         });
-        this.saveOrUpdateBatch(list);
+        saveOrUpdateBatch(list);
 
 //        try {
 //            //未完成订单
