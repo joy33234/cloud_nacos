@@ -14,6 +14,7 @@ import javax.annotation.Resource;
 
 import com.ruoyi.common.core.constant.OkxConstants;
 import com.ruoyi.common.core.constant.RedisConstants;
+import com.ruoyi.common.core.exception.ServiceException;
 import com.ruoyi.common.core.utils.DateUtil;
 import com.ruoyi.common.core.utils.HttpUtil;
 import com.ruoyi.common.redis.service.RedisLock;
@@ -61,7 +62,7 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
     private RedisService redisService;
 
     @Transactional(rollbackFor = Exception.class)
-    public boolean syncTicker() {
+    public boolean syncTicker() throws ServiceException{
         try {
             Long start = System.currentTimeMillis();
             Map<String, String> accountMap = accountBusiness.getAccountMap();
@@ -132,6 +133,7 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
         } catch (Exception e) {
             log.error("syncTicker error:", e);
             redisLock.releaseLock(RedisConstants.OKX_TICKER);
+            throw new ServiceException("syncTicker error");
         }
         return true;
     }

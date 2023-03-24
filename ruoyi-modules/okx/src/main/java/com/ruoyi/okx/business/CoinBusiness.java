@@ -83,9 +83,8 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
         return this.coinMapper.selectOne(wrapper);
     }
 
-    @Transactional(rollbackFor = {Exception.class})
     public boolean updateList(List<OkxCoin> coins) {
-        this.saveOrUpdateBatch(coins);
+        saveOrUpdateBatch(coins);
         return true;
     }
 

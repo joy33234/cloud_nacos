@@ -176,7 +176,7 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
 //            }
 //        } catch (Exception e) {
 //            log.error("同步订单异常", e);
-//            return false;
+//            throw new ServiceException("同步订单异常");
 //        }
         return true;
     }

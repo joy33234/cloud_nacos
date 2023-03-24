@@ -64,7 +64,7 @@ public class TradeBusiness {
      * @throws Exception
      */
     @Transactional(rollbackFor = Exception.class)
-    public void trade(List<TradeDto> list, OkxCoin coin, Map<String, String> map) {
+    public void trade(List<TradeDto> list, OkxCoin coin, Map<String, String> map) throws ServiceException {
         try {
             Date now = new Date();
             Integer accountId = Integer.valueOf(map.get("id"));
@@ -108,6 +108,7 @@ public class TradeBusiness {
             }
         } catch (Exception e) {
             log.error("okx trade error:{}", e);
+            throw new ServiceException("okx trade error");
         }
     }
 
