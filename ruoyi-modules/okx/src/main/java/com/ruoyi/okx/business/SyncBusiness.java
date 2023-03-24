@@ -6,6 +6,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.ruoyi.common.core.constant.CacheConstants;
+import com.ruoyi.common.core.exception.ServiceException;
 import com.ruoyi.common.core.utils.DateUtil;
 import com.ruoyi.common.core.utils.HttpUtil;
 import com.ruoyi.common.redis.service.RedisService;
@@ -141,7 +142,7 @@ public class SyncBusiness {
 
 
     @Transactional(rollbackFor = {Exception.class})
-    public boolean syncBuyOrder() {
+    public boolean syncBuyOrder() throws ServiceException {
         try {
             List<OkxAccount> accounts = accountBusiness.list();
             for (OkxAccount account:accounts) {
@@ -150,6 +151,7 @@ public class SyncBusiness {
             }
         } catch (Exception e) {
             log.error("同步订单异常", e);
+            throw new ServiceException("同步订单异常");
         }
         return true;
     }
