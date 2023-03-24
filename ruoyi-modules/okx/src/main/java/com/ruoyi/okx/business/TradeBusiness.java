@@ -21,6 +21,7 @@ import com.ruoyi.okx.enums.*;
 import com.ruoyi.okx.params.dto.RiseDto;
 import com.ruoyi.okx.params.dto.TradeDto;
 import com.ruoyi.okx.service.SettingService;
+import com.ruoyi.okx.utils.Constant;
 import com.ruoyi.okx.utils.DtoUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
@@ -72,7 +73,7 @@ public class TradeBusiness {
                 if (tradeDto.getSide().equals(OkxSideEnum.BUY.getSide())) {
                     OkxBuyRecord buyRecord =
                             new OkxBuyRecord(null, tradeDto.getCoin(), tradeDto.getInstId(), tradeDto.getPx(), tradeDto.getSz(),
-                                    tradeDto.getPx().multiply(tradeDto.getSz()).setScale(8, RoundingMode.HALF_UP), BigDecimal.ZERO, BigDecimal.ZERO,
+                                    tradeDto.getPx().multiply(tradeDto.getSz()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP), BigDecimal.ZERO, BigDecimal.ZERO,
                                     OrderStatusEnum.PENDING.getStatus(), UUID.randomUUID().toString(), "", tradeDto.getBuyStrategyId(), tradeDto.getTimes(), accountId,accountName,tradeDto.getMarketStatus(),tradeDto.getModeType());
                     if (!strategyBusiness.checkBuy(buyRecord, coin)){
                         return;
@@ -86,7 +87,7 @@ public class TradeBusiness {
                     buyRecordBusiness.save(buyRecord);
                 } else {
                     OkxSellRecord sellRecord = new OkxSellRecord(null, tradeDto.getBuyRecordId(), tradeDto.getCoin(), tradeDto.getInstId(), tradeDto.getPx(), tradeDto.getSz(),
-                            tradeDto.getPx().multiply(tradeDto.getSz()).setScale(8, RoundingMode.HALF_UP), BigDecimal.ZERO, OrderStatusEnum.PENDING.getStatus(),
+                            tradeDto.getPx().multiply(tradeDto.getSz()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP), BigDecimal.ZERO, OrderStatusEnum.PENDING.getStatus(),
                             UUID.randomUUID().toString(), "", tradeDto.getSellStrategyId(), tradeDto.getBuyStrategyId(), tradeDto.getTimes(), accountId,accountName);
                     if (!strategyBusiness.checkSell(sellRecord, coin, tradeDto)) {
                         return;
@@ -120,7 +121,7 @@ public class TradeBusiness {
 //        params.put("ordType", tradeDto.getOrdType());
 //        params.put("sz", tradeDto.getSz().toString());
 //        if (tradeDto.getOrdType().equals(OkxOrdTypeEnum.LIMIT.getValue())) {
-//            params.put("px", tradeDto.getPx().setScale(8, RoundingMode.HALF_UP) + "");
+//            params.put("px", tradeDto.getPx().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP) + "");
 //        }
 //        String str = HttpUtil.postOkx("/api/v5/trade/order", params, map);
 //        JSONObject json = JSONObject.parseObject(str);
@@ -200,15 +201,15 @@ public class TradeBusiness {
             if (ins.compareTo(new BigDecimal(settingService.selectSettingByKey(OkxConstants.GRIDE_MIN_PERCENT_FOR_SELL))) >= 0) {
                 buyRecords.stream().filter(item -> item.getModeType().equals(ModeTypeEnum.GRID.getValue())).forEach(item -> {
                     TradeDto temp =  DtoUtils.transformBean(tradeDto, TradeDto.class);
-                    temp.setSz(item.getQuantity().subtract(item.getFee().abs()).setScale(8, RoundingMode.HALF_UP));
+                    temp.setSz(item.getQuantity().subtract(item.getFee().abs()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                     temp.setTimes(item.getTimes());
                     temp.setBuyStrategyId(item.getStrategyId());
                     temp.setSide(OkxSideEnum.SELL.getSide());
                     temp.setBuyRecordId(item.getId());
-                    temp.setPx(ticker.getLast().setScale(8, RoundingMode.DOWN));
+                    temp.setPx(ticker.getLast().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
                     if (OkxOrdTypeEnum.LIMIT.getValue().equals(temp.getOrdType())) {
                         BigDecimal price = ticker.getLast().subtract(coin.getStandard().multiply(new BigDecimal(9.0E-4D)));
-                        temp.setPx(price.setScale(8, RoundingMode.HALF_UP));
+                        temp.setPx(price.setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                     }
                     list.add(temp);
                 });
@@ -219,14 +220,14 @@ public class TradeBusiness {
                 OkxBuyStrategy buyStrategy = buyStrategyBusiness.list().stream()
                         .filter(strategy -> (strategy.getFallPercent().compareTo(ins.abs().setScale(2, RoundingMode.DOWN)) >= 0))
                         .sorted(Comparator.comparing(OkxBuyStrategy::getFallPercent)).findFirst().get();
-                tradeDto.setSz(coin.getUnit().multiply(BigDecimal.valueOf(buyStrategy.getTimes())).setScale(8, RoundingMode.HALF_UP));
+                tradeDto.setSz(coin.getUnit().multiply(BigDecimal.valueOf(buyStrategy.getTimes())).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                 tradeDto.setTimes(buyStrategy.getTimes());
                 tradeDto.setBuyStrategyId(buyStrategy.getId());
-                tradeDto.setPx(ticker.getLast().setScale(8, RoundingMode.DOWN));
+                tradeDto.setPx(ticker.getLast().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
                 //limit-设置价格
                 if (OkxOrdTypeEnum.LIMIT.getValue().equals(tradeDto.getOrdType())) {
                     BigDecimal buyPrice = ticker.getLast().add(ticker.getLast().multiply(new BigDecimal("9.0E-4")));
-                    tradeDto.setPx(buyPrice.setScale(8, RoundingMode.HALF_UP));
+                    tradeDto.setPx(buyPrice.setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                 }
                 tradeDto.setSide(OkxSideEnum.BUY.getSide());
                 list.add(tradeDto);
@@ -246,16 +247,16 @@ public class TradeBusiness {
                     BigDecimal riseIns = ticker.getLast().subtract(item.getPrice()).divide(item.getPrice(),8, RoundingMode.DOWN);
                     if (riseIns.compareTo(new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_LOW_SELL_PERCENT))) > 0) {
                         TradeDto temp =  DtoUtils.transformBean(tradeDto, TradeDto.class);
-                        temp.setSz(item.getQuantity().subtract(item.getFee().abs()).setScale(8, RoundingMode.HALF_UP));
+                        temp.setSz(item.getQuantity().subtract(item.getFee().abs()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                         temp.setTimes(item.getTimes());
                         temp.setBuyStrategyId(item.getStrategyId());
                         temp.setSide(OkxSideEnum.SELL.getSide());
                         temp.setBuyRecordId(item.getId());
                         temp.setMarketStatus(MarketStatusEnum.RISE.getStatus());
-                        temp.setPx(ticker.getLast().setScale(8, RoundingMode.DOWN));
+                        temp.setPx(ticker.getLast().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
                         if (OkxOrdTypeEnum.LIMIT.getValue().equals(temp.getOrdType())) {
                             BigDecimal price = ticker.getLast().subtract(coin.getStandard().multiply(new BigDecimal(9.0E-4D)));
-                            temp.setPx(price.setScale(8, RoundingMode.HALF_UP));
+                            temp.setPx(price.setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                         }
                         list.add(temp);
                     }
@@ -269,16 +270,16 @@ public class TradeBusiness {
                     || (riseDto.getHighest().compareTo(riseDto.getRisePercent()) > 0 && riseDto.getHighest().multiply(new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_RISE_SELL_PERCENT))).compareTo(riseDto.getRisePercent()) <= 0))) {
                 tempBuyRecords.stream().filter(obj -> obj.getMarketStatus() == MarketStatusEnum.RISE.getStatus()).forEach(item -> {
                     TradeDto temp =  DtoUtils.transformBean(tradeDto, TradeDto.class);
-                    temp.setSz(item.getQuantity().subtract(item.getFee().abs()).setScale(8, RoundingMode.HALF_UP));
+                    temp.setSz(item.getQuantity().subtract(item.getFee().abs()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                     temp.setTimes(item.getTimes());
                     temp.setBuyStrategyId(item.getStrategyId());
                     temp.setSide(OkxSideEnum.SELL.getSide());
                     temp.setBuyRecordId(item.getId());
                     temp.setMarketStatus(MarketStatusEnum.RISE.getStatus());
-                    temp.setPx(ticker.getLast().setScale(8, RoundingMode.DOWN));
+                    temp.setPx(ticker.getLast().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
                     if (OkxOrdTypeEnum.LIMIT.getValue().equals(temp.getOrdType())) {
                         BigDecimal price = ticker.getLast().subtract(coin.getStandard().multiply(new BigDecimal(9.0E-4D)));
-                        temp.setPx(price.setScale(8, RoundingMode.HALF_UP));
+                        temp.setPx(price.setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                     }
                     log.info("list-2:{}",JSON.toJSONString(list));
 
@@ -294,16 +295,16 @@ public class TradeBusiness {
                     BigDecimal currentIns = ticker.getLast().subtract(item.getPrice()).divide(item.getPrice(),8,RoundingMode.DOWN);
                     if (currentIns.compareTo(new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_LOW_SELL_PERCENT))) > 0){
                         TradeDto temp =  DtoUtils.transformBean(tradeDto, TradeDto.class);
-                        temp.setSz(item.getQuantity().subtract(item.getFee().abs()).setScale(8, RoundingMode.HALF_UP));
+                        temp.setSz(item.getQuantity().subtract(item.getFee().abs()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                         temp.setTimes(item.getTimes());
                         temp.setBuyStrategyId(item.getStrategyId());
                         temp.setSide(OkxSideEnum.SELL.getSide());
                         temp.setBuyRecordId(item.getId());
                         temp.setMarketStatus(MarketStatusEnum.FALL.getStatus());
-                        temp.setPx(ticker.getLast().setScale(8, RoundingMode.DOWN));
+                        temp.setPx(ticker.getLast().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
                         if (OkxOrdTypeEnum.LIMIT.getValue().equals(temp.getOrdType())) {
                             BigDecimal price = ticker.getLast().subtract(coin.getStandard().multiply(new BigDecimal(9.0E-4D)));
-                            temp.setPx(price.setScale(8, RoundingMode.HALF_UP));
+                            temp.setPx(price.setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                         }
                         list.add(temp);
                         log.info("list-3:{}",JSON.toJSONString(list));
@@ -318,12 +319,12 @@ public class TradeBusiness {
             //大盘上涨-买入
             if (!riseDto.getRiseBought() && riseDto.getRisePercent().compareTo(new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_RISE_BUY_PERCENT))) > 0) {
                 tradeDto.setTimes(marketBuyTimes);
-                tradeDto.setSz(coin.getUnit().multiply(BigDecimal.valueOf(tradeDto.getTimes())).setScale(8, RoundingMode.HALF_UP));
-                tradeDto.setPx(ticker.getLast().setScale(8, RoundingMode.DOWN));
+                tradeDto.setSz(coin.getUnit().multiply(BigDecimal.valueOf(tradeDto.getTimes())).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+                tradeDto.setPx(ticker.getLast().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
                 //设置价格
                 if (OkxOrdTypeEnum.LIMIT.getValue().equals(tradeDto.getOrdType())) {
                     BigDecimal buyPrice = ticker.getLast().add(ticker.getLast().multiply(new BigDecimal(9.0E-4D)));
-                    tradeDto.setPx(buyPrice.setScale(8, RoundingMode.HALF_UP));
+                    tradeDto.setPx(buyPrice.setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                 }
                 tradeDto.setMarketStatus(MarketStatusEnum.RISE.getStatus());
                 tradeDto.setSide(OkxSideEnum.BUY.getSide());
@@ -335,12 +336,12 @@ public class TradeBusiness {
             //大盘下跌-买入
             if (!riseDto.getFallBought() && riseDto.getLowPercent().compareTo(new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_LOW_BUY_PERCENT))) > 0) {
                 tradeDto.setTimes(marketBuyTimes);
-                tradeDto.setSz(coin.getUnit().multiply(BigDecimal.valueOf(tradeDto.getTimes())).setScale(8, RoundingMode.HALF_UP));
+                tradeDto.setSz(coin.getUnit().multiply(BigDecimal.valueOf(tradeDto.getTimes())).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                 tradeDto.setPx(ticker.getLast());
                 //设置价格
                 if (OkxOrdTypeEnum.LIMIT.getValue().equals(tradeDto.getOrdType())) {
                     BigDecimal buyPrice = ticker.getLast().add(ticker.getLast().multiply(new BigDecimal(9.0E-4D)));
-                    tradeDto.setPx(buyPrice.setScale(8, RoundingMode.HALF_UP));
+                    tradeDto.setPx(buyPrice.setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                 }
                 tradeDto.setMarketStatus(MarketStatusEnum.FALL.getStatus());
                 tradeDto.setSide(OkxSideEnum.BUY.getSide());

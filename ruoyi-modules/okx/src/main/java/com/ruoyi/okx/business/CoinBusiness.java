@@ -9,15 +9,14 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.common.collect.Lists;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 
+import com.ruoyi.common.core.constant.CacheConstants;
 import com.ruoyi.common.core.constant.OkxConstants;
 import com.ruoyi.common.core.utils.HttpUtil;
+import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.*;
 import com.ruoyi.okx.enums.CoinStatusEnum;
 import com.ruoyi.okx.mapper.CoinMapper;
@@ -26,6 +25,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +36,9 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
 
     @Resource
     private CoinMapper coinMapper;
+
+    @Autowired
+    private RedisService redisService;
 
 
 
@@ -76,16 +79,12 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
 
     public OkxCoin findOne(String coin) {
         LambdaQueryWrapper<OkxCoin> wrapper = new LambdaQueryWrapper();
-//        wrapper.eq(Coin::getAccountId, accountId);
         wrapper.eq(OkxCoin::getCoin, coin);
-        return (OkxCoin)this.coinMapper.selectOne((Wrapper)wrapper);
+        return this.coinMapper.selectOne(wrapper);
     }
 
     @Transactional(rollbackFor = {Exception.class})
     public boolean updateList(List<OkxCoin> coins) {
-//        coins.stream().forEach(item -> {
- //           coinMapper.updateById(item);
-  //      });
         this.saveOrUpdateBatch(coins);
         return true;
     }
@@ -113,6 +112,37 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
             wrapper.eq(OkxCoin::getCoin, coin.getCoin());
         }
         return coinMapper.selectList(wrapper);
+    }
+
+    public OkxCoin getCoin(String coin) {
+        OkxCoin okxCoin = redisService.getCacheObject(CacheConstants.OKX_COIN_KEY + coin);
+        if (okxCoin == null) {
+            okxCoin = this.findOne(coin);
+            if (okxCoin != null) {
+                redisService.setCacheObject(CacheConstants.OKX_COIN_KEY + coin, okxCoin);
+            }
+        }
+        return okxCoin;
+    }
+
+    public void resetSettingCache()
+    {
+        clearSettingCache();
+        loadingCache();
+    }
+
+    public void loadingCache() {
+        List<OkxCoin> coins = list();
+        for (OkxCoin coin : coins)
+        {
+            redisService.setCacheObject(CacheConstants.OKX_COIN_KEY + coin.getCoin(), coin);
+        }
+    }
+
+    public void clearSettingCache()
+    {
+        Collection<String> keys = redisService.keys(CacheConstants.OKX_COIN_KEY + "*");
+        redisService.deleteObject(keys);
     }
 
 }

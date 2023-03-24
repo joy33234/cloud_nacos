@@ -25,4 +25,6 @@ public class Constant {
 //    public static BigDecimal NEW_COIN_MAX_USDT = new BigDecimal("100");
 //
 //    public static int OKX_TRADE_STATUS = 0;
+
+    public static int OKX_BIG_DECIMAL = 12;
 }

@@ -57,4 +57,9 @@ public class CacheConstants
      */
     public static final String OKX_SETTING_KEY = "okx_setting:";
 
+    /**
+     * okx参数管理 cache key
+     */
+    public static final String OKX_COIN_KEY = "okx_coin:";
+
 }
