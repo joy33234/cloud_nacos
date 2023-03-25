@@ -135,7 +135,7 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
     public void syncOrderStatus(Map<String, String> map) throws ServiceException {
         List<OkxBuyRecord> list = findPendings(Integer.valueOf(map.get("id")));
         list.stream().forEach(item -> {
-            if (item.getStatus() == OrderStatusEnum.CREATED.getStatus()) {
+            if (item.getStatus() == OrderStatusEnum.PENDING.getStatus()) {
                 item.setStatus(OrderStatusEnum.SUCCESS.getStatus());
             }
         });

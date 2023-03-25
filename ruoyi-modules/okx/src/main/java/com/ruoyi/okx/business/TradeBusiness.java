@@ -240,7 +240,7 @@ public class TradeBusiness {
             tradeDto.setModeType(ModeTypeEnum.MARKET.getValue());
 
             List<OkxBuyRecord> tempBuyRecords = buyRecords.stream().filter(item -> item.getModeType().equals(ModeTypeEnum.MARKET.getValue())).collect(Collectors.toList());
-            //当天以前的订单卖出
+            //卖出 - 当天以前的订单
             Date todayMinTime = DateUtil.getMinTime(new Date());
             List<OkxBuyRecord> beforeBuyRecords = tempBuyRecords.stream().filter(item -> todayMinTime.getTime() > item.getCreateTime().getTime()).collect(Collectors.toList());
             if (CollectionUtils.isNotEmpty(beforeBuyRecords)) {
@@ -331,9 +331,9 @@ public class TradeBusiness {
                 tradeDto.setSide(OkxSideEnum.BUY.getSide());
                 tradeDto.setBuyStrategyId(0);
                 list.add(tradeDto);
+                log.info("list-4:{}",JSON.toJSONString(list));
                 map.put("riseBuy","true");
             }
-
             //大盘下跌-买入
             if (!riseDto.getFallBought() && riseDto.getLowPercent().compareTo(new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_LOW_BUY_PERCENT))) > 0) {
                 tradeDto.setTimes(marketBuyTimes);
@@ -348,6 +348,7 @@ public class TradeBusiness {
                 tradeDto.setSide(OkxSideEnum.BUY.getSide());
                 tradeDto.setBuyStrategyId(0);
                 list.add(tradeDto);
+                log.info("list-5:{}",JSON.toJSONString(list));
                 map.put("fallBuy","true");
             }
         }
