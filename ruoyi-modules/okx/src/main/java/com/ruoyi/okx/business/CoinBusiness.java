@@ -44,7 +44,7 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
     }
 
     public boolean reduceCount(String coinStr, Integer accountId, BigDecimal count) {
-        OkxCoin coin = findOne(coinStr);
+        OkxCoin coin = getCoin(coinStr);
         BigDecimal remainCount = coin.getCount().subtract(count);
         if (remainCount.compareTo(BigDecimal.ZERO) >= 0) {
             coin.setCount(remainCount);
@@ -55,12 +55,12 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
     }
 
     public boolean addCount(String coinStr, Integer accountId, BigDecimal count) {
-        OkxCoin coin = findOne(coinStr);
+        OkxCoin coin = getCoin(coinStr);
         coin.setCount(coin.getCount().add(count));
         return updateById(coin);
     }
 
-    public OkxCoin findOne(String coin) {
+    private OkxCoin findOne(String coin) {
         LambdaQueryWrapper<OkxCoin> wrapper = new LambdaQueryWrapper();
         wrapper.eq(OkxCoin::getCoin, coin);
         return this.coinMapper.selectOne(wrapper);
