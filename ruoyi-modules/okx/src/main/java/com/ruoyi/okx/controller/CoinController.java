@@ -54,7 +54,7 @@ public class CoinController extends BaseController
     @GetMapping(value = "/{coin}")
     public AjaxResult getInfo(@PathVariable String coin)
     {
-        return success(coinBusiness.findOne(coin));
+        return success(coinBusiness.getCoin(coin));
     }
 
 
