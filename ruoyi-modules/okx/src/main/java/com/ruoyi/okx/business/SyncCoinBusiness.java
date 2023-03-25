@@ -6,6 +6,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.ruoyi.common.core.constant.OkxConstants;
 import com.ruoyi.common.core.constant.RedisConstants;
 import com.ruoyi.common.core.utils.DateUtil;
+import com.ruoyi.common.core.utils.DateUtils;
 import com.ruoyi.common.core.utils.HttpUtil;
 import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.OkxAccount;
@@ -109,6 +110,9 @@ public class SyncCoinBusiness {
                     obj.setStatus(CoinStatusEnum.OPEN.getStatus());
                     }
                 }
+                if (obj.getCoin().equalsIgnoreCase("BTC")) {
+                    obj.setBtcIns(tickers.get(finalI).getIns());
+                }
                 obj.setStandard(coinBusiness.calculateStandard(tickers.get(finalI)));
             });
         }
@@ -116,7 +120,8 @@ public class SyncCoinBusiness {
         this.refreshRiseCount(okxCoins, now);
 
         boolean update = coinBusiness.updateList(okxCoins);
-        if (update == true) {
+        //过渡时间不交易
+        if (update == true && now.getTime() > DateUtils.addMinutes(DateUtil.getMinTime(now),30).getTime()) {
             tradeBusiness.trade( okxCoins, tickers, map);
         }
     }
@@ -131,7 +136,7 @@ public class SyncCoinBusiness {
         Integer riseCount = okxCoins.stream().filter(item -> (item.isRise() == true)).collect(Collectors.toList()).size();
         BigDecimal risePercent = new BigDecimal(riseCount).divide(new BigDecimal(okxCoins.size()), 4,BigDecimal.ROUND_DOWN);
         BigDecimal lowPercent = BigDecimal.ONE.subtract(risePercent).setScale(4);
-        RiseDto riseDto = redisService.getCacheObject(RedisConstants.OKX_TICKER_MARKET);
+        RiseDto riseDto = redisService.getCacheObject(RedisConstants.getTicketKey());
         if (riseDto == null) {
             riseDto = new RiseDto();
         }
@@ -145,7 +150,13 @@ public class SyncCoinBusiness {
             riseDto.setLowest(lowPercent);
         }
         riseDto.setLowPercent(lowPercent);
+        for (OkxCoin okxCoin:okxCoins) {
+            if (okxCoin.getCoin().equalsIgnoreCase("BTC")) {
+                riseDto.setBTCIns(okxCoin.getBtcIns());
+            }
+        }
         long diff = DateUtil.diffSecond(now, DateUtil.getMaxTime(now));
-        redisService.setCacheObject(RedisConstants.OKX_TICKER_MARKET, riseDto, diff, TimeUnit.SECONDS);
+        redisService.setCacheObject(RedisConstants.getTicketKey(), riseDto, diff, TimeUnit.SECONDS);
     }
+
 }
