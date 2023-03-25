@@ -141,7 +141,6 @@ public class SyncBusiness {
 
 
 
-    @Transactional(rollbackFor = {Exception.class})
     public boolean syncBuyOrder() throws ServiceException {
         try {
             List<OkxAccount> accounts = accountBusiness.list();
