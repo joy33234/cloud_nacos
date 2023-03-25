@@ -1,5 +1,6 @@
 package com.ruoyi.okx.domain;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.ruoyi.common.core.web.domain.CommonEntity;
 import lombok.Data;
@@ -30,6 +31,6 @@ public class OkxCoin extends CommonEntity {
 
     private BigDecimal count;
 
-    @Transient
+    @TableField(exist = false)
     private BigDecimal btcIns;
 }
