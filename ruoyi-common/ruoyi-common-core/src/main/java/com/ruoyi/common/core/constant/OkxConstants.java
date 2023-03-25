@@ -78,6 +78,13 @@ public class OkxConstants
 
 //    public static int OKX_TRADE_STATUS = 0; //0:上涨 1：下降
 
+    public static final String MARKET_BTC_RISE_INS = "market_btc_rise_ins";
+
+    public static final String MARKET_BTC_FALL_INS = "market_btc_fall_ins";
+
+
+
+
 
 
 
