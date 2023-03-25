@@ -33,5 +33,7 @@ public class RiseDto {
 
     private Boolean fallBought = false; //当日大盘下跌是否交易过
 
+    private BigDecimal BTCIns = BigDecimal.ZERO;
+
 
 }

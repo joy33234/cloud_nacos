@@ -3,7 +3,7 @@ package com.ruoyi.okx.domain;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.ruoyi.common.core.web.domain.CommonEntity;
 import lombok.Data;
-import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 
 import java.math.BigDecimal;
 
@@ -29,4 +29,7 @@ public class OkxCoin extends CommonEntity {
     private BigDecimal volUsdt24h;
 
     private BigDecimal count;
+
+    @Transient
+    private BigDecimal btcIns;
 }

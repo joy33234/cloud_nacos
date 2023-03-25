@@ -142,7 +142,7 @@ public class TradeBusiness {
     @Async
     public void trade(List<OkxCoin> coins, List<OkxCoinTicker> tickers, Map<String, String> map) throws ServiceException {
         try {
-            RiseDto riseDto = redisService.getCacheObject(RedisConstants.OKX_TICKER_MARKET);
+            RiseDto riseDto = redisService.getCacheObject(RedisConstants.getTicketKey());
             Integer accountId = Integer.valueOf(map.get("id"));
 
             //赋值用户订单类型和交易模式
@@ -181,7 +181,7 @@ public class TradeBusiness {
                 if (riseDto.getRiseBought() && riseDto.getFallBought()) {
                     riseDto.setStatus(Status.DISABLE.getCode());
                 }
-                redisService.setCacheObject(RedisConstants.OKX_TICKER_MARKET, riseDto);
+                redisService.setCacheObject(RedisConstants.getTicketKey(), riseDto);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -317,8 +317,9 @@ public class TradeBusiness {
                 return list;
             }
             Integer marketBuyTimes = Integer.valueOf(settingService.selectSettingByKey(OkxConstants.MARKET_BUY_TIMES));
-            //大盘上涨-买入
-            if (!riseDto.getRiseBought() && riseDto.getRisePercent().compareTo(new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_RISE_BUY_PERCENT))) > 0) {
+            //买入- 大盘上涨
+            if (!riseDto.getRiseBought() && riseDto.getRisePercent().compareTo(new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_RISE_BUY_PERCENT))) > 0
+                    && riseDto.getBTCIns().compareTo(new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_BTC_RISE_INS))) > 0 ) {
                 tradeDto.setTimes(marketBuyTimes);
                 tradeDto.setSz(coin.getUnit().multiply(BigDecimal.valueOf(tradeDto.getTimes())).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                 tradeDto.setPx(ticker.getLast().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
@@ -334,8 +335,9 @@ public class TradeBusiness {
                 map.put("riseBuy","true");
             }
 
-            //大盘下跌-买入
-            if (!riseDto.getFallBought() && riseDto.getLowPercent().compareTo(new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_LOW_BUY_PERCENT))) > 0) {
+            //买入- 大盘下跌
+            if (!riseDto.getFallBought() && riseDto.getLowPercent().compareTo(new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_LOW_BUY_PERCENT))) > 0
+                    && new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_BTC_FALL_INS)).compareTo(riseDto.getBTCIns()) > 0 ) {
                 tradeDto.setTimes(marketBuyTimes);
                 tradeDto.setSz(coin.getUnit().multiply(BigDecimal.valueOf(tradeDto.getTimes())).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                 tradeDto.setPx(ticker.getLast());
