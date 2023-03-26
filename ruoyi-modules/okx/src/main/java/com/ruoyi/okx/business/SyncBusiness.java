@@ -53,6 +53,7 @@ public class SyncBusiness {
     private RedisService redisService;
 
     public boolean syncCurrencies() {
+        List<OkxCoin> saveCoins = Lists.newArrayList();
         try {
             OkxAccount account = accountBusiness.list().get(0);
             Map<String, String> map = accountBusiness.getAccountMap(account);
@@ -64,10 +65,9 @@ public class SyncBusiness {
             }
             Date now = new Date();
             JSONArray jsonArray = json.getJSONArray("data");
-            List<OkxCoin> saveCoins = Lists.newArrayList();
             for (int i = 0; i < jsonArray.size(); i++) {
                JSONObject item = jsonArray.getJSONObject(i);
-                OkxCoin coin = redisService.getCacheObject(CacheConstants.OKX_COIN_KEY + item.getString("ccy"));
+                OkxCoin coin = coinBusiness.getCoin(item.getString("ccy"));
                 if (coin == null) {
                     coin = new OkxCoin();
                     coin.setCreateTime(now);
@@ -103,6 +103,7 @@ public class SyncBusiness {
             }
         } catch (Exception e) {
             log.error("syncCurrencies error:", e);
+            log.error("saveCoins:{}", JSON.toJSONString(saveCoins));
             return false;
         }
         return true;
