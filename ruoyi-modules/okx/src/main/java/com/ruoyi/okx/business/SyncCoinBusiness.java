@@ -122,7 +122,9 @@ public class SyncCoinBusiness {
         boolean update = coinBusiness.updateList(okxCoins);
         //过渡时间不交易
         if (update == true && now.getTime() > DateUtils.addMinutes(DateUtil.getMinTime(now),30).getTime()) {
-            tradeBusiness.trade( okxCoins, tickers, map);
+            accountBusiness.list().stream().forEach(item -> {
+                tradeBusiness.trade( okxCoins, tickers, accountBusiness.getAccountMap(item));
+            });
         }
     }
 

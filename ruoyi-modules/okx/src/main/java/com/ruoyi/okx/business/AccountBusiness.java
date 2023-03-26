@@ -55,7 +55,7 @@ public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
 
 
     public Map<String, String> getAccountMap(OkxAccount account) {
-        Map<String, String> accountMap = new HashMap<>(4);
+        Map<String, String> accountMap = new HashMap<>(5);
         accountMap.put("id", account.getId().toString());
         accountMap.put("accountName", account.getName());
         accountMap.put("apikey", account.getApikey());
