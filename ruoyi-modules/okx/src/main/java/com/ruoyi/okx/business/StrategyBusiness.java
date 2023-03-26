@@ -46,7 +46,7 @@ public class StrategyBusiness  {
         //okxSettings.stream().filter(item -> item.getSettingValue().equals(ModeTypeEnum.GRID.getValue())).collect(Collectors.toList()).stream().findFirst().ifPresent(obj -> {
         BigDecimal total = coin.getCount().add(buyRecord.getQuantity());
         BigDecimal onlySellTimes = total.divide(coin.getUnit());
-        if (onlySellTimes.compareTo(buyMaxTime) > 0) {
+        if (onlySellTimes.compareTo(buyMaxTime) > 0 && coin.getStatus() == CoinStatusEnum.OPEN.getStatus()) {
             log.warn("状态变更为只卖 coin:{},buyStrategy:{} ", JSON.toJSONString(coin));
             coin.setStatus(CoinStatusEnum.ONYYSELL.getStatus());
             coinBusiness.updateById(coin);
@@ -57,7 +57,6 @@ public class StrategyBusiness  {
             return false;
         }
         if (buyRecordBusiness.hasBuy(buyRecord.getAccountId(), buyRecord.getStrategyId(), coin.getCoin(), buyRecord.getTimes()) == true) {
-            log.warn("买入失败-该策略已买 account:{} coin:{}", buyRecord.getAccountId(), coin.getCoin());
             return false;
         }
         return true;
@@ -77,7 +76,6 @@ public class StrategyBusiness  {
         OkxBuyRecord buyRecord = buyRecordBusiness.getById(sellRecord.getBuyRecordId());
         if (sellRecord.getPrice().compareTo(buyRecord.getPrice().add(buyRecord.getPrice().multiply(new BigDecimal(settingService.selectSettingByKey(OkxConstants.GRIDE_MIN_PERCENT_FOR_SELL))))) < 0
             && tradeDto.getOrdType().equals(OkxOrdTypeEnum.LIMIT.getValue())) {
-            log.warn("卖出失败-未涨1%{}, coin:{},buyPrice:{}, sellPrice:{}", sellRecord.getAccountId(), sellRecord.getCoin(), buyRecord.getPrice(), sellRecord.getPrice());
             return false;
         }
         return true;

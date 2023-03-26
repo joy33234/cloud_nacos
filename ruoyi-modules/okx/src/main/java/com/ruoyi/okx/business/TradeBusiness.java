@@ -149,7 +149,6 @@ public class TradeBusiness {
             accountBusiness.listByAccountId(accountId).stream()
                     .filter(item -> item.getSettingKey().equals(OkxConstants.ORD_TYPE) || item.getSettingKey().equals(OkxConstants.MODE_TYPE))
                     .collect(Collectors.toList()).stream().forEach(obj -> map.put(obj.getSettingKey(), obj.getSettingValue()));
-
             List<OkxBuyRecord> buyRecords = buyRecordBusiness.findSuccessRecord(null, accountId, null,null);
 
             for (OkxCoinTicker ticker : tickers) {
@@ -282,8 +281,6 @@ public class TradeBusiness {
                         BigDecimal price = ticker.getLast().subtract(coin.getStandard().multiply(new BigDecimal(9.0E-4D)));
                         temp.setPx(price.setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                     }
-                    log.info("list-2:{}",JSON.toJSONString(list));
-
                     list.add(temp);
                 });
                 return list;
@@ -308,7 +305,6 @@ public class TradeBusiness {
                             temp.setPx(price.setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                         }
                         list.add(temp);
-                        log.info("list-3:{}",JSON.toJSONString(list));
                     }
                 });
                 return list;
