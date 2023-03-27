@@ -20,22 +20,22 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		from okx_setting
     </sql>
 
-<!--    &lt;!&ndash; 查询条件 &ndash;&gt;-->
-<!--	<sql id="sqlwhereSearch">-->
-<!--		<where>-->
-<!--			<if test="settingId !=null">-->
-<!--				and setting_id = #{settingId}-->
-<!--			</if>-->
-<!--			<if test="settingKey !=null and settingKey != ''">-->
-<!--				and setting_key = #{settingKey}-->
-<!--			</if>-->
-<!--		</where>-->
-<!--	</sql>-->
+    <!-- 查询条件 -->
+	<sql id="sqlwhereSearch">
+		<where>
+			<if test="settingId !=null">
+				and setting_id = #{settingId}
+			</if>
+			<if test="settingKey !=null and settingKey != ''">
+				and setting_key = #{settingKey}
+			</if>
+		</where>
+	</sql>
 
-<!--    <select id="selectSetting" parameterType="OkxSetting" resultMap="SettingResult">-->
-<!--        <include refid="selectSettingVo"/>-->
-<!--        <include refid="sqlwhereSearch"/>-->
-<!--    </select>-->
+    <select id="selectSetting" parameterType="com.ruoyi.okx.domain.OkxSetting" resultMap="SettingResult">
+        <include refid="selectSettingVo"/>
+        <include refid="sqlwhereSearch"/>
+    </select>
 
     <select id="selectSettingList" parameterType="com.ruoyi.okx.domain.OkxSetting" resultMap="SettingResult">
         <include refid="selectSettingVo"/>
@@ -73,46 +73,46 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 <!--        where setting_key = #{settingKey} limit 1-->
 <!--    </select>-->
 
-<!--    <insert id="insertSetting" parameterType="OkxSetting">-->
-<!--        insert into okx_setting (-->
-<!--			<if test="settingName != null and settingName != '' ">setting_name,</if>-->
-<!--			<if test="settingKey != null and settingKey != '' ">setting_key,</if>-->
-<!--			<if test="settingValue != null and settingValue != '' ">setting_value,</if>-->
-<!--			<if test="createBy != null and createBy != ''">create_by,</if>-->
-<!--			<if test="remark != null and remark != ''">remark,</if>-->
-<!-- 			create_time-->
-<!--        )values(-->
-<!--			<if test="settingName != null and settingName != ''">#{settingName},</if>-->
-<!--			<if test="settingKey != null and settingKey != ''">#{settingKey},</if>-->
-<!--			<if test="settingValue != null and settingValue != ''">#{settingValue},</if>-->
-<!--			<if test="createBy != null and createBy != ''">#{createBy},</if>-->
-<!--			<if test="remark != null and remark != ''">#{remark},</if>-->
-<!-- 			sysdate()-->
-<!--		)-->
-<!--    </insert>-->
+    <insert id="insertSetting" parameterType="com.ruoyi.okx.domain.OkxSetting">
+        insert into okx_setting (
+			<if test="settingName != null and settingName != '' ">setting_name,</if>
+			<if test="settingKey != null and settingKey != '' ">setting_key,</if>
+			<if test="settingValue != null and settingValue != '' ">setting_value,</if>
+			<if test="createBy != null and createBy != ''">create_by,</if>
+			<if test="remark != null and remark != ''">remark,</if>
+ 			create_time
+        )values(
+			<if test="settingName != null and settingName != ''">#{settingName},</if>
+			<if test="settingKey != null and settingKey != ''">#{settingKey},</if>
+			<if test="settingValue != null and settingValue != ''">#{settingValue},</if>
+			<if test="createBy != null and createBy != ''">#{createBy},</if>
+			<if test="remark != null and remark != ''">#{remark},</if>
+ 			sysdate()
+		)
+    </insert>
 
-<!--    <update id="updateSetting" parameterType="OkxSetting">-->
-<!--        update okx_setting-->
-<!--        <set>-->
-<!--            <if test="settingName != null and settingName != ''">setting_name = #{settingName},</if>-->
-<!--            <if test="settingKey != null and settingKey != ''">setting_key = #{settingKey},</if>-->
-<!--            <if test="settingValue != null and settingValue != ''">setting_value = #{settingValue},</if>-->
-<!--            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>-->
-<!--            <if test="remark != null">remark = #{remark},</if>-->
-<!-- 			update_time = sysdate()-->
-<!--        </set>-->
-<!--        where setting_id = #{settingId}-->
-<!--    </update>-->
+    <update id="updateSetting" parameterType="com.ruoyi.okx.domain.OkxSetting">
+        update okx_setting
+        <set>
+            <if test="settingName != null and settingName != ''">setting_name = #{settingName},</if>
+            <if test="settingKey != null and settingKey != ''">setting_key = #{settingKey},</if>
+            <if test="settingValue != null and settingValue != ''">setting_value = #{settingValue},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            <if test="remark != null">remark = #{remark},</if>
+ 			update_time = sysdate()
+        </set>
+        where setting_id = #{settingId}
+    </update>
 
-<!--    <delete id="deleteSettingById" parameterType="Long">-->
-<!--        delete from okx_setting where setting_id = #{settingId}-->
-<!--    </delete>-->
+    <delete id="deleteSettingById" parameterType="Long">
+        delete from okx_setting where setting_id = #{settingId}
+    </delete>
 
-<!--    <delete id="deleteSettingByIds" parameterType="Long">-->
-<!--        delete from okx_setting where setting_id in-->
-<!--        <foreach item="settingId" collection="array" open="(" separator="," close=")">-->
-<!--        	#{settingId}-->
-<!--        </foreach>-->
-<!--    </delete>-->
+    <delete id="deleteSettingByIds" parameterType="Long">
+        delete from okx_setting where setting_id in
+        <foreach item="settingId" collection="array" open="(" separator="," close=")">
+        	#{settingId}
+        </foreach>
+    </delete>
 
 </mapper>

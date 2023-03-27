@@ -1,5 +1,6 @@
 package com.ruoyi.okx.service.impl;
 
+import cn.hutool.setting.Setting;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.ruoyi.common.core.constant.CacheConstants;
@@ -16,9 +17,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
+
+import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toCollection;
 
 /**
  * 参数配置 服务层实现
@@ -209,16 +216,21 @@ public class SettingServiceImpl implements SettingService
      * @return 结果
      */
     @Override
-    public boolean checkSettingKeyUnique(Long[] settingIds){
+    public boolean checkSettingKey(Long[] settingIds){
         if (StringUtils.isEmpty(settingIds)) {
-            return true;
+            return false;
         }
-        List<OkxSetting> settingList = settingMapper.selectSettingListByIds(settingIds);
-        for (OkxSetting setting:settingList) {
-            List<OkxSetting> tempList = settingList.stream().filter(item -> item.getSettingKey().equals(setting.getSettingKey())).collect(Collectors.toList());
-            if (CollectionUtils.isNotEmpty(tempList) && tempList.size() > 1) {
-                return false;
-            }
+        List<OkxSetting> uniqueSettings = settingMapper.selectSettingList(new OkxSetting()).stream().collect(
+                collectingAndThen(toCollection(() -> new TreeSet<>(comparing(OkxSetting::getSettingKey))), ArrayList::new));
+        //部分配置未勾选
+        if (uniqueSettings.size() != settingIds.length) {
+            return false;
+        }
+        List<OkxSetting> settingList = settingMapper.selectSettingListByIds(settingIds).stream().collect(
+                collectingAndThen(toCollection(() -> new TreeSet<>(comparing(OkxSetting::getSettingKey))), ArrayList::new));
+        //勾选配置有重复
+        if (settingList.size() != settingIds.length) {
+            return false;
         }
         return true;
     }

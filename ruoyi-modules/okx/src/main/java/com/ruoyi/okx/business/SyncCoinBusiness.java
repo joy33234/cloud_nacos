@@ -13,6 +13,7 @@ import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.OkxAccount;
 import com.ruoyi.okx.domain.OkxCoin;
 import com.ruoyi.okx.domain.OkxCoinTicker;
+import com.ruoyi.okx.domain.OkxSetting;
 import com.ruoyi.okx.enums.CoinStatusEnum;
 import com.ruoyi.okx.params.dto.RiseDto;
 import com.ruoyi.okx.service.SettingService;
@@ -128,7 +129,8 @@ public class SyncCoinBusiness {
             //过渡时间不交易
             if (update == true && now.getTime() > DateUtils.addMinutes(DateUtil.getMinTime(now),30).getTime()) {
                 accountBusiness.list().stream().forEach(item -> {
-                    tradeBusiness.trade( okxCoins, tickers, accountBusiness.getAccountMap(item));
+                    List<OkxSetting> okxSettings =   accountBusiness.listByAccountId(item.getId());
+                    tradeBusiness.trade( okxCoins, tickers, okxSettings,accountBusiness.getAccountMap(item));
                 });
             }
             redisLock.releaseLock(RedisConstants.OKX_TICKER_UPDATE_COIN);

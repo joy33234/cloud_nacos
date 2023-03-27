@@ -96,10 +96,10 @@ public interface SettingService
 
 
     /**
-     * 检验策略settingid唯一
+     * 检验策略settingid
      * @param settingIds
      * @return
      */
-    public boolean checkSettingKeyUnique(Long[] settingIds);
+    public boolean checkSettingKey(Long[] settingIds);
 
 }

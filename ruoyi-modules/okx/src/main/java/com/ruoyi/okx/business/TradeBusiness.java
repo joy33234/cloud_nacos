@@ -21,7 +21,6 @@ import com.ruoyi.okx.domain.*;
 import com.ruoyi.okx.enums.*;
 import com.ruoyi.okx.params.dto.RiseDto;
 import com.ruoyi.okx.params.dto.TradeDto;
-import com.ruoyi.okx.service.SettingService;
 import com.ruoyi.okx.utils.Constant;
 import com.ruoyi.okx.utils.DtoUtils;
 import org.apache.commons.collections4.CollectionUtils;
@@ -33,6 +32,11 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import static java.util.Comparator.comparing;
+import static java.util.Comparator.comparingLong;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toCollection;
+
 @Component
 public class TradeBusiness {
     private static final Logger log = LoggerFactory.getLogger(TradeBusiness.class);
@@ -42,9 +46,6 @@ public class TradeBusiness {
 
     @Resource
     private StrategyBusiness strategyBusiness;
-
-    @Resource
-    private SettingService settingService;
 
     @Resource
     private SellRecordBusiness sellRecordBusiness;
@@ -144,15 +145,16 @@ public class TradeBusiness {
 
 
     @Async
-    public void trade(List<OkxCoin> coins, List<OkxCoinTicker> tickers, Map<String, String> map) throws ServiceException {
+    public void trade(List<OkxCoin> coins, List<OkxCoinTicker> tickers,List<OkxSetting> okxSettings, Map<String, String> map) throws ServiceException {
         try {
             redisLock.lock(RedisConstants.OKX_TICKER_TRADE,10,3,1000);
 
             RiseDto riseDto = redisService.getCacheObject(RedisConstants.getTicketKey());
             Integer accountId = Integer.valueOf(map.get("id"));
 
+
             //赋值用户订单类型和交易模式
-            accountBusiness.listByAccountId(accountId).stream()
+            okxSettings.stream()
                     .filter(item -> item.getSettingKey().equals(OkxConstants.ORD_TYPE) || item.getSettingKey().equals(OkxConstants.MODE_TYPE))
                     .collect(Collectors.toList()).stream().forEach(obj -> map.put(obj.getSettingKey(), obj.getSettingValue()));
             List<OkxBuyRecord> buyRecords = buyRecordBusiness.findSuccessRecord(null, accountId, null,null);
@@ -166,7 +168,7 @@ public class TradeBusiness {
                 }
                 List<OkxBuyRecord> tempBuyRecords = buyRecords.stream().filter(item -> item.getCoin().equals(ticker.getCoin())).collect(Collectors.toList());
                 //获取交易参数
-                List<TradeDto> tradeDtoList = getTradeDto( OkxCoin.get(), ticker, map, riseDto, tempBuyRecords);
+                List<TradeDto> tradeDtoList = getTradeDto( OkxCoin.get(), ticker, map, riseDto, tempBuyRecords,okxSettings);
                 if (CollectionUtils.isEmpty(tradeDtoList)) {
                     continue;
                 }
@@ -196,7 +198,7 @@ public class TradeBusiness {
         }
     }
 
-    private List<TradeDto> getTradeDto( OkxCoin coin, OkxCoinTicker ticker, Map<String, String> map,RiseDto riseDto,List<OkxBuyRecord> buyRecords) {
+    private List<TradeDto> getTradeDto( OkxCoin coin, OkxCoinTicker ticker, Map<String, String> map,RiseDto riseDto,List<OkxBuyRecord> buyRecords,List<OkxSetting> okxSettings) {
         List<TradeDto> list = Lists.newArrayList();
         TradeDto tradeDto =  DtoUtils.transformBean(ticker, TradeDto.class);
         tradeDto.setUnit(coin.getUnit());
@@ -206,7 +208,7 @@ public class TradeBusiness {
             tradeDto.setModeType(ModeTypeEnum.GRID.getValue());
             BigDecimal ins = ticker.getLast().subtract(coin.getStandard()).divide(coin.getStandard(), 8, RoundingMode.HALF_UP);
             //卖出
-            if (ins.compareTo(new BigDecimal(settingService.selectSettingByKey(OkxConstants.GRIDE_MIN_PERCENT_FOR_SELL))) >= 0) {
+            if (ins.compareTo(new BigDecimal(okxSettings.stream().filter(item -> item.getSettingKey().equals(OkxConstants.GRIDE_MIN_PERCENT_FOR_SELL)).findFirst().get().getSettingValue())) >= 0) {
                 buyRecords.stream().filter(item -> item.getModeType().equals(ModeTypeEnum.GRID.getValue())).forEach(item -> {
                     TradeDto temp =  DtoUtils.transformBean(tradeDto, TradeDto.class);
                     temp.setSz(item.getQuantity().subtract(item.getFee().abs()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
@@ -227,7 +229,7 @@ public class TradeBusiness {
             if ((new BigDecimal(-0.011D)).compareTo(ins) >= 0) {
                 OkxBuyStrategy buyStrategy = buyStrategyBusiness.list().stream()
                         .filter(strategy -> (strategy.getFallPercent().compareTo(ins.abs().setScale(2, RoundingMode.DOWN)) >= 0))
-                        .sorted(Comparator.comparing(OkxBuyStrategy::getFallPercent)).findFirst().get();
+                        .sorted(comparing(OkxBuyStrategy::getFallPercent)).findFirst().get();
                 tradeDto.setSz(coin.getUnit().multiply(BigDecimal.valueOf(buyStrategy.getTimes())).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                 tradeDto.setTimes(buyStrategy.getTimes());
                 tradeDto.setBuyStrategyId(buyStrategy.getId());
@@ -253,7 +255,7 @@ public class TradeBusiness {
             if (CollectionUtils.isNotEmpty(beforeBuyRecords)) {
                 beforeBuyRecords.stream().forEach(item -> {
                     BigDecimal riseIns = ticker.getLast().subtract(item.getPrice()).divide(item.getPrice(),8, RoundingMode.DOWN);
-                    if (riseIns.compareTo(new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_LOW_SELL_PERCENT))) > 0) {
+                    if (riseIns.compareTo(new BigDecimal(okxSettings.stream().filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_LOW_SELL_PERCENT)).findFirst().get().getSettingValue())) > 0) {
                         TradeDto temp =  DtoUtils.transformBean(tradeDto, TradeDto.class);
                         temp.setSz(item.getQuantity().subtract(item.getFee().abs()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                         temp.setTimes(item.getTimes());
@@ -274,8 +276,11 @@ public class TradeBusiness {
 
             //卖出 —— 大盘上涨时买入的
             if (CollectionUtils.isNotEmpty(tempBuyRecords) &&
-                    (riseDto.getRisePercent().compareTo(new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_RISE_MAX_SELL_PERCENT))) > 0
-                    || (riseDto.getHighest().compareTo(riseDto.getRisePercent()) > 0 && riseDto.getHighest().multiply(new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_RISE_SELL_PERCENT))).compareTo(riseDto.getRisePercent()) <= 0))) {
+                    (riseDto.getRisePercent().compareTo(new BigDecimal(okxSettings.stream()
+                            .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_RISE_MAX_SELL_PERCENT)).findFirst().get().getSettingValue())) > 0
+                    || (riseDto.getHighest().compareTo(riseDto.getRisePercent()) > 0
+                            && riseDto.getHighest().multiply(new BigDecimal(okxSettings.stream()
+                            .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_RISE_SELL_PERCENT)).findFirst().get().getSettingValue())).compareTo(riseDto.getRisePercent()) <= 0))) {
                 tempBuyRecords.stream().filter(obj -> obj.getMarketStatus() == MarketStatusEnum.RISE.getStatus()).forEach(item -> {
                     TradeDto temp =  DtoUtils.transformBean(tradeDto, TradeDto.class);
                     temp.setSz(item.getQuantity().subtract(item.getFee().abs()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
@@ -299,7 +304,8 @@ public class TradeBusiness {
             if (CollectionUtils.isNotEmpty(tempFallBuyRecords)) {
                 tempFallBuyRecords.stream().forEach(item -> {
                     BigDecimal currentIns = ticker.getLast().subtract(item.getPrice()).divide(item.getPrice(),8,RoundingMode.DOWN);
-                    if (currentIns.compareTo(new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_LOW_SELL_PERCENT))) > 0){
+                    if (currentIns.compareTo(new BigDecimal(okxSettings.stream()
+                                    .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_LOW_SELL_PERCENT)).findFirst().get().getSettingValue())) > 0){
                         TradeDto temp =  DtoUtils.transformBean(tradeDto, TradeDto.class);
                         temp.setSz(item.getQuantity().subtract(item.getFee().abs()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                         temp.setTimes(item.getTimes());
@@ -320,10 +326,13 @@ public class TradeBusiness {
             if (riseDto.getStatus() == Status.DISABLE.getCode()) {
                 return list;
             }
-            Integer marketBuyTimes = Integer.valueOf(settingService.selectSettingByKey(OkxConstants.MARKET_BUY_TIMES));
+            Integer marketBuyTimes = Integer.valueOf(okxSettings.stream()
+                    .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_BUY_TIMES)).findFirst().get().getSettingValue());
             //买入- 大盘上涨
-            if (!riseDto.getRiseBought() && riseDto.getRisePercent().compareTo(new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_RISE_BUY_PERCENT))) > 0
-                    && riseDto.getBTCIns().compareTo(new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_BTC_RISE_INS))) > 0 ) {
+            if (!riseDto.getRiseBought() && riseDto.getRisePercent().compareTo(new BigDecimal(okxSettings.stream()
+                            .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_RISE_BUY_PERCENT)).findFirst().get().getSettingValue())) > 0
+                    && riseDto.getBTCIns().compareTo(new BigDecimal(okxSettings.stream()
+                            .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_BTC_RISE_INS)).findFirst().get().getSettingValue())) > 0 ) {
                 tradeDto.setTimes(marketBuyTimes);
                 tradeDto.setSz(coin.getUnit().multiply(BigDecimal.valueOf(tradeDto.getTimes())).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                 tradeDto.setPx(ticker.getLast().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
@@ -340,8 +349,12 @@ public class TradeBusiness {
             }
 
             //买入- 大盘下跌
-            if (!riseDto.getFallBought() && riseDto.getLowPercent().compareTo(new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_LOW_BUY_PERCENT))) > 0
-                    && new BigDecimal(settingService.selectSettingByKey(OkxConstants.MARKET_BTC_FALL_INS)).compareTo(riseDto.getBTCIns()) > 0 ) {
+            if (!riseDto.getFallBought() && riseDto.getLowPercent().compareTo(
+                    new BigDecimal(okxSettings.stream()
+                            .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_LOW_BUY_PERCENT)).findFirst().get().getSettingValue())) > 0
+                    && new BigDecimal(okxSettings.stream()
+                            .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_BTC_FALL_INS)).findFirst().get().getSettingValue())
+                    .compareTo(riseDto.getBTCIns()) > 0 ) {
                 tradeDto.setTimes(marketBuyTimes);
                 tradeDto.setSz(coin.getUnit().multiply(BigDecimal.valueOf(tradeDto.getTimes())).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                 tradeDto.setPx(ticker.getLast());

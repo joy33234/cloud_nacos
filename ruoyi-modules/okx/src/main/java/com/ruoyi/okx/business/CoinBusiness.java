@@ -69,6 +69,7 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
     @Transactional(rollbackFor = Exception.class)
     public boolean updateList(List<OkxCoin> coins) {
         saveOrUpdateBatch(coins);
+        resetSettingCache();
         return true;
     }
 
@@ -95,8 +96,7 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
         return okxCoin;
     }
 
-    public void resetSettingCache()
-    {
+    public void resetSettingCache(){
         clearSettingCache();
         loadingCache();
     }
