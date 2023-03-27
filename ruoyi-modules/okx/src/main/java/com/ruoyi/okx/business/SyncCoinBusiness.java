@@ -8,6 +8,7 @@ import com.ruoyi.common.core.constant.RedisConstants;
 import com.ruoyi.common.core.utils.DateUtil;
 import com.ruoyi.common.core.utils.DateUtils;
 import com.ruoyi.common.core.utils.HttpUtil;
+import com.ruoyi.common.redis.service.RedisLock;
 import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.OkxAccount;
 import com.ruoyi.okx.domain.OkxCoin;
@@ -18,6 +19,7 @@ import com.ruoyi.okx.service.SettingService;
 import com.ruoyi.okx.utils.Constant;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
@@ -49,6 +51,9 @@ public class SyncCoinBusiness {
 
     @Resource
     private RedisService redisService;
+
+    @Autowired
+    private RedisLock redisLock;
 
     @Async
     public void syncOkxBalance(List<OkxCoin> allCoinList, List<OkxAccount> accounts, int pages) {
@@ -88,43 +93,48 @@ public class SyncCoinBusiness {
 
     @Async
     public void updateCoin(List<JSONObject> items, List<OkxCoinTicker> tickers, Date now, Map<String, String> map) throws Exception {
+        try {
+            redisLock.lock(RedisConstants.OKX_TICKER_UPDATE_COIN,10,3,1000);
 
-        BigDecimal usdt24h = new BigDecimal(settingService.selectSettingByKey(OkxConstants.USDT_24H));
-
-        List<OkxCoin> okxCoins = coinBusiness.list();
-
-        for (int i = 0; i < items.size(); i++) {
-            int finalI = i;
-            okxCoins.stream().filter(item -> item.getCoin().equals(tickers.get(finalI).getCoin())).findFirst().ifPresent(obj -> {
-                obj.setVolCcy24h(items.get(finalI).getBigDecimal("vol24h").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
-                obj.setVolUsdt24h(items.get(finalI).getBigDecimal("volCcy24h").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
-                obj.setHightest(items.get(finalI).getBigDecimal("high24h").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
-                obj.setLowest(items.get(finalI).getBigDecimal("low24h").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
-                obj.setRise((tickers.get(finalI).getIns().compareTo(BigDecimal.ZERO) >= 0));
-                obj.setUpdateTime(now);
-                //交易额低于配置值-关闭交易
-                if (usdt24h.compareTo(obj.getVolUsdt24h()) > 0) {
-                    obj.setStatus(CoinStatusEnum.CLOSE.getStatus());
-                } else {
-                    if (obj.getStatus().intValue() == CoinStatusEnum.CLOSE.getStatus().intValue()) {
-                    obj.setStatus(CoinStatusEnum.OPEN.getStatus());
+            BigDecimal usdt24h = new BigDecimal(settingService.selectSettingByKey(OkxConstants.USDT_24H));
+            List<OkxCoin> okxCoins = coinBusiness.list();
+            for (int i = 0; i < items.size(); i++) {
+                int finalI = i;
+                okxCoins.stream().filter(item -> item.getCoin().equals(tickers.get(finalI).getCoin())).findFirst().ifPresent(obj -> {
+                    obj.setVolCcy24h(items.get(finalI).getBigDecimal("vol24h").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
+                    obj.setVolUsdt24h(items.get(finalI).getBigDecimal("volCcy24h").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
+                    obj.setHightest(items.get(finalI).getBigDecimal("high24h").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+                    obj.setLowest(items.get(finalI).getBigDecimal("low24h").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+                    obj.setRise((tickers.get(finalI).getIns().compareTo(BigDecimal.ZERO) >= 0));
+                    obj.setUpdateTime(now);
+                    //交易额低于配置值-关闭交易
+                    if (usdt24h.compareTo(obj.getVolUsdt24h()) > 0) {
+                        obj.setStatus(CoinStatusEnum.CLOSE.getStatus());
+                    } else {
+                        if (obj.getStatus().intValue() == CoinStatusEnum.CLOSE.getStatus().intValue()) {
+                            obj.setStatus(CoinStatusEnum.OPEN.getStatus());
+                        }
                     }
-                }
-                if (obj.getCoin().equalsIgnoreCase("BTC")) {
-                    obj.setBtcIns(tickers.get(finalI).getIns());
-                }
-                obj.setStandard(coinBusiness.calculateStandard(tickers.get(finalI)));
-            });
-        }
-        //更新涨跌数据
-        this.refreshRiseCount(okxCoins, now);
+                    if (obj.getCoin().equalsIgnoreCase("BTC")) {
+                        obj.setBtcIns(tickers.get(finalI).getIns());
+                    }
+                    obj.setStandard(coinBusiness.calculateStandard(tickers.get(finalI)));
+                });
+            }
+            //更新涨跌数据
+            this.refreshRiseCount(okxCoins, now);
 
-        boolean update = coinBusiness.updateList(okxCoins);
-        //过渡时间不交易
-        if (update == true && now.getTime() > DateUtils.addMinutes(DateUtil.getMinTime(now),30).getTime()) {
-            accountBusiness.list().stream().forEach(item -> {
-                tradeBusiness.trade( okxCoins, tickers, accountBusiness.getAccountMap(item));
-            });
+            boolean update = coinBusiness.updateList(okxCoins);
+            //过渡时间不交易
+            if (update == true && now.getTime() > DateUtils.addMinutes(DateUtil.getMinTime(now),30).getTime()) {
+                accountBusiness.list().stream().forEach(item -> {
+                    tradeBusiness.trade( okxCoins, tickers, accountBusiness.getAccountMap(item));
+                });
+            }
+            redisLock.releaseLock(RedisConstants.OKX_TICKER_UPDATE_COIN);
+        } catch (Exception e) {
+            log.error("updateCoin error",e);
+            redisLock.releaseLock(RedisConstants.OKX_TICKER_UPDATE_COIN);
         }
     }
 
