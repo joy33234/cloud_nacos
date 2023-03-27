@@ -61,6 +61,7 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
     @Resource
     private RedisService redisService;
 
+    @Transactional(rollbackFor = Exception.class)
     public boolean syncTicker() throws ServiceException{
         try {
             Map<String, String> accountMap = accountBusiness.getAccountMap();
