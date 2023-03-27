@@ -100,9 +100,11 @@ public class AccountController extends BaseController
         if (UserConstants.NOT_UNIQUE.equals(accountBusiness.checkKeyUnique(accountDO))){
             return error("新增参数'" + accountDO.getApikey() + "'失败，参数键名已存在");
         }
-        if (!settingService.checkSettingKeyUnique(accountDO.getSettingIds())) {
+        if (!settingService.checkSettingKey(accountDO.getSettingIds())) {
             return error("配置策略失败，参数键名不唯一");
         }
+
+
         OkxAccount okxAccount = DtoUtils.transformBean(accountDO, OkxAccount.class);
         okxAccount.setSettingIds(StringUtils.join(accountDO.getSettingIds(),","));
         okxAccount.setCreateTime(new Date());
@@ -118,8 +120,8 @@ public class AccountController extends BaseController
     @PutMapping
     public AjaxResult edit(@Validated @RequestBody OkxAccountDO accountDO)
     {
-        if (!settingService.checkSettingKeyUnique(accountDO.getSettingIds())) {
-            return error("配置策略失败，参数键名不唯一");
+        if (!settingService.checkSettingKey(accountDO.getSettingIds())) {
+            return error("配置策略失败，参数键名异常");
         }
         OkxAccount okxAccount = DtoUtils.transformBean(accountDO, OkxAccount.class);
         okxAccount.setSettingIds(StringUtils.join(accountDO.getSettingIds(),","));

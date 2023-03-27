@@ -89,8 +89,6 @@ public class OkxSetting extends CommonEntity
         this.settingValue = settingValue;
     }
 
-    @NotBlank(message = "参数键名长度不能为空")
-    @Size(min = 0, max = 100, message = "参数键名长度不能超过100个字符")
     public String getDesc()
     {
         return desc;
