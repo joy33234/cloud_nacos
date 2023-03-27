@@ -15,6 +15,7 @@ import com.ruoyi.common.core.enums.Status;
 import com.ruoyi.common.core.exception.ServiceException;
 import com.ruoyi.common.core.utils.DateUtil;
 import com.ruoyi.common.core.utils.StringUtils;
+import com.ruoyi.common.redis.service.RedisLock;
 import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.*;
 import com.ruoyi.okx.enums.*;
@@ -27,6 +28,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,6 +58,8 @@ public class TradeBusiness {
     @Resource
     private RedisService redisService;
 
+    @Autowired
+    private RedisLock redisLock;
     /**
      * 买卖交易
      * @param list
@@ -142,6 +146,8 @@ public class TradeBusiness {
     @Async
     public void trade(List<OkxCoin> coins, List<OkxCoinTicker> tickers, Map<String, String> map) throws ServiceException {
         try {
+            redisLock.lock(RedisConstants.OKX_TICKER_TRADE,10,3,1000);
+
             RiseDto riseDto = redisService.getCacheObject(RedisConstants.getTicketKey());
             Integer accountId = Integer.valueOf(map.get("id"));
 
@@ -182,8 +188,10 @@ public class TradeBusiness {
                 }
                 redisService.setCacheObject(RedisConstants.getTicketKey(), riseDto);
             }
+            redisLock.releaseLock(RedisConstants.OKX_TICKER_TRADE);
         } catch (Exception e) {
-            e.printStackTrace();
+            redisLock.releaseLock(RedisConstants.OKX_TICKER_TRADE);
+            log.error("trade error",e);
             throw new ServiceException("交易异常", 500);
         }
     }

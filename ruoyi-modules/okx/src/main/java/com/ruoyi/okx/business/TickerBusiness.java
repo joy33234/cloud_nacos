@@ -64,7 +64,6 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
     @Transactional(rollbackFor = Exception.class)
     public boolean syncTicker() throws ServiceException{
         try {
-            Long start = System.currentTimeMillis();
             Map<String, String> accountMap = accountBusiness.getAccountMap();
             redisLock.lock(RedisConstants.OKX_TICKER,10,3,1000);
 

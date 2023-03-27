@@ -16,6 +16,10 @@ public class RedisConstants
      */
     public static final String OKX_TICKER = "okx_ticker";
 
+    public static final String OKX_TICKER_UPDATE_COIN = "okx_ticker_update_coin";
+
+    public static final String OKX_TICKER_TRADE = "okx_ticker_trade";
+
 
     public static final String OKX_TICKER_MARKET = "okx_ticker_market_";
 
