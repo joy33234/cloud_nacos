@@ -100,14 +100,6 @@
             <version>5.7.20</version>
         </dependency>
 
-
-
-<!--        <dependency>-->
-<!--            <groupId>com.ruoyi</groupId>-->
-<!--            <artifactId>common-mybatis</artifactId>-->
-<!--            <version>3.6.1</version>-->
-<!--        </dependency>-->
-
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-boot-starter</artifactId>
