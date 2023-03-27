@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSON;
 import com.ruoyi.common.core.constant.OkxConstants;
 import com.ruoyi.okx.domain.*;
 import com.ruoyi.okx.enums.CoinStatusEnum;
+import com.ruoyi.okx.enums.ModeTypeEnum;
 import com.ruoyi.okx.enums.OkxOrdTypeEnum;
 import com.ruoyi.okx.params.dto.TradeDto;
 import com.ruoyi.okx.service.SettingService;
@@ -14,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 import java.math.BigDecimal;
+import java.util.List;
 
 @Component
 public class StrategyBusiness  {
@@ -29,21 +31,20 @@ public class StrategyBusiness  {
     private CoinBusiness coinBusiness;
 
 
-    public boolean checkBuy(OkxBuyRecord buyRecord, OkxCoin coin) {
+    public boolean checkBuy(OkxBuyRecord buyRecord, OkxCoin coin, List<OkxSetting> settingList) {
 
-        //List<OkxSetting> okxSettings = this.listByStrategyId(buyRecord.getStrategyId());
         if (coin.getUnit().compareTo(BigDecimal.ZERO) <= 0 || ObjectUtils.isEmpty(coin.getCount())) {
             log.warn("买入校验策略-单位为0 coin:{}", JSON.toJSONString(coin));
             return false;
         }
         BigDecimal times = coin.getCount().divide(coin.getUnit());
-        BigDecimal buyMaxTime = new BigDecimal(settingService.selectSettingByKey(OkxConstants.BUY_MAX_TIMES));
-        if (times.compareTo(buyMaxTime) > 0) {
-            log.warn("不能高于最高手持倍数 coin:{}", coin.getCoin());
+        BigDecimal buyMaxTime = new BigDecimal(settingList.stream()
+                .filter(item -> item.getSettingKey().equalsIgnoreCase(OkxConstants.BUY_MAX_TIMES)).findFirst().get().getSettingValue());
+        if (times.compareTo(buyMaxTime) >= 0) {
+            log.warn("不能高于最高手持倍数 coin:{},count:{}", coin.getCoin());
             return false;
         }
-        //网络系统 现有数量与买入数量不能超过最高手持数量
-        //okxSettings.stream().filter(item -> item.getSettingValue().equals(ModeTypeEnum.GRID.getValue())).collect(Collectors.toList()).stream().findFirst().ifPresent(obj -> {
+        //现有数量与买入数量不能超过最高手持数量
         BigDecimal total = coin.getCount().add(buyRecord.getQuantity());
         BigDecimal onlySellTimes = total.divide(coin.getUnit());
         if (onlySellTimes.compareTo(buyMaxTime) > 0 && coin.getStatus() == CoinStatusEnum.OPEN.getStatus()) {
@@ -56,7 +57,11 @@ public class StrategyBusiness  {
             log.warn("买入金额高于最高买入值 accountId{}, amount:{}", buyRecord.getAccountId(), buyRecord.getAmount());
             return false;
         }
-        if (buyRecordBusiness.hasBuy(buyRecord.getAccountId(), buyRecord.getStrategyId(), coin.getCoin(), buyRecord.getTimes()) == true) {
+        String modeType = settingList.stream()
+                .filter(item -> item.getSettingKey().equalsIgnoreCase(OkxConstants.BUY_MAX_TIMES)).findFirst().get().getSettingValue();
+        if (modeType.equalsIgnoreCase(ModeTypeEnum.GRID.getValue())
+            && buyRecordBusiness.hasBuy(buyRecord.getAccountId(), buyRecord.getStrategyId(), coin.getCoin(), modeType) == true) {
+            log.warn("grid mode has buy this strategy:{}", buyRecord.getAccountId(), buyRecord.getAmount());
             return false;
         }
         return true;

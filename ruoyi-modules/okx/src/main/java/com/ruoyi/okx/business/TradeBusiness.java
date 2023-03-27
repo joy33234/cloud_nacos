@@ -71,7 +71,7 @@ public class TradeBusiness {
      * @throws Exception
      */
     @Transactional(rollbackFor = Exception.class)
-    public void trade(List<TradeDto> list, OkxCoin coin, Map<String, String> map) throws ServiceException {
+    public void trade(List<TradeDto> list, OkxCoin coin, Map<String, String> map, List<OkxSetting> okxSettings) throws ServiceException {
         try {
             Date now = new Date();
             Integer accountId = Integer.valueOf(map.get("id"));
@@ -82,7 +82,7 @@ public class TradeBusiness {
                             new OkxBuyRecord(null, tradeDto.getCoin(), tradeDto.getInstId(), tradeDto.getPx(), tradeDto.getSz(),
                                     tradeDto.getPx().multiply(tradeDto.getSz()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP), BigDecimal.ZERO, BigDecimal.ZERO,
                                     OrderStatusEnum.PENDING.getStatus(), UUID.randomUUID().toString(), "", tradeDto.getBuyStrategyId(), tradeDto.getTimes(), accountId,accountName,tradeDto.getMarketStatus(),tradeDto.getModeType());
-                    if (!strategyBusiness.checkBuy(buyRecord, coin)){
+                    if (!strategyBusiness.checkBuy(buyRecord, coin, okxSettings)){
                         return;
                     }
                     String okxOrderId = tradeOkx(tradeDto, now, map);
@@ -167,7 +167,6 @@ public class TradeBusiness {
                     .filter(item -> item.getSettingKey().equals(OkxConstants.ORD_TYPE) || item.getSettingKey().equals(OkxConstants.MODE_TYPE))
                     .collect(Collectors.toList()).stream().forEach(obj -> map.put(obj.getSettingKey(), obj.getSettingValue()));
             List<OkxBuyRecord> buyRecords = buyRecordBusiness.findSuccessRecord(null, accountId, null,null);
-
             for (OkxCoinTicker ticker : tickers) {
                 Optional<OkxCoin> OkxCoin = coins.stream().filter(obj -> obj.getCoin().equals(ticker.getCoin())).findFirst();
                 if (!OkxCoin.isPresent()
@@ -182,9 +181,8 @@ public class TradeBusiness {
                     continue;
                 }
                 //交易
-                trade(tradeDtoList, OkxCoin.get(), map);
+                trade(tradeDtoList, OkxCoin.get(), map, okxSettings);
             }
-
             //大盘交易
             if (map.get(OkxConstants.MODE_TYPE).equals(ModeTypeEnum.MARKET.getValue())
                     && (StringUtils.isNotEmpty(map.get("riseBuy")) || StringUtils.isNotEmpty(map.get("fallBuy")))) {
