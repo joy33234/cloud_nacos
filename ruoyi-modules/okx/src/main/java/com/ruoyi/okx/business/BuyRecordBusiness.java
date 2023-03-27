@@ -67,12 +67,12 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
         return this.buyRecordMapper.selectList(wrapper);
     }
 
-    public boolean hasBuy(Integer accountId, Integer strategyId, String coin, Integer times) {
+    public boolean hasBuy(Integer accountId, Integer strategyId, String coin,String modeType) {
         LambdaQueryWrapper<OkxBuyRecord> wrapper = new LambdaQueryWrapper();
         wrapper.eq(OkxBuyRecord::getStrategyId, strategyId);
-        wrapper.eq(OkxBuyRecord::getTimes, times);
         wrapper.eq(OkxBuyRecord::getAccountId, accountId);
         wrapper.eq(OkxBuyRecord::getCoin, coin);
+        wrapper.eq((StringUtils.isNotEmpty(modeType)), OkxBuyRecord::getModeType, modeType);
         wrapper.in(OkxBuyRecord::getStatus, OrderStatusEnum.getUnFinishList());
         wrapper.ge(OkxBuyRecord::getCreateTime, DateUtil.parseSimpleDateTime("2000-1-1 00:00:00"));
         List<OkxBuyRecord> buyRecords = this.buyRecordMapper.selectList(wrapper);
