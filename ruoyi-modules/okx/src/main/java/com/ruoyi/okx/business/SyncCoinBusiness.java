@@ -10,11 +10,9 @@ import com.ruoyi.common.core.utils.DateUtils;
 import com.ruoyi.common.core.utils.HttpUtil;
 import com.ruoyi.common.redis.service.RedisLock;
 import com.ruoyi.common.redis.service.RedisService;
-import com.ruoyi.okx.domain.OkxAccount;
-import com.ruoyi.okx.domain.OkxCoin;
-import com.ruoyi.okx.domain.OkxCoinTicker;
-import com.ruoyi.okx.domain.OkxSetting;
+import com.ruoyi.okx.domain.*;
 import com.ruoyi.okx.enums.CoinStatusEnum;
+import com.ruoyi.okx.params.DO.OkxAccountBalanceDO;
 import com.ruoyi.okx.params.dto.RiseDto;
 import com.ruoyi.okx.service.SettingService;
 import com.ruoyi.okx.utils.Constant;
@@ -41,6 +39,7 @@ public class SyncCoinBusiness {
     @Resource
     private AccountBusiness accountBusiness;
 
+
     @Resource
     private CoinBusiness coinBusiness;
 
@@ -56,15 +55,24 @@ public class SyncCoinBusiness {
     @Autowired
     private RedisLock redisLock;
 
+    @Resource
+    private AccountBalanceBusiness balanceBusiness;
+
     @Async
-    public void syncOkxBalance(List<OkxCoin> allCoinList, List<OkxAccount> accounts, int pages) {
+    public void syncOkxBalance() {
         try {
+            List<OkxAccount> accounts = accountBusiness.list();
             for (OkxAccount account:accounts) {
+                List<OkxAccountBalance> allBalanceList = balanceBusiness.list(new OkxAccountBalanceDO(null,null,null,account.getId(),null));
+                int pages = allBalanceList.size() / 20;
+                if (allBalanceList.size() % 20 != 0) {
+                    pages++;
+                }
                 Map<String, String> map = accountBusiness.getAccountMap(account);
                 //帐户币种数量
                 for (int i = 0; i < pages; i++) {
-                    List<OkxCoin> coinList = allCoinList.subList(i * 20, ((i + 1) * 20 <= allCoinList.size()) ? ((i + 1) * 20) : allCoinList.size());
-                    String coins = StringUtils.join(coinList.stream().map(OkxCoin::getCoin).collect(Collectors.toList()), ",");
+                    List<OkxAccountBalance> balanceList = allBalanceList.subList(i * 20, ((i + 1) * 20 <= allBalanceList.size()) ? ((i + 1) * 20) : allBalanceList.size());
+                    String coins = StringUtils.join(balanceList.stream().map(OkxAccountBalance::getCoin).collect(Collectors.toList()), ",");
                     String str = HttpUtil.getOkx("/api/v5/account/balance?ccy=" + coins, null, map);
                     JSONObject json = JSONObject.parseObject(str);
                     if (json == null || !json.getString("code").equals("0")) {
@@ -75,13 +83,13 @@ public class SyncCoinBusiness {
                     JSONArray detail = data.getJSONArray("details");
                     for (int j = 0; j < detail.size(); j++) {
                         JSONObject balance = detail.getJSONObject(j);
-                        allCoinList.stream().filter(item -> item.getCoin().equals(balance.getString("ccy"))).findFirst().ifPresent(obj ->{
-                            obj.setCount(balance.getBigDecimal("availBal"));
+                        allBalanceList.stream().filter(item -> item.getCoin().equals(balance.getString("ccy"))).findFirst().ifPresent(obj ->{
+                            obj.setBalance(balance.getBigDecimal("availBal"));
                         });
                     }
                     Thread.sleep(200);
                 }
-                coinBusiness.saveOrUpdateBatch(allCoinList.stream().distinct().collect(Collectors.toList()));
+                balanceBusiness.saveOrUpdateBatch(allBalanceList.stream().distinct().collect(Collectors.toList()));
             }
         } catch (Exception e) {
             log.error("syncCurrencies error:", e);

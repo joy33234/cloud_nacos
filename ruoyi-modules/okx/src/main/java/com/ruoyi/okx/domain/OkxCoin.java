@@ -29,6 +29,7 @@ public class OkxCoin extends CommonEntity {
 
     private BigDecimal volUsdt24h;
 
+    @TableField(exist = false)
     private BigDecimal count;
 
     @TableField(exist = false)

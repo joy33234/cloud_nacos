@@ -19,6 +19,7 @@ import com.ruoyi.common.redis.service.RedisLock;
 import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.*;
 import com.ruoyi.okx.enums.*;
+import com.ruoyi.okx.params.DO.OkxAccountBalanceDO;
 import com.ruoyi.okx.params.dto.RiseDto;
 import com.ruoyi.okx.params.dto.TradeDto;
 import com.ruoyi.okx.utils.Constant;
@@ -33,9 +34,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import static java.util.Comparator.comparing;
-import static java.util.Comparator.comparingLong;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toCollection;
 
 @Component
 public class TradeBusiness {
@@ -61,6 +59,10 @@ public class TradeBusiness {
 
     @Autowired
     private RedisLock redisLock;
+
+    @Resource
+    private AccountBalanceBusiness balanceBusiness;
+
     /**
      * 买卖交易
      * @param list
@@ -152,6 +154,13 @@ public class TradeBusiness {
             RiseDto riseDto = redisService.getCacheObject(RedisConstants.getTicketKey());
             Integer accountId = Integer.valueOf(map.get("id"));
 
+            //coin set balance
+            List<OkxAccountBalance> balances = balanceBusiness.list(new OkxAccountBalanceDO(null,null,null,accountId,null));
+            coins.stream().forEach(item -> {
+                balances.stream().filter(obj -> obj.getCoin().equals(item.getCoin())).findFirst().ifPresent( balance -> {
+                    item.setCount(balance.getBalance());
+                });
+            });
 
             //赋值用户订单类型和交易模式
             okxSettings.stream()

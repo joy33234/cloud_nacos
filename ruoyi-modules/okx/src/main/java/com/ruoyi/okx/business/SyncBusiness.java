@@ -35,6 +35,9 @@ public class SyncBusiness {
     private AccountBusiness accountBusiness;
 
     @Resource
+    private AccountBalanceBusiness balanceBusiness;
+
+    @Resource
     private CoinBusiness coinBusiness;
 
     @Resource
@@ -121,22 +124,7 @@ public class SyncBusiness {
     }
 
     public boolean syncCoinBalance() {
-        try {
-            List<OkxCoin> allCoinList = coinBusiness.list();
-            int pages = allCoinList.size() / 20;
-            if (allCoinList.size() % 20 != 0) {
-                pages++;
-            }
-            //所有帐户
-            List<OkxAccount> accounts = accountBusiness.list();
-            Long start = System.currentTimeMillis();
-            syncCoinCountBusiness.syncOkxBalance(allCoinList,accounts,pages);
-
-            System.out.println("time:" + (System.currentTimeMillis() - start));
-        } catch (Exception e) {
-            log.error("syncCurrencies error:", e);
-            return false;
-        }
+        syncCoinCountBusiness.syncOkxBalance();
         return true;
     }
 
@@ -189,8 +177,8 @@ public class SyncBusiness {
                 sellRecord.setFee(data.getBigDecimal("fee").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP).abs());
                 boolean update = sellRecordBusiness.updateById(sellRecord);
                 if (update) {
-                    this.coinBusiness.reduceCount(sellRecord.getCoin(), sellRecord.getAccountId(), sellRecord.getQuantity());
-                    this.buyRecordBusiness.updateBySell(sellRecord.getBuyRecordId(), OrderStatusEnum.FINISH.getStatus());
+                    balanceBusiness.reduceCount(sellRecord.getCoin(), sellRecord.getAccountId(), sellRecord.getQuantity());
+                    buyRecordBusiness.updateBySell(sellRecord.getBuyRecordId(), OrderStatusEnum.FINISH.getStatus());
                     return;
                 }
             }
