@@ -209,3 +209,20 @@ create table okx_buy_strategy (
 
 
 insert into okx_buy_strategy values(1,  1 , 0.1, 2, 'admin' ,sysdate(), '', null, 'remark');
+
+
+
+drop table if exists okx_account_balance;
+create table okx_account_balance (
+  id         int(5)          not null auto_increment    comment '参数主键',
+  account_name         varchar(100)          default ''    comment '姓名',
+  account_id         int(5)     not null       comment '帐号主键',
+  coin         varchar(100)          default ''    comment '币种',
+  balance         decimal(18,8)          default 0    comment '币种主键',
+  create_by         varchar(64)     default ''                 comment '创建者',
+  create_time       datetime                                   comment '创建时间',
+  update_by         varchar(64)     default ''                 comment '更新者',
+  update_time       datetime                                   comment '更新时间',
+  remark            varchar(500)    default null               comment '备注',
+  primary key (id)
+) engine=innodb auto_increment=100 comment = '币种余额';

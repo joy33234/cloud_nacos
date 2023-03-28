@@ -255,10 +255,10 @@ public class TradeBusiness {
             }
             tradeDto.setModeType(ModeTypeEnum.MARKET.getValue());
 
-            List<OkxBuyRecord> tempBuyRecords = buyRecords.stream().filter(item -> item.getModeType().equals(ModeTypeEnum.MARKET.getValue())).collect(Collectors.toList());
+            List<OkxBuyRecord> marketBuyRecords = buyRecords.stream().filter(item -> item.getModeType().equals(ModeTypeEnum.MARKET.getValue())).collect(Collectors.toList());
             //卖出 - 当天以前的订单
             Date todayMinTime = DateUtil.getMinTime(new Date());
-            List<OkxBuyRecord> beforeBuyRecords = tempBuyRecords.stream().filter(item -> todayMinTime.getTime() > item.getCreateTime().getTime()).collect(Collectors.toList());
+            List<OkxBuyRecord> beforeBuyRecords = marketBuyRecords.stream().filter(item -> todayMinTime.getTime() > item.getCreateTime().getTime()).collect(Collectors.toList());
             if (CollectionUtils.isNotEmpty(beforeBuyRecords)) {
                 beforeBuyRecords.stream().forEach(item -> {
                     BigDecimal riseIns = ticker.getLast().subtract(item.getPrice()).divide(item.getPrice(),8, RoundingMode.DOWN);
@@ -282,13 +282,13 @@ public class TradeBusiness {
             }
 
             //卖出 —— 大盘上涨时买入的
-            if (CollectionUtils.isNotEmpty(tempBuyRecords) &&
+            if (CollectionUtils.isNotEmpty(marketBuyRecords) &&
                     (riseDto.getRisePercent().compareTo(new BigDecimal(okxSettings.stream()
                             .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_RISE_MAX_SELL_PERCENT)).findFirst().get().getSettingValue())) > 0
                     || (riseDto.getHighest().compareTo(riseDto.getRisePercent()) > 0
                             && riseDto.getHighest().multiply(new BigDecimal(okxSettings.stream()
-                            .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_RISE_SELL_PERCENT)).findFirst().get().getSettingValue())).compareTo(riseDto.getRisePercent()) <= 0))) {
-                tempBuyRecords.stream().filter(obj -> obj.getMarketStatus() == MarketStatusEnum.RISE.getStatus()).forEach(item -> {
+                            .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_RISE_SELL_PERCENT)).findFirst().get().getSettingValue())).compareTo(riseDto.getRisePercent()) >= 0))) {
+                marketBuyRecords.stream().filter(obj -> obj.getMarketStatus() == MarketStatusEnum.RISE.getStatus()).forEach(item -> {
                     TradeDto temp =  DtoUtils.transformBean(tradeDto, TradeDto.class);
                     temp.setSz(item.getQuantity().subtract(item.getFee().abs()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                     temp.setTimes(item.getTimes());
@@ -307,7 +307,7 @@ public class TradeBusiness {
             }
 
             //卖出 —— 大盘下跌时买入的
-            List<OkxBuyRecord> tempFallBuyRecords = tempBuyRecords.stream().filter(obj -> obj.getMarketStatus() == MarketStatusEnum.FALL.getStatus()).collect(Collectors.toList());
+            List<OkxBuyRecord> tempFallBuyRecords = marketBuyRecords.stream().filter(obj -> obj.getMarketStatus() == MarketStatusEnum.FALL.getStatus()).collect(Collectors.toList());
             if (CollectionUtils.isNotEmpty(tempFallBuyRecords)) {
                 tempFallBuyRecords.stream().forEach(item -> {
                     BigDecimal currentIns = ticker.getLast().subtract(item.getPrice()).divide(item.getPrice(),8,RoundingMode.DOWN);
