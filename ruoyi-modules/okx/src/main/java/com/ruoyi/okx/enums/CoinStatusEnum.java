@@ -5,11 +5,11 @@ import com.google.common.collect.Maps;
 import java.util.Map;
 
 public enum CoinStatusEnum {
-    OPEN(Integer.valueOf(0), "开启"),
-    CLOSE(Integer.valueOf(1), "关闭"),
-    ONYYSELL(Integer.valueOf(2), "只卖");
+    OPEN(0, "开启"),
+    CLOSE(1, "关闭"),
+    ONYYSELL(2, "只卖");
 
-    private Integer status;
+    private int status;
 
     private String desc;
 
@@ -26,7 +26,7 @@ public enum CoinStatusEnum {
         this.desc = desc;
     }
 
-    public Integer getStatus() {
+    public int getStatus() {
         return this.status;
     }
 
