@@ -57,8 +57,13 @@ public class StrategyBusiness  {
             log.warn("买入金额高于最高买入值 accountId{}, amount:{}", buyRecord.getAccountId(), buyRecord.getAmount());
             return false;
         }
+
         String modeType = settingList.stream()
                 .filter(item -> item.getSettingKey().equalsIgnoreCase(OkxConstants.BUY_MAX_TIMES)).findFirst().get().getSettingValue();
+        if (coin.getCoin().equals("STX")) {
+            boolean result = buyRecordBusiness.hasBuy(buyRecord.getAccountId(), buyRecord.getStrategyId(), coin.getCoin(), modeType);
+            log.info("modeType:{},accountId:{},strategyId:{},coin:{},result:{}",modeType,buyRecord.getAccountId(),buyRecord.getStrategyId(),coin.getCoin(),result);
+        }
         if (modeType.equalsIgnoreCase(ModeTypeEnum.GRID.getValue())
             && buyRecordBusiness.hasBuy(buyRecord.getAccountId(), buyRecord.getStrategyId(), coin.getCoin(), modeType) == true) {
             log.warn("grid mode has buy this strategy:{}", buyRecord.getAccountId(), buyRecord.getAmount());
