@@ -118,11 +118,7 @@ public class SyncCoinBusiness {
                     obj.setUpdateTime(now);
                     //交易额低于配置值-关闭交易
                     if (usdt24h.compareTo(obj.getVolUsdt24h()) > 0) {
-                        obj.setStatus(CoinStatusEnum.CLOSE.getStatus());
-                    } else {
-                        if (obj.getStatus().intValue() == CoinStatusEnum.CLOSE.getStatus().intValue()) {
-                            obj.setStatus(CoinStatusEnum.OPEN.getStatus());
-                        }
+                        obj.setStatus(CoinStatusEnum.ONYYSELL.getStatus());
                     }
                     if (obj.getCoin().equalsIgnoreCase("BTC")) {
                         obj.setBtcIns(tickers.get(finalI).getIns());

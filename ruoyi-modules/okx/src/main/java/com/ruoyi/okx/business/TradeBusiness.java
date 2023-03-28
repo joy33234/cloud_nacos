@@ -147,7 +147,6 @@ public class TradeBusiness {
     }
 
 
-    @Async
     public void trade(List<OkxCoin> coins, List<OkxCoinTicker> tickers,List<OkxSetting> okxSettings, Map<String, String> map) throws ServiceException {
         try {
             redisLock.lock(RedisConstants.OKX_TICKER_TRADE,10,3,1000);
@@ -172,7 +171,7 @@ public class TradeBusiness {
                 Optional<OkxCoin> OkxCoin = coins.stream().filter(obj -> obj.getCoin().equals(ticker.getCoin())).findFirst();
                 if (!OkxCoin.isPresent()
                         || OkxCoin.get().getStandard().compareTo(BigDecimal.ZERO) <= 0
-                        || OkxCoin.get().getStatus().intValue() == CoinStatusEnum.CLOSE.getStatus().intValue()) {
+                        || OkxCoin.get().getStatus() == CoinStatusEnum.CLOSE.getStatus()) {
                     continue;
                 }
                 List<OkxBuyRecord> tempBuyRecords = buyRecords.stream().filter(item -> item.getCoin().equals(ticker.getCoin())).collect(Collectors.toList());
@@ -282,7 +281,6 @@ public class TradeBusiness {
                 return list;
             }
 
-            //卖出 —— 大盘上涨时买入的
             if (CollectionUtils.isNotEmpty(marketBuyRecords) &&
                     (riseDto.getRisePercent().compareTo(new BigDecimal(okxSettings.stream()
                             .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_RISE_MAX_SELL_PERCENT)).findFirst().get().getSettingValue())) > 0
@@ -304,6 +302,8 @@ public class TradeBusiness {
                     }
                     list.add(temp);
                 });
+                log.info("卖出 —— 大盘上涨时买入的list:{}",JSON.toJSONString(list));
+
                 return list;
             }
 

@@ -64,7 +64,7 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
         wrapper.eq((accountId != null), OkxBuyRecord::getAccountId, accountId);
         wrapper.eq((StringUtils.isNotEmpty(modeType)), OkxBuyRecord::getModeType, modeType);
         wrapper.eq((marketStatus != null), OkxBuyRecord::getMarketStatus, marketStatus);
-        return this.buyRecordMapper.selectList(wrapper);
+        return buyRecordMapper.selectList(wrapper);
     }
 
     public boolean hasBuy(Integer accountId, Integer strategyId, String coin,String modeType) {
@@ -75,7 +75,7 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
         wrapper.eq((StringUtils.isNotEmpty(modeType)), OkxBuyRecord::getModeType, modeType);
         wrapper.in(OkxBuyRecord::getStatus, OrderStatusEnum.getUnFinishList());
         wrapper.ge(OkxBuyRecord::getCreateTime, DateUtil.parseSimpleDateTime("2000-1-1 00:00:00"));
-        List<OkxBuyRecord> buyRecords = this.buyRecordMapper.selectList(wrapper);
+        List<OkxBuyRecord> buyRecords = buyRecordMapper.selectList(wrapper);
         if (CollectionUtils.isEmpty(buyRecords)) {
             return false;
         }
@@ -88,9 +88,8 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
         if (accountId != null && accountId > 0) {
             wrapper.eq(OkxBuyRecord::getAccountId, accountId);
         }
-        return this.buyRecordMapper.selectList(wrapper);
+        return buyRecordMapper.selectList(wrapper);
     }
-
 
     public boolean updateBySell(Integer buyRecordId, Integer status) {
         OkxBuyRecord buyRecord = getById(buyRecordId);
@@ -103,15 +102,13 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
         return updateById(buyRecord);
     }
 
-
-
     public List<OkxBuyRecord> findUnfinish(Integer accountId, Integer hours) {
         LambdaQueryWrapper<OkxBuyRecord> wrapper = new LambdaQueryWrapper();
         wrapper.in(OkxBuyRecord::getStatus, Arrays.asList(new Integer[] { OrderStatusEnum.CREATED.getStatus(), OrderStatusEnum.SUCCESS.getStatus(), OrderStatusEnum.PENDING.getStatus() }));
         if (hours != null && hours.intValue() > 0)
             wrapper.gt(OkxBuyRecord::getCreateTime, DateUtil.addHour(new Date(), -hours.intValue()));
         wrapper.eq(OkxBuyRecord::getAccountId, accountId);
-        return this.buyRecordMapper.selectList((Wrapper)wrapper);
+        return buyRecordMapper.selectList(wrapper);
     }
 
 //    public List<OkbBuyRecord> findByStatus(Integer accountId, List<Integer> status) {
