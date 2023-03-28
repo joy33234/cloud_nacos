@@ -59,7 +59,7 @@ public class StrategyBusiness  {
         }
 
         String modeType = settingList.stream()
-                .filter(item -> item.getSettingKey().equalsIgnoreCase(OkxConstants.BUY_MAX_TIMES)).findFirst().get().getSettingValue();
+                .filter(item -> item.getSettingKey().equalsIgnoreCase(OkxConstants.MODE_TYPE)).findFirst().get().getSettingValue();
         if (coin.getCoin().equals("STX")) {
             boolean result = buyRecordBusiness.hasBuy(buyRecord.getAccountId(), buyRecord.getStrategyId(), coin.getCoin(), modeType);
             log.info("modeType:{},accountId:{},strategyId:{},coin:{},result:{}",modeType,buyRecord.getAccountId(),buyRecord.getStrategyId(),coin.getCoin(),result);
