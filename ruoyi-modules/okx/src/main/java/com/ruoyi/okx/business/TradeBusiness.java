@@ -86,8 +86,9 @@ public class TradeBusiness {
                         return;
                     }
                     String okxOrderId = tradeOkx(tradeDto, now, map);
-                    if (okxOrderId == null)
+                    if (okxOrderId == null) {
                         return;
+                    }
                     buyRecord.setOkxOrderId(okxOrderId);
                     buyRecord.setCreateTime(now);
                     buyRecord.setUpdateTime(now);

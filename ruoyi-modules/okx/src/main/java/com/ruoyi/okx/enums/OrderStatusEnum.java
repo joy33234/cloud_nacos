@@ -16,6 +16,7 @@ public enum OrderStatusEnum {
     FINISH(Integer.valueOf(5), "卖出结束", Boolean.valueOf(true)),
     CANCEL(Integer.valueOf(6), "撤销", Boolean.valueOf(true)),
     SELLING(Integer.valueOf(7), "卖出中", Boolean.valueOf(false)),
+
     NEW(Integer.valueOf(8), "新币", Boolean.valueOf(false));
 
     OrderStatusEnum(Integer status, String desc, Boolean finished) {
