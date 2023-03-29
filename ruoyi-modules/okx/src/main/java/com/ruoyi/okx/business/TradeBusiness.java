@@ -71,7 +71,7 @@ public class TradeBusiness {
      * @throws Exception
      */
     @Transactional(rollbackFor = Exception.class)
-    public void trade(List<TradeDto> list, OkxCoin coin, Map<String, String> map, List<OkxSetting> okxSettings) throws ServiceException {
+    public void trade(List<TradeDto> list, OkxCoin coin, Map<String, String> map, List<OkxSetting> okxSettings, RiseDto riseDto) throws ServiceException {
         try {
             Date now = new Date();
             Integer accountId = Integer.valueOf(map.get("id"));
@@ -89,6 +89,7 @@ public class TradeBusiness {
                     if (okxOrderId == null) {
                         return;
                     }
+                    buyRecord.setRemark(riseDto.getRisePercent().toString());
                     buyRecord.setOkxOrderId(okxOrderId);
                     buyRecord.setCreateTime(now);
                     buyRecord.setUpdateTime(now);
@@ -181,7 +182,7 @@ public class TradeBusiness {
                     continue;
                 }
                 //交易
-                trade(tradeDtoList, OkxCoin.get(), map, okxSettings);
+                trade(tradeDtoList, OkxCoin.get(), map, okxSettings, riseDto);
             }
             //大盘交易
             if (map.get(OkxConstants.MODE_TYPE).equals(ModeTypeEnum.MARKET.getValue())
