@@ -217,17 +217,8 @@ public class TradeBusiness {
             //卖出
             if (ins.compareTo(new BigDecimal(okxSettings.stream().filter(item -> item.getSettingKey().equals(OkxConstants.GRIDE_MIN_PERCENT_FOR_SELL)).findFirst().get().getSettingValue())) >= 0) {
                 buyRecords.stream().filter(item -> item.getModeType().equals(ModeTypeEnum.GRID.getValue())).forEach(item -> {
-                    TradeDto temp =  DtoUtils.transformBean(tradeDto, TradeDto.class);
-                    temp.setSz(item.getQuantity().subtract(item.getFee().abs()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
-                    temp.setTimes(item.getTimes());
-                    temp.setBuyStrategyId(item.getStrategyId());
-                    temp.setSide(OkxSideEnum.SELL.getSide());
-                    temp.setBuyRecordId(item.getId());
-                    temp.setPx(ticker.getLast().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
-                    if (OkxOrdTypeEnum.LIMIT.getValue().equals(temp.getOrdType())) {
-                        BigDecimal price = ticker.getLast().subtract(coin.getStandard().multiply(new BigDecimal(9.0E-4D)));
-                        temp.setPx(price.setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
-                    }
+                    TradeDto temp =  getSellDto(tradeDto,ticker,coin,item);
+                    temp.setMarketStatus(MarketStatusEnum.MAX_RISE.getStatus());
                     list.add(temp);
                 });
                 return list;
@@ -263,47 +254,36 @@ public class TradeBusiness {
                 beforeBuyRecords.stream().forEach(item -> {
                     BigDecimal riseIns = ticker.getLast().subtract(item.getPrice()).divide(item.getPrice(),8, RoundingMode.DOWN);
                     if (riseIns.compareTo(new BigDecimal(okxSettings.stream().filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_LOW_SELL_PERCENT)).findFirst().get().getSettingValue())) > 0) {
-                        TradeDto temp =  DtoUtils.transformBean(tradeDto, TradeDto.class);
-                        temp.setSz(item.getQuantity().subtract(item.getFee().abs()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
-                        temp.setTimes(item.getTimes());
-                        temp.setBuyStrategyId(item.getStrategyId());
-                        temp.setSide(OkxSideEnum.SELL.getSide());
-                        temp.setBuyRecordId(item.getId());
+                        TradeDto temp =  getSellDto(tradeDto,ticker,coin,item);
                         temp.setMarketStatus(MarketStatusEnum.RISE.getStatus());
-                        temp.setPx(ticker.getLast().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
-                        if (OkxOrdTypeEnum.LIMIT.getValue().equals(temp.getOrdType())) {
-                            BigDecimal price = ticker.getLast().subtract(coin.getStandard().multiply(new BigDecimal(9.0E-4D)));
-                            temp.setPx(price.setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
-                        }
                         list.add(temp);
                     }
                 });
                 return list;
             }
-
+            //卖出 - 当天上涨超过设置最大值
             if (CollectionUtils.isNotEmpty(marketBuyRecords) &&
-                    (riseDto.getRisePercent().compareTo(new BigDecimal(okxSettings.stream()
-                            .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_RISE_MAX_SELL_PERCENT)).findFirst().get().getSettingValue())) > 0
-                    || (riseDto.getHighest().compareTo(riseDto.getRisePercent()) > 0
-                            && riseDto.getHighest().multiply(new BigDecimal(okxSettings.stream()
-                            .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_RISE_SELL_PERCENT)).findFirst().get().getSettingValue())).compareTo(riseDto.getRisePercent()) >= 0))) {
+                    riseDto.getRisePercent().compareTo(new BigDecimal(okxSettings.stream()
+                            .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_RISE_MAX_SELL_PERCENT)).findFirst().get().getSettingValue())) > 0) {
                 marketBuyRecords.stream().filter(obj -> obj.getMarketStatus() == MarketStatusEnum.RISE.getStatus()).forEach(item -> {
-                    TradeDto temp =  DtoUtils.transformBean(tradeDto, TradeDto.class);
-                    temp.setSz(item.getQuantity().subtract(item.getFee().abs()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
-                    temp.setTimes(item.getTimes());
-                    temp.setBuyStrategyId(item.getStrategyId());
-                    temp.setSide(OkxSideEnum.SELL.getSide());
-                    temp.setBuyRecordId(item.getId());
+                    TradeDto temp =  getSellDto(tradeDto,ticker,coin,item);
+                    temp.setMarketStatus(MarketStatusEnum.MAX_RISE.getStatus());
+                    list.add(temp);
+
+                });
+                log.info("卖出-大涨 —— 大盘上涨时买入的list:{}",JSON.toJSONString(list));
+                return list;
+            }
+            //卖出 - 当天上涨最大值百分比
+            if (CollectionUtils.isNotEmpty(marketBuyRecords)
+                && riseDto.getHighest().multiply(new BigDecimal(okxSettings.stream()
+                    .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_RISE_SELL_PERCENT)).findFirst().get().getSettingValue())).compareTo(riseDto.getRisePercent()) >= 0) {
+                marketBuyRecords.stream().filter(obj -> obj.getMarketStatus() == MarketStatusEnum.RISE.getStatus()).forEach(item -> {
+                    TradeDto temp =  getSellDto(tradeDto,ticker,coin,item);
                     temp.setMarketStatus(MarketStatusEnum.RISE.getStatus());
-                    temp.setPx(ticker.getLast().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
-                    if (OkxOrdTypeEnum.LIMIT.getValue().equals(temp.getOrdType())) {
-                        BigDecimal price = ticker.getLast().subtract(coin.getStandard().multiply(new BigDecimal(9.0E-4D)));
-                        temp.setPx(price.setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
-                    }
                     list.add(temp);
                 });
-                log.info("卖出 —— 大盘上涨时买入的list:{}",JSON.toJSONString(list));
-
+                log.info("卖出-上涨 —— 大盘上涨时买入的list:{}",JSON.toJSONString(list));
                 return list;
             }
 
@@ -314,26 +294,18 @@ public class TradeBusiness {
                     BigDecimal currentIns = ticker.getLast().subtract(item.getPrice()).divide(item.getPrice(),8,RoundingMode.DOWN);
                     if (currentIns.compareTo(new BigDecimal(okxSettings.stream()
                                     .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_LOW_SELL_PERCENT)).findFirst().get().getSettingValue())) > 0){
-                        TradeDto temp =  DtoUtils.transformBean(tradeDto, TradeDto.class);
-                        temp.setSz(item.getQuantity().subtract(item.getFee().abs()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
-                        temp.setTimes(item.getTimes());
-                        temp.setBuyStrategyId(item.getStrategyId());
-                        temp.setSide(OkxSideEnum.SELL.getSide());
-                        temp.setBuyRecordId(item.getId());
+                        TradeDto temp =  getSellDto(tradeDto,ticker,coin,item);
                         temp.setMarketStatus(MarketStatusEnum.FALL.getStatus());
-                        temp.setPx(ticker.getLast().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
-                        if (OkxOrdTypeEnum.LIMIT.getValue().equals(temp.getOrdType())) {
-                            BigDecimal price = ticker.getLast().subtract(coin.getStandard().multiply(new BigDecimal(9.0E-4D)));
-                            temp.setPx(price.setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
-                        }
                         list.add(temp);
                     }
                 });
                 return list;
             }
+
             if (riseDto.getStatus() == Status.DISABLE.getCode()) {
                 return list;
             }
+
             Integer marketBuyTimes = Integer.valueOf(okxSettings.stream()
                     .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_BUY_TIMES)).findFirst().get().getSettingValue());
             //买入- 大盘上涨
@@ -379,6 +351,21 @@ public class TradeBusiness {
             }
         }
         return list;
+    }
+
+    private TradeDto getSellDto (TradeDto tradeDto,OkxCoinTicker ticker,OkxCoin coin,OkxBuyRecord item) {
+        TradeDto temp =  DtoUtils.transformBean(tradeDto, TradeDto.class);
+        temp.setSz(item.getQuantity().subtract(item.getFee().abs()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+        temp.setTimes(item.getTimes());
+        temp.setBuyStrategyId(item.getStrategyId());
+        temp.setSide(OkxSideEnum.SELL.getSide());
+        temp.setBuyRecordId(item.getId());
+        temp.setPx(ticker.getLast().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
+        if (OkxOrdTypeEnum.LIMIT.getValue().equals(temp.getOrdType())) {
+            BigDecimal price = ticker.getLast().subtract(coin.getStandard().multiply(new BigDecimal(9.0E-4D)));
+            temp.setPx(price.setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+        }
+        return temp;
     }
 
 

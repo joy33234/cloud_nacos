@@ -9,7 +9,9 @@ public enum MarketStatusEnum {
     RISE(0, "上涨"),
     FALL(1, "下跌"),
 
-    STABLE(2, "平稳");
+    STABLE(2, "平稳"),
+
+    MAX_RISE(4, "大涨");
 
     private Integer status;
 
