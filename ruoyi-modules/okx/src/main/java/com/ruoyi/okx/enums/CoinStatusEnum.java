@@ -6,8 +6,7 @@ import java.util.Map;
 
 public enum CoinStatusEnum {
     OPEN(0, "开启"),
-    CLOSE(1, "关闭"),
-    ONYYSELL(2, "只卖");
+    CLOSE(1, "关闭");
 
     private int status;
 

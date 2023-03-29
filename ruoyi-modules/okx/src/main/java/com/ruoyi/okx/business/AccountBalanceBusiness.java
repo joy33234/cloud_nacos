@@ -10,6 +10,7 @@ import com.ruoyi.okx.domain.OkxCoin;
 import com.ruoyi.okx.mapper.OkxAccountBalanceMapper;
 import com.ruoyi.okx.params.DO.OkxAccountBalanceDO;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 import java.math.BigDecimal;
@@ -73,6 +74,7 @@ public class AccountBalanceBusiness extends ServiceImpl<OkxAccountBalanceMapper,
 
 
 
+    @Async
     public void syncBanlance (OkxCoin coin, List<OkxAccount> accounts) {
         OkxCoin finalCoin = coin;
         accounts.stream().forEach(obj -> {

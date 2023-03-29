@@ -58,6 +58,9 @@ public class SyncCoinBusiness {
     @Resource
     private AccountBalanceBusiness balanceBusiness;
 
+    @Resource
+    private BuyRecordBusiness buyRecordBusiness;
+
     @Async
     public void syncOkxBalance() {
         try {
@@ -118,7 +121,9 @@ public class SyncCoinBusiness {
                     obj.setUpdateTime(now);
                     //交易额低于配置值-关闭交易
                     if (usdt24h.compareTo(obj.getVolUsdt24h()) > 0) {
-                        obj.setStatus(CoinStatusEnum.ONYYSELL.getStatus());
+                        obj.setStatus(CoinStatusEnum.CLOSE.getStatus());
+                    } else {
+                        obj.setStatus(CoinStatusEnum.OPEN.getStatus());
                     }
                     if (obj.getCoin().equalsIgnoreCase("BTC")) {
                         obj.setBtcIns(tickers.get(finalI).getIns());
