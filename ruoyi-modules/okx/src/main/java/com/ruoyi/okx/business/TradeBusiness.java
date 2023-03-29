@@ -106,6 +106,7 @@ public class TradeBusiness {
                         log.info("tradeDto：{}, okxOrderId：{}", JSON.toJSONString(tradeDto), okxOrderId);
                         return;
                     }
+                    sellRecord.setRemark(riseDto.getRisePercent().toString());
                     sellRecord.setOkxOrderId(okxOrderId);
                     sellRecord.setCreateTime(now);
                     sellRecord.setUpdateTime(now);
