@@ -40,33 +40,6 @@ public class BuyStrategyBusiness extends ServiceImpl<BuyStrategyMapper, OkxBuySt
     @Resource
     private SettingService settingService;
 
-//    public boolean check(OkxBuyRecord buyRecord, OkxCoin coin) {
-//        OkxBuyStrategy buyStrategy = getById(buyRecord.getStrategyId());
-//        if (coin.getUnit().compareTo(BigDecimal.ZERO) <= 0 || ObjectUtils.isEmpty(coin.getCount())) {
-//            log.warn("买入校验策略-单位为0 coin:{}", JSON.toJSONString(coin));
-//            return false;
-//        }
-//        BigDecimal times = coin.getCount().divide(coin.getUnit());
-//        if (times.compareTo(new BigDecimal(buyStrategy.getHoldMaxTimes().intValue())) > 0) {
-//            log.warn("不能高于最高手持倍数 coin:{}", coin.getCoin());
-//            return false;
-//        }
-//        BigDecimal total = coin.getCount().add(buyRecord.getQuantity());
-//        BigDecimal onlySellTimes = total.divide(coin.getUnit());
-//        if (onlySellTimes.compareTo(new BigDecimal(buyStrategy.getHoldMaxTimes().intValue())) > 0) {
-//            log.warn("状态变更为只读 coin:{},buyStrategy:{} ", JSON.toJSONString(coin), JSON.toJSONString(buyStrategy));
-//            coin.setStatus(CoinStatusEnum.ONYYSELL.getStatus());
-//            coinBusiness.updateList(Arrays.asList(coin));
-//        }
-//        if (buyRecord.getAmount().compareTo(new BigDecimal(settingService.selectSettingByKey(OkxConstants.BUY_MAX_USDT))) > 0) {
-//            log.warn("买入金额高于最高买入值 account:Id{}, amount:{}", buyRecord.getAccountId(), buyRecord.getAmount());
-//            return false;
-//        }
-//        if (this.buyRecordBusiness.hasBuy(buyRecord.getAccountId(), buyRecord.getStrategyId(), coin.getCoin()) == true) {
-//            log.warn("买入失败-该策略已买 account:{} coin:{}", buyRecord.getAccountId(), coin.getCoin());
-//            return false;
-//        }
-//        return true;
-//    }
+
 
 }

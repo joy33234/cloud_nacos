@@ -37,28 +37,22 @@ public class StrategyBusiness  {
             return false;
         }
         if (coin.getUnit().compareTo(BigDecimal.ZERO) <= 0 || ObjectUtils.isEmpty(coin.getCount())) {
-            log.warn("买入校验策略-单位为0 coin:{}", JSON.toJSONString(coin));
+            //log.warn("买入校验策略-单位为0 coin:{}", JSON.toJSONString(coin));
             return false;
         }
-        BigDecimal times = coin.getCount().divide(coin.getUnit());
+
+        //现有数量与买入数量不能超过最高手持数量
+        BigDecimal totalTimes = coin.getCount().add(buyRecord.getQuantity()).divide(coin.getUnit());
         BigDecimal buyMaxTime = new BigDecimal(settingList.stream()
                 .filter(item -> item.getSettingKey().equalsIgnoreCase(OkxConstants.BUY_MAX_TIMES)).findFirst().get().getSettingValue());
-        if (times.compareTo(buyMaxTime) >= 0) {
-            log.warn("不能高于最高手持倍数 coin:{},count:{}", coin.getCoin());
+        if (totalTimes.compareTo(buyMaxTime) > 0) {
+            //log.warn("不能高于最高手持倍数 coin:{},count:{}", coin.getCoin());
             return false;
         }
-        //现有数量与买入数量不能超过最高手持数量
-        BigDecimal total = coin.getCount().add(buyRecord.getQuantity());
-        BigDecimal onlySellTimes = total.divide(coin.getUnit());
-        if (onlySellTimes.compareTo(buyMaxTime) > 0 && coin.getStatus() == CoinStatusEnum.OPEN.getStatus()) {
-            log.warn("状态变更为只卖 coin:{},buyStrategy:{} ", JSON.toJSONString(coin));
-            coin.setStatus(CoinStatusEnum.ONYYSELL.getStatus());
-            coinBusiness.updateById(coin);
-        }
-        //});
+
         if (buyRecord.getAmount().compareTo(new BigDecimal(settingList.stream()
                         .filter(item -> item.getSettingKey().equals(OkxConstants.BUY_MAX_USDT)).findFirst().get().getSettingValue())) > 0) {
-            log.warn("买入金额高于最高买入值 accountId{}, amount:{}", buyRecord.getAccountId(), buyRecord.getAmount());
+            //log.warn("买入金额高于最高买入值 accountId{}, amount:{}", buyRecord.getAccountId(), buyRecord.getAmount());
             return false;
         }
 
@@ -66,7 +60,7 @@ public class StrategyBusiness  {
                 .filter(item -> item.getSettingKey().equalsIgnoreCase(OkxConstants.MODE_TYPE)).findFirst().get().getSettingValue();
         if (modeType.equalsIgnoreCase(ModeTypeEnum.GRID.getValue())
             && buyRecordBusiness.hasBuy(buyRecord.getAccountId(), buyRecord.getStrategyId(), coin.getCoin(), modeType) == true) {
-            log.warn("grid mode has buy this strategy:{}", buyRecord.getAccountId(), buyRecord.getAmount());
+            //log.warn("grid  has buy this strategy:{}", buyRecord.getAccountId(), buyRecord.getAmount());
             return false;
         }
         return true;

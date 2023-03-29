@@ -82,6 +82,15 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
         return true;
     }
 
+    public int getTimes(Integer accountId, String coin) {
+        LambdaQueryWrapper<OkxBuyRecord> wrapper = new LambdaQueryWrapper();
+        wrapper.eq(OkxBuyRecord::getAccountId, accountId);
+        wrapper.eq(OkxBuyRecord::getCoin, coin);
+        wrapper.in(OkxBuyRecord::getStatus, OrderStatusEnum.getUnFinishList());
+        Long count = buyRecordMapper.selectCount(wrapper);
+        return count.intValue();
+    }
+
     public List<OkxBuyRecord> findPendings(Integer accountId) {
         LambdaQueryWrapper<OkxBuyRecord> wrapper = new LambdaQueryWrapper();
         wrapper.eq(OkxBuyRecord::getStatus, OrderStatusEnum.PENDING.getStatus());
