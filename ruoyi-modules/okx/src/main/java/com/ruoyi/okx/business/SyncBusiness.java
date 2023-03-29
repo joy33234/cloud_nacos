@@ -90,19 +90,7 @@ public class SyncBusiness {
                     saveCoins.add(coin);
                 } else {
                     //TODO delete
-
-                    OkxCoin finalCoin = coin;
-                    accounts.stream().forEach(obj -> {
-                        List<OkxBuyRecord> buyRecords = buyRecordBusiness.findSuccessRecord(item.getString("ccy"),obj.getId(),null,null);
-                        BigDecimal balance = finalCoin.getUnit().multiply(new BigDecimal(buyRecords.size() * 2));
-                        OkxAccountBalance accountBalance = balanceBusiness.getAccountBalance(finalCoin.getCoin(),obj.getId());
-                        if (accountBalance == null) {
-                            balanceBusiness.save(new OkxAccountBalance(null,obj.getId(),obj.getName(),finalCoin.getCoin(),balance));
-                        } else {
-                            accountBalance.setBalance(balance);
-                            balanceBusiness.updateById(accountBalance);
-                        }
-                    });
+                    balanceBusiness.syncBanlance(coin,accounts);
                 }
             }
             if (CollectionUtils.isNotEmpty(saveCoins)){
