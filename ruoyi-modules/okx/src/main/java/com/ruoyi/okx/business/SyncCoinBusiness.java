@@ -131,12 +131,13 @@ public class SyncCoinBusiness {
                     obj.setStandard(coinBusiness.calculateStandard(tickers.get(finalI)));
                 });
             }
-            //更新涨跌数据
-            this.refreshRiseCount(okxCoins, now);
 
             boolean update = coinBusiness.updateList(okxCoins);
             //过渡时间不交易
-            if (update == true && now.getTime() > DateUtils.addMinutes(DateUtil.getMinTime(now),30).getTime()) {
+            if (update == true && now.getTime() > DateUtils.addMinutes(DateUtil.getMinTime(now),50).getTime()) {
+                //更新涨跌数据
+                this.refreshRiseCount(okxCoins, now);
+
                 accountBusiness.list().stream().forEach(item -> {
                     List<OkxSetting> okxSettings =   accountBusiness.listByAccountId(item.getId());
                     tradeBusiness.trade( okxCoins, tickers, okxSettings,accountBusiness.getAccountMap(item));

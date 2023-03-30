@@ -35,5 +35,11 @@ public class RiseDto {
 
     private BigDecimal BTCIns = BigDecimal.ZERO;
 
+    private BigDecimal buyRisePercent = BigDecimal.ZERO;
+
+    private BigDecimal buyLowPercent = BigDecimal.ZERO;
+
+    private BigDecimal sellPercent = BigDecimal.ZERO;
+
 
 }

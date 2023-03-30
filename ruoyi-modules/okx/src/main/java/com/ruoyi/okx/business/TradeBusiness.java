@@ -71,7 +71,7 @@ public class TradeBusiness {
      * @throws Exception
      */
     @Transactional(rollbackFor = Exception.class)
-    public void trade(List<TradeDto> list, OkxCoin coin, Map<String, String> map, List<OkxSetting> okxSettings, RiseDto riseDto) throws ServiceException {
+    public void trade(List<TradeDto> list, OkxCoin coin, Map<String, String> map, List<OkxSetting> okxSettings, RiseDto riseDto,BigDecimal tickerIns) throws ServiceException {
         try {
             Date now = new Date();
             Integer accountId = Integer.valueOf(map.get("id"));
@@ -89,7 +89,7 @@ public class TradeBusiness {
                     if (okxOrderId == null) {
                         return;
                     }
-                    buyRecord.setRemark(riseDto.getRisePercent().toString());
+                    buyRecord.setRemark(tickerIns.toString());
                     buyRecord.setOkxOrderId(okxOrderId);
                     buyRecord.setCreateTime(now);
                     buyRecord.setUpdateTime(now);
@@ -106,12 +106,12 @@ public class TradeBusiness {
                         log.info("tradeDto：{}, okxOrderId：{}", JSON.toJSONString(tradeDto), okxOrderId);
                         return;
                     }
-                    sellRecord.setRemark(riseDto.getRisePercent().toString());
+                    sellRecord.setRemark(tickerIns.toString());
                     sellRecord.setOkxOrderId(okxOrderId);
                     sellRecord.setCreateTime(now);
                     sellRecord.setUpdateTime(now);
                     sellRecord.setStatus(OrderStatusEnum.PENDING.getStatus());
-                    if (this.sellRecordBusiness.save(sellRecord)) {
+                    if (sellRecordBusiness.save(sellRecord)) {
                         buyRecordBusiness.updateBySell(sellRecord.getBuyRecordId(), OrderStatusEnum.SELLING.getStatus());
                     }
                 }
@@ -183,16 +183,18 @@ public class TradeBusiness {
                     continue;
                 }
                 //交易
-                trade(tradeDtoList, OkxCoin.get(), map, okxSettings, riseDto);
+                trade(tradeDtoList, OkxCoin.get(), map, okxSettings, riseDto,ticker.getIns());
             }
             //大盘交易
             if (map.get(OkxConstants.MODE_TYPE).equals(ModeTypeEnum.MARKET.getValue())
                     && (StringUtils.isNotEmpty(map.get("riseBuy")) || StringUtils.isNotEmpty(map.get("fallBuy")))) {
                 if (StringUtils.isNotEmpty(map.get("riseBuy"))) {
                     riseDto.setRiseBought(true);
+                    riseDto.setBuyRisePercent(riseDto.getRisePercent());
                 }
                 if (StringUtils.isNotEmpty(map.get("fallBuy"))) {
                     riseDto.setFallBought(true);
+                    riseDto.setBuyLowPercent(riseDto.getLowPercent());
                 }
                 if (riseDto.getRiseBought() && riseDto.getFallBought()) {
                     riseDto.setStatus(Status.DISABLE.getCode());
@@ -274,6 +276,7 @@ public class TradeBusiness {
 
                 });
                 log.info("卖出-大涨 —— 大盘上涨时买入的list:{}",JSON.toJSONString(list));
+                riseDto.setSellPercent(riseDto.getRisePercent());
                 return list;
             }
             //卖出 - 当天上涨最大值百分比
@@ -286,6 +289,7 @@ public class TradeBusiness {
                     list.add(temp);
                 });
                 log.info("卖出-上涨 —— 大盘上涨时买入的list:{}",JSON.toJSONString(list));
+                riseDto.setSellPercent(riseDto.getRisePercent());
                 return list;
             }
 
