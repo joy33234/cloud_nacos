@@ -219,17 +219,36 @@ public class TradeBusiness {
         tradeDto.setOrdType(map.get(OkxConstants.ORD_TYPE));
         String modeType = map.get(OkxConstants.MODE_TYPE);
         if (modeType.equals(ModeTypeEnum.GRID.getValue())) {
-            tradeDto.setModeType(ModeTypeEnum.GRID.getValue());
-            BigDecimal ins = ticker.getLast().subtract(coin.getStandard()).divide(coin.getStandard(), 8, RoundingMode.HALF_UP);
             //卖出
-            if (ins.compareTo(new BigDecimal(okxSettings.stream().filter(item -> item.getSettingKey().equals(OkxConstants.GRIDE_MIN_PERCENT_FOR_SELL)).findFirst().get().getSettingValue())) >= 0) {
-                buyRecords.stream().filter(item -> item.getModeType().equals(ModeTypeEnum.GRID.getValue())).forEach(item -> {
-                    TradeDto temp =  getSellDto(tradeDto,ticker,coin,item);
-                    temp.setMarketStatus(MarketStatusEnum.MAX_RISE.getStatus());
-                    list.add(temp);
-                });
+            BigDecimal ins = ticker.getLast().subtract(coin.getStandard()).divide(coin.getStandard(), 8, RoundingMode.HALF_UP);
+            tradeDto.setModeType(ModeTypeEnum.GRID.getValue());
+
+
+
+            BigDecimal gridMinSellPercent = new BigDecimal(okxSettings.stream().filter(item -> item.getSettingKey().equals(OkxConstants.GRIDE_MIN_PERCENT_FOR_SELL)).findFirst().get().getSettingValue());
+            buyRecords.stream().filter(item -> item.getModeType().equals(ModeTypeEnum.GRID.getValue()))
+                    .filter(item -> (ticker.getLast().subtract(item.getPrice()).divide(item.getPrice(), Constant.OKX_BIG_DECIMAL,RoundingMode.DOWN)).compareTo(gridMinSellPercent) > 0)
+                    .forEach(item -> {
+                TradeDto temp =  getSellDto(tradeDto,ticker,coin,item);
+                temp.setMarketStatus(MarketStatusEnum.MAX_RISE.getStatus());
+                list.add(temp);
+            });
+            if (CollectionUtils.isNotEmpty(list)) {
                 return list;
             }
+
+
+            //TODO - test
+//            if (ins.compareTo(new BigDecimal(okxSettings.stream().filter(item -> item.getSettingKey().equals(OkxConstants.GRIDE_MIN_PERCENT_FOR_SELL)).findFirst().get().getSettingValue())) >= 0) {
+//                buyRecords.stream().filter(item -> item.getModeType().equals(ModeTypeEnum.GRID.getValue())).forEach(item -> {
+//                    TradeDto temp =  getSellDto(tradeDto,ticker,coin,item);
+//                    temp.setMarketStatus(MarketStatusEnum.MAX_RISE.getStatus());
+//                    list.add(temp);
+//                });
+//                return list;
+//            }
+
+
             //买入
             if ((new BigDecimal(-0.011D)).compareTo(ins) >= 0) {
                 OkxBuyStrategy buyStrategy = buyStrategyBusiness.list().stream()
