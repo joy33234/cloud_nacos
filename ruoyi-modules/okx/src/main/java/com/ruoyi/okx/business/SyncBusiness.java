@@ -70,9 +70,6 @@ public class SyncBusiness {
             JSONArray jsonArray = json.getJSONArray("data");
             List<OkxAccount> accounts = accountBusiness.list();
 
-            Long start = System.currentTimeMillis();
-            log.info(start + "");
-
             for (int i = 0; i < jsonArray.size(); i++) {
                JSONObject item = jsonArray.getJSONObject(i);
                 OkxCoin coin = coinBusiness.getCoin(item.getString("ccy"));
@@ -96,7 +93,6 @@ public class SyncBusiness {
                     balanceBusiness.syncBanlance(coin,accounts);
                 }
             }
-            log.info((System.currentTimeMillis() - start) + "");
 
             if (CollectionUtils.isNotEmpty(saveCoins)){
                 //set unit

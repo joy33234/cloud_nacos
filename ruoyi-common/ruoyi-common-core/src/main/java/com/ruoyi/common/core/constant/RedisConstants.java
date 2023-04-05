@@ -20,12 +20,4 @@ public class RedisConstants
 
     public static final String OKX_TICKER_TRADE = "okx_ticker_trade";
 
-
-    public static final String OKX_TICKER_MARKET = "okx_ticker_market_";
-
-    public static  final String getTicketKey() {
-        return RedisConstants.OKX_TICKER_MARKET + DateUtil.getFormateDate(new Date(),DateUtil.YYYYMMDD);
-    }
-
-
 }

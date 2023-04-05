@@ -109,7 +109,7 @@ public class SyncCoinBusiness {
             redisLock.lock(RedisConstants.OKX_TICKER_UPDATE_COIN,10,3,1000);
 
             BigDecimal usdt24h = new BigDecimal(settingService.selectSettingByKey(OkxConstants.USDT_24H));
-            List<OkxCoin> okxCoins = coinBusiness.list();
+            List<OkxCoin> okxCoins = coinBusiness.list().stream().filter(item -> item.getUnit().compareTo(BigDecimal.ZERO) > 0).collect(Collectors.toList());
             for (int i = 0; i < items.size(); i++) {
                 int finalI = i;
                 okxCoins.stream().filter(item -> item.getCoin().equals(tickers.get(finalI).getCoin())).findFirst().ifPresent(obj -> {
@@ -131,15 +131,13 @@ public class SyncCoinBusiness {
                     obj.setStandard(coinBusiness.calculateStandard(tickers.get(finalI)));
                 });
             }
-
             boolean update = coinBusiness.updateList(okxCoins);
-            //过渡时间不交易
-            if (update == true && now.getTime() > DateUtils.addMinutes(DateUtil.getMinTime(now),50).getTime()) {
-                //更新涨跌数据
-                this.refreshRiseCount(okxCoins, now);
 
+            if (update == true) {
+                //更新涨跌数据
                 accountBusiness.list().stream().forEach(item -> {
                     List<OkxSetting> okxSettings =   accountBusiness.listByAccountId(item.getId());
+                    this.refreshRiseCount(okxCoins, now, item.getId(), okxSettings);
                     tradeBusiness.trade( okxCoins, tickers, okxSettings,accountBusiness.getAccountMap(item));
                 });
             }
@@ -156,13 +154,15 @@ public class SyncCoinBusiness {
      * @param okxCoins
      * @param now
      */
-    public void refreshRiseCount(List<OkxCoin> okxCoins, Date now){
+    public void refreshRiseCount(List<OkxCoin> okxCoins, Date now, Integer accountId,List<OkxSetting> settingList){
         Integer riseCount = okxCoins.stream().filter(item -> (item.isRise() == true)).collect(Collectors.toList()).size();
         BigDecimal risePercent = new BigDecimal(riseCount).divide(new BigDecimal(okxCoins.size()), 4,BigDecimal.ROUND_DOWN);
         BigDecimal lowPercent = BigDecimal.ONE.subtract(risePercent).setScale(4);
-        RiseDto riseDto = redisService.getCacheObject(RedisConstants.getTicketKey());
+        RiseDto riseDto = redisService.getCacheObject(tradeBusiness.getCacheMarketKey(accountId));
         if (riseDto == null) {
             riseDto = new RiseDto();
+            String modeType = settingList.stream().filter(item -> item.getSettingKey().equals(OkxConstants.MODE_TYPE)).findFirst().get().getSettingValue();
+            riseDto.setModeType(modeType);
         }
         riseDto.setRiseCount(riseCount);
         riseDto.setRisePercent(risePercent);
@@ -180,7 +180,7 @@ public class SyncCoinBusiness {
             }
         }
         long diff = DateUtil.diffSecond(now, DateUtil.getMaxTime(now));
-        redisService.setCacheObject(RedisConstants.getTicketKey(), riseDto, diff, TimeUnit.SECONDS);
+        redisService.setCacheObject(tradeBusiness.getCacheMarketKey(accountId), riseDto, diff, TimeUnit.SECONDS);
     }
 
 }

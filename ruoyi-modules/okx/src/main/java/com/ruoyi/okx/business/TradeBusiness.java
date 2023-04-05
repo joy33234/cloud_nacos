@@ -9,6 +9,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 
+import com.ruoyi.common.core.constant.CacheConstants;
 import com.ruoyi.common.core.constant.OkxConstants;
 import com.ruoyi.common.core.constant.RedisConstants;
 import com.ruoyi.common.core.enums.Status;
@@ -89,7 +90,7 @@ public class TradeBusiness {
                     if (okxOrderId == null) {
                         return;
                     }
-                    buyRecord.setRemark(tickerIns.toString());
+                    buyRecord.setRemark(riseDto.getRisePercent() + "||" + tickerIns);
                     buyRecord.setOkxOrderId(okxOrderId);
                     buyRecord.setCreateTime(now);
                     buyRecord.setUpdateTime(now);
@@ -106,7 +107,7 @@ public class TradeBusiness {
                         log.info("tradeDto：{}, okxOrderId：{}", JSON.toJSONString(tradeDto), okxOrderId);
                         return;
                     }
-                    sellRecord.setRemark(tickerIns.toString());
+                    sellRecord.setRemark(riseDto.getRisePercent() + "||" + tickerIns);
                     sellRecord.setOkxOrderId(okxOrderId);
                     sellRecord.setCreateTime(now);
                     sellRecord.setUpdateTime(now);
@@ -149,12 +150,13 @@ public class TradeBusiness {
     }
 
 
+    @Async
     public void trade(List<OkxCoin> coins, List<OkxCoinTicker> tickers,List<OkxSetting> okxSettings, Map<String, String> map) throws ServiceException {
         try {
             redisLock.lock(RedisConstants.OKX_TICKER_TRADE,10,3,1000);
 
-            RiseDto riseDto = redisService.getCacheObject(RedisConstants.getTicketKey());
             Integer accountId = Integer.valueOf(map.get("id"));
+            RiseDto riseDto = redisService.getCacheObject(this.getCacheMarketKey(accountId));
 
             //coin set balance
             List<OkxAccountBalance> balances = balanceBusiness.list(new OkxAccountBalanceDO(null,null,null,accountId,null));
@@ -199,7 +201,7 @@ public class TradeBusiness {
                 if (riseDto.getRiseBought() && riseDto.getFallBought()) {
                     riseDto.setStatus(Status.DISABLE.getCode());
                 }
-                redisService.setCacheObject(RedisConstants.getTicketKey(), riseDto);
+                redisService.setCacheObject(this.getCacheMarketKey(accountId), riseDto);
             }
             redisLock.releaseLock(RedisConstants.OKX_TICKER_TRADE);
         } catch (Exception e) {
@@ -275,7 +277,6 @@ public class TradeBusiness {
                     list.add(temp);
 
                 });
-                log.info("卖出-大涨 —— 大盘上涨时买入的list:{}",JSON.toJSONString(list));
                 riseDto.setSellPercent(riseDto.getRisePercent());
                 return list;
             }
@@ -288,7 +289,6 @@ public class TradeBusiness {
                     temp.setMarketStatus(MarketStatusEnum.RISE.getStatus());
                     list.add(temp);
                 });
-                log.info("卖出-上涨 —— 大盘上涨时买入的list:{}",JSON.toJSONString(list));
                 riseDto.setSellPercent(riseDto.getRisePercent());
                 return list;
             }
@@ -314,9 +314,11 @@ public class TradeBusiness {
 
             Integer marketBuyTimes = Integer.valueOf(okxSettings.stream()
                     .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_BUY_TIMES)).findFirst().get().getSettingValue());
+            BigDecimal marketRiseBuyPercent = new BigDecimal(okxSettings.stream()
+                    .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_RISE_BUY_PERCENT)).findFirst().get().getSettingValue());
             //买入- 大盘上涨
-            if (!riseDto.getRiseBought() && riseDto.getRisePercent().compareTo(new BigDecimal(okxSettings.stream()
-                            .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_RISE_BUY_PERCENT)).findFirst().get().getSettingValue())) > 0
+            if (!riseDto.getRiseBought() && riseDto.getRisePercent().compareTo(marketRiseBuyPercent) > 0
+                    && marketRiseBuyPercent.add(marketRiseBuyPercent.multiply(new BigDecimal(0.1))).compareTo(riseDto.getRisePercent()) > 0
                     && riseDto.getBTCIns().compareTo(new BigDecimal(okxSettings.stream()
                             .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_BTC_RISE_INS)).findFirst().get().getSettingValue())) > 0 ) {
                 tradeDto.setTimes(marketBuyTimes);
@@ -404,5 +406,8 @@ public class TradeBusiness {
 //        return dataJSON.getString("ordId");
 //    }
 
+    public String getCacheMarketKey (Integer accountId) {
+        return CacheConstants.OKX_MARKET + DateUtil.getFormateDate(new Date(),DateUtil.YYYYMMDD) + ":" + accountId;
+    }
 
 }
