@@ -3,6 +3,7 @@ package com.ruoyi.okx.business;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
+import com.ruoyi.common.core.enums.Status;
 import com.ruoyi.common.core.exception.ServiceException;
 import com.ruoyi.common.core.utils.HttpUtil;
 import com.ruoyi.common.redis.service.RedisService;
@@ -65,7 +66,8 @@ public class SyncBusiness {
             }
             Date now = new Date();
             JSONArray jsonArray = json.getJSONArray("data");
-            List<OkxAccount> accounts = accountBusiness.list();
+            List<OkxAccount> accounts = accountBusiness.list().stream()
+                    .filter(item -> item.getStatus().intValue() == Status.OK.getCode()).collect(Collectors.toList());
 
             for (int i = 0; i < jsonArray.size(); i++) {
                JSONObject item = jsonArray.getJSONObject(i);
@@ -132,7 +134,8 @@ public class SyncBusiness {
     @Async
     public void syncBuyOrder() throws ServiceException {
         try {
-            List<OkxAccount> accounts = accountBusiness.list();
+            List<OkxAccount> accounts = accountBusiness.list().stream()
+                    .filter(item -> item.getStatus().intValue() == Status.OK.getCode()).collect(Collectors.toList());;
             for (OkxAccount account:accounts) {
                 Map<String, String> map = accountBusiness.getAccountMap(account);
                 buyRecordBusiness.syncBuyOrder(map);
@@ -149,7 +152,8 @@ public class SyncBusiness {
     @Async
     public void syncSellOrder() {
         try {
-            List<OkxAccount> accounts = accountBusiness.list();
+            List<OkxAccount> accounts = accountBusiness.list().stream()
+                    .filter(item -> item.getStatus().intValue() == Status.OK.getCode()).collect(Collectors.toList());;
             for (OkxAccount account:accounts) {
                 Map<String, String> map = accountBusiness.getAccountMap(account);
                 sellRecordBusiness.syncSellOrderStatus(map);
