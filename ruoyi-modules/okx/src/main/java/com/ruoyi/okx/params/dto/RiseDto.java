@@ -11,6 +11,8 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class RiseDto {
 
+    private String modeType;
+
     /**
      * @see com.ruoyi.common.core.enums.Status
      *
