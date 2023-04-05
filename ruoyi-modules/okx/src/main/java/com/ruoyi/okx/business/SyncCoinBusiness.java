@@ -11,6 +11,7 @@ import com.ruoyi.common.redis.service.RedisLock;
 import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.*;
 import com.ruoyi.okx.enums.CoinStatusEnum;
+import com.ruoyi.okx.enums.ModeTypeEnum;
 import com.ruoyi.okx.params.DO.OkxAccountBalanceDO;
 import com.ruoyi.okx.params.dto.RiseDto;
 import com.ruoyi.okx.service.SettingService;
@@ -155,13 +156,16 @@ public class SyncCoinBusiness {
      * @param now
      */
     public void refreshRiseCount(List<OkxCoin> okxCoins, Date now, Integer accountId,List<OkxSetting> settingList){
+        String modeType = settingList.stream().filter(item -> item.getSettingKey().equals(OkxConstants.MODE_TYPE)).findFirst().get().getSettingValue();
+        if (!modeType.equals(ModeTypeEnum.MARKET.getValue())) {
+            return;
+        }
         Integer riseCount = okxCoins.stream().filter(item -> (item.isRise() == true)).collect(Collectors.toList()).size();
         BigDecimal risePercent = new BigDecimal(riseCount).divide(new BigDecimal(okxCoins.size()), 4,BigDecimal.ROUND_DOWN);
         BigDecimal lowPercent = BigDecimal.ONE.subtract(risePercent).setScale(4);
         RiseDto riseDto = redisService.getCacheObject(tradeBusiness.getCacheMarketKey(accountId));
         if (riseDto == null) {
             riseDto = new RiseDto();
-            String modeType = settingList.stream().filter(item -> item.getSettingKey().equals(OkxConstants.MODE_TYPE)).findFirst().get().getSettingValue();
             riseDto.setModeType(modeType);
         }
         riseDto.setRiseCount(riseCount);
