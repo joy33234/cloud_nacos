@@ -30,6 +30,8 @@ public class OkxSellRecord extends CommonEntity {
 
     private BigDecimal fee;
 
+    private BigDecimal profit;
+
     private Integer status;
 
     private String orderId;

@@ -226,3 +226,20 @@ create table okx_account_balance (
   remark            varchar(500)    default null               comment '备注',
   primary key (id)
 ) engine=innodb auto_increment=100 comment = '币种余额';
+
+
+
+drop table if exists okx_coin_profit;
+create table okx_coin_profit (
+  id         int(5)          not null auto_increment    comment '参数主键',
+  account_id         int(5)     not null       comment '帐号主键',
+  coin         varchar(100)          default ''    comment '币种',
+  profit         decimal(18,8)          default 0    comment '利润',
+  create_by         varchar(64)     default ''                 comment '创建者',
+  create_time       datetime                                   comment '创建时间',
+  update_by         varchar(64)     default ''                 comment '更新者',
+  update_time       datetime                                   comment '更新时间',
+  remark            varchar(500)    default null               comment '备注',
+  primary key (id),
+    UNIQUE KEY `profit_coin_account_id` (`account_id`,`coin`)
+) engine=innodb auto_increment=1 comment = '利润';

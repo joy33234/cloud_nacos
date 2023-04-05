@@ -131,6 +131,9 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
         return buyRecordMapper.updateById(record) > 0 ? true : false;
     }
 
+    public OkxBuyRecord findOne(Integer id) {
+        return buyRecordMapper.selectById(id);
+    }
 
     @Async
     public void syncBuyOrder(Map<String, String> map) {

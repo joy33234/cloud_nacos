@@ -7,9 +7,11 @@ import com.ruoyi.common.core.constant.UserConstants;
 import com.ruoyi.common.core.exception.ServiceException;
 import com.ruoyi.common.core.utils.StringUtils;
 import com.ruoyi.okx.domain.OkxAccount;
+import com.ruoyi.okx.domain.OkxCoinProfit;
 import com.ruoyi.okx.domain.OkxSetting;
 import com.ruoyi.okx.mapper.OkxAccountMapper;
 import com.ruoyi.okx.params.DO.OkxAccountDO;
+import com.ruoyi.okx.params.dto.AccountProfitDto;
 import com.ruoyi.okx.service.SettingService;
 import com.ruoyi.okx.utils.DtoUtils;
 import org.slf4j.Logger;
@@ -17,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +33,9 @@ public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
 
     @Resource
     private SettingService settingService;
+
+    @Resource
+    private CoinProfitBusiness profitBusiness;
 
 
     public List<OkxAccount> list(OkxAccountDO account) {
@@ -99,5 +105,14 @@ public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
     public List<OkxSetting> listByAccountId(Integer accountId) {
         String settingIds = this.getById(accountId).getSettingIds();
         return settingService.selectSettingByIds(DtoUtils.StringToLong(settingIds.split(",")));
+    }
+
+
+    public AccountProfitDto profit(Integer accountId) {
+        AccountProfitDto profitDto = new AccountProfitDto();
+        List<OkxCoinProfit> profits = profitBusiness.selectList(new OkxCoinProfit(null,null,accountId,null));
+        profitDto.setProfit(profits.stream().map(OkxCoinProfit::getProfit).reduce(BigDecimal.ZERO, BigDecimal::add));
+        profitDto.setCoinProfits(profits);
+        return profitDto;
     }
 }

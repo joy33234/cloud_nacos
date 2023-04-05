@@ -97,7 +97,7 @@ public class TradeBusiness {
                     buyRecordBusiness.save(buyRecord);
                 } else {
                     OkxSellRecord sellRecord = new OkxSellRecord(null, tradeDto.getBuyRecordId(), tradeDto.getCoin(), tradeDto.getInstId(), tradeDto.getPx(), tradeDto.getSz(),
-                            tradeDto.getPx().multiply(tradeDto.getSz()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP), BigDecimal.ZERO, OrderStatusEnum.PENDING.getStatus(),
+                            tradeDto.getPx().multiply(tradeDto.getSz()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP), BigDecimal.ZERO, BigDecimal.ZERO, OrderStatusEnum.PENDING.getStatus(),
                             UUID.randomUUID().toString(), "", tradeDto.getSellStrategyId(), tradeDto.getBuyStrategyId(), tradeDto.getTimes(), accountId,accountName);
                     if (!strategyBusiness.checkSell(sellRecord, coin, tradeDto)) {
                         return;
@@ -125,6 +125,7 @@ public class TradeBusiness {
 
     public String tradeOkx(TradeDto tradeDto, Date now, Map<String, String> map) {
         return System.currentTimeMillis() + "";
+        //TODO
 //        Map<String, String> params = new HashMap<>(8);
 //        params.put("instId", tradeDto.getInstId());
 //        params.put("tdMode", "cash");

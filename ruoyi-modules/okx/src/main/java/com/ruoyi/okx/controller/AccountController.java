@@ -142,4 +142,12 @@ public class AccountController extends BaseController
         return success();
     }
 
+    /**
+     * 删除参数配置
+     */
+    @GetMapping("profit")
+    public AjaxResult profit(Integer accountId){
+        return success(accountBusiness.profit(accountId));
+    }
+
 }
