@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.ruoyi.common.core.constant.OkxConstants;
 import com.ruoyi.common.core.constant.RedisConstants;
+import com.ruoyi.common.core.enums.Status;
 import com.ruoyi.common.core.utils.DateUtil;
 import com.ruoyi.common.core.utils.HttpUtil;
 import com.ruoyi.common.redis.service.RedisLock;
@@ -61,7 +62,8 @@ public class SyncCoinBusiness {
 
     public void syncOkxBalance() {
         try {
-            List<OkxAccount> accounts = accountBusiness.list();
+            List<OkxAccount> accounts = accountBusiness.list().stream()
+                    .filter(item -> item.getStatus().intValue() == Status.OK.getCode()).collect(Collectors.toList());;
             for (OkxAccount account:accounts) {
                 List<OkxAccountBalance> allBalanceList = balanceBusiness.list(new OkxAccountBalanceDO(null,null,null,account.getId(),null));
                 int pages = allBalanceList.size() / 20;
@@ -132,7 +134,8 @@ public class SyncCoinBusiness {
 
             if (update == true) {
                 //更新涨跌数据
-                accountBusiness.list().stream().forEach(item -> {
+                accountBusiness.list().stream()
+                        .filter(item -> item.getStatus().intValue() == Status.OK.getCode()).forEach(item -> {
                     List<OkxSetting> okxSettings =   accountBusiness.listByAccountId(item.getId());
                     this.refreshRiseCount(okxCoins, now, item.getId(), okxSettings);
                     tradeBusiness.trade( okxCoins, tickers, okxSettings,accountBusiness.getAccountMap(item));

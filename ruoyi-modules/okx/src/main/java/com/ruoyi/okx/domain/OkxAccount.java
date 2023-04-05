@@ -20,5 +20,10 @@ public class OkxAccount extends CommonEntity {
 
     private String password;
 
+    /**
+     * @see com.ruoyi.common.core.enums.Status;
+     */
+    private Integer status;
+
     private String settingIds;
 }
