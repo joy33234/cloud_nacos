@@ -3,7 +3,6 @@ package com.ruoyi.okx.controller;
 import com.ruoyi.common.core.web.controller.BaseController;
 import com.ruoyi.common.core.web.domain.AjaxResult;
 import com.ruoyi.okx.business.SyncBusiness;
-import com.ruoyi.okx.business.TickerBusiness;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,25 +19,22 @@ public class SyncController extends BaseController
     @Autowired
     private SyncBusiness syncBusiness;
 
-    @Autowired
-    private TickerBusiness tickerBusiness;
-
     /**
      * 根据参数获取详细信息
      */
     @GetMapping(value = "/buy/order")
-    public AjaxResult syncBuy()
-    {
-        return success(syncBusiness.syncBuyOrder());
+    public AjaxResult syncBuy(){
+        syncBusiness.syncBuyOrder();
+        return success();
     }
 
     /**
      * 根据参数获取详细信息
      */
     @GetMapping(value = "/sell/order")
-    public AjaxResult syncSell()
-    {
-        return success(syncBusiness.syncSellOrder());
+    public AjaxResult syncSell(){
+        syncBusiness.syncSellOrder();
+        return success();
     }
 
 
@@ -47,9 +43,9 @@ public class SyncController extends BaseController
      * 根据参数获取详细信息
      */
     @GetMapping(value = "/ticker")
-    public AjaxResult syncTicker()
-    {
-        return success(tickerBusiness.syncTicker());
+    public AjaxResult syncTicker(){
+        syncBusiness.syncTicker();
+        return success();
     }
     
 
@@ -57,18 +53,18 @@ public class SyncController extends BaseController
      * 根据参数获取详细信息
      */
     @GetMapping(value = "/count")
-    public AjaxResult syncCount()
-    {
-        return success(syncBusiness.syncCoinBalance());
+    public AjaxResult syncCount(){
+        syncBusiness.syncCoinBalance();
+        return success();
     }
 
     /**
      * 根据参数获取详细信息
      */
     @GetMapping(value = "/currencies")
-    public AjaxResult syncCurrencies()
-    {
-        return success(syncBusiness.syncCurrencies());
+    public AjaxResult syncCurrencies(){
+        syncBusiness.syncCurrencies();
+        return success();
     }
 
 }

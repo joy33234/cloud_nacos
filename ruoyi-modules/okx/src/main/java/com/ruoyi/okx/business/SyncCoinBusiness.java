@@ -1,12 +1,10 @@
 package com.ruoyi.okx.business;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.ruoyi.common.core.constant.OkxConstants;
 import com.ruoyi.common.core.constant.RedisConstants;
 import com.ruoyi.common.core.utils.DateUtil;
-import com.ruoyi.common.core.utils.DateUtils;
 import com.ruoyi.common.core.utils.HttpUtil;
 import com.ruoyi.common.redis.service.RedisLock;
 import com.ruoyi.common.redis.service.RedisService;
@@ -61,7 +59,6 @@ public class SyncCoinBusiness {
     @Resource
     private BuyRecordBusiness buyRecordBusiness;
 
-    @Async
     public void syncOkxBalance() {
         try {
             List<OkxAccount> accounts = accountBusiness.list();
