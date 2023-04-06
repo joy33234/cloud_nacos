@@ -24,4 +24,6 @@ public class SellRecordDO extends PageRequestForm implements Serializable {
     protected Date startTime;
 
     protected Date endTime;
+
+    private Integer status;
 }
