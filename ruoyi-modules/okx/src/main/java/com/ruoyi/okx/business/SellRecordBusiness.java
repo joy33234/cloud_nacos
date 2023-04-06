@@ -19,6 +19,7 @@ import com.ruoyi.okx.enums.OrderStatusEnum;
 import com.ruoyi.okx.mapper.SellRecordMapper;
 import com.ruoyi.okx.params.DO.SellRecordDO;
 import com.ruoyi.okx.utils.Constant;
+import org.apache.commons.compress.utils.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -69,10 +70,15 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
         SellRecordDO recordDO = new SellRecordDO();
         recordDO.setStatus(OrderStatusEnum.PENDING.getStatus());
         List<OkxSellRecord> list = selectList(recordDO);
+        List<OkxBuyRecord> buyRecords = Lists.newArrayList();
         list.stream().forEach(item -> {
+            OkxBuyRecord buyRecord = buyRecordBusiness.findOne(item.getBuyRecordId());
+            buyRecord.setStatus(OrderStatusEnum.FINISH.getStatus());
+            buyRecords.add(buyRecord);
             item.setStatus(OrderStatusEnum.FINISH.getStatus());
         });
         updateBatchById(list);
+        buyRecordBusiness.updateBatchById(buyRecords);
         //TODO -delete
 //
 //
