@@ -90,7 +90,7 @@ public class TradeBusiness {
                     if (okxOrderId == null) {
                         return;
                     }
-                    buyRecord.setRemark(riseDto.getRisePercent() + "||" + tickerIns);
+                    buyRecord.setRemark(riseDto == null ? "" : riseDto.getRisePercent() + "||" + tickerIns);
                     buyRecord.setOkxOrderId(okxOrderId);
                     buyRecord.setCreateTime(now);
                     buyRecord.setUpdateTime(now);
@@ -107,7 +107,7 @@ public class TradeBusiness {
                         log.info("tradeDto：{}, okxOrderId：{}", JSON.toJSONString(tradeDto), okxOrderId);
                         return;
                     }
-                    sellRecord.setRemark(riseDto.getRisePercent() + "||" + tickerIns);
+                    sellRecord.setRemark(riseDto == null ? "" : riseDto.getRisePercent() + "||" + tickerIns);
                     sellRecord.setOkxOrderId(okxOrderId);
                     sellRecord.setCreateTime(now);
                     sellRecord.setUpdateTime(now);
@@ -118,7 +118,7 @@ public class TradeBusiness {
                 }
             }
         } catch (Exception e) {
-            log.error("okx trade error:{}", e);
+            log.error("okx trade error ", e);
             throw new ServiceException("okx trade error");
         }
     }
@@ -174,9 +174,7 @@ public class TradeBusiness {
             List<OkxBuyRecord> buyRecords = buyRecordBusiness.findSuccessRecord(null, accountId, null,null);
             for (OkxCoinTicker ticker : tickers) {
                 Optional<OkxCoin> OkxCoin = coins.stream().filter(obj -> obj.getCoin().equals(ticker.getCoin())).findFirst();
-                if (!OkxCoin.isPresent()
-                        || OkxCoin.get().getStandard().compareTo(BigDecimal.ZERO) <= 0
-                        || OkxCoin.get().getStatus() == CoinStatusEnum.CLOSE.getStatus()) {
+                if (!OkxCoin.isPresent() || OkxCoin.get().getStandard().compareTo(BigDecimal.ZERO) <= 0) {
                     continue;
                 }
                 List<OkxBuyRecord> tempBuyRecords = buyRecords.stream().filter(item -> item.getCoin().equals(ticker.getCoin())).collect(Collectors.toList());
@@ -250,7 +248,8 @@ public class TradeBusiness {
 
 
             //买入
-            if ((new BigDecimal(-0.011D)).compareTo(ins) >= 0) {
+            if ((new BigDecimal(-0.011D)).compareTo(ins) >= 0
+                && coin.getStatus() == CoinStatusEnum.OPEN.getStatus()) {
                 OkxBuyStrategy buyStrategy = buyStrategyBusiness.list().stream()
                         .filter(strategy -> (strategy.getFallPercent().compareTo(ins.abs().setScale(2, RoundingMode.DOWN)) >= 0))
                         .sorted(comparing(OkxBuyStrategy::getFallPercent)).findFirst().get();
@@ -337,7 +336,8 @@ public class TradeBusiness {
             BigDecimal marketRiseBuyPercent = new BigDecimal(okxSettings.stream()
                     .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_RISE_BUY_PERCENT)).findFirst().get().getSettingValue());
             //买入- 大盘上涨
-            if (!riseDto.getRiseBought() && riseDto.getRisePercent().compareTo(marketRiseBuyPercent) > 0
+            if (!riseDto.getRiseBought() && coin.getStatus() == CoinStatusEnum.OPEN.getStatus()
+                    && riseDto.getRisePercent().compareTo(marketRiseBuyPercent) > 0
                     && marketRiseBuyPercent.add(marketRiseBuyPercent.multiply(new BigDecimal(0.1))).compareTo(riseDto.getRisePercent()) > 0
                     && riseDto.getBTCIns().compareTo(new BigDecimal(okxSettings.stream()
                             .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_BTC_RISE_INS)).findFirst().get().getSettingValue())) > 0 ) {
@@ -357,8 +357,8 @@ public class TradeBusiness {
             }
 
             //买入- 大盘下跌
-            if (!riseDto.getFallBought() && riseDto.getLowPercent().compareTo(
-                    new BigDecimal(okxSettings.stream()
+            if (!riseDto.getFallBought() && coin.getStatus() == CoinStatusEnum.OPEN.getStatus()
+                    && riseDto.getLowPercent().compareTo(new BigDecimal(okxSettings.stream()
                             .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_LOW_BUY_PERCENT)).findFirst().get().getSettingValue())) > 0
                     && new BigDecimal(okxSettings.stream()
                             .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_BTC_FALL_INS)).findFirst().get().getSettingValue())

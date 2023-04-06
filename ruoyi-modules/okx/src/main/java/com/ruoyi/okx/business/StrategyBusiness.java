@@ -60,7 +60,7 @@ public class StrategyBusiness  {
                 .filter(item -> item.getSettingKey().equalsIgnoreCase(OkxConstants.MODE_TYPE)).findFirst().get().getSettingValue();
         if (modeType.equalsIgnoreCase(ModeTypeEnum.GRID.getValue())
             && buyRecordBusiness.hasBuy(buyRecord.getAccountId(), buyRecord.getStrategyId(), coin.getCoin(), modeType) == true) {
-            //log.warn("grid  has buy this strategy:{}", buyRecord.getAccountId(), buyRecord.getAmount());
+            log.warn("grid  has buy this coin:{},strategy:{}", buyRecord.getCoin(), buyRecord.getStrategyId());
             return false;
         }
         return true;
