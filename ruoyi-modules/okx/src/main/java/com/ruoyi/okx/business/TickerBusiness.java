@@ -8,20 +8,16 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 
-import com.ruoyi.common.core.constant.OkxConstants;
 import com.ruoyi.common.core.constant.RedisConstants;
 import com.ruoyi.common.core.exception.ServiceException;
 import com.ruoyi.common.core.utils.DateUtil;
 import com.ruoyi.common.core.utils.HttpUtil;
 import com.ruoyi.common.redis.service.RedisLock;
-import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.OkxCoinTicker;
 import com.ruoyi.okx.mapper.CoinTickerMapper;
-import com.ruoyi.okx.service.SettingService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.slf4j.Logger;
@@ -50,16 +46,8 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
     private RedisLock redisLock;
 
     @Resource
-    private SettingService settingService;
-
-    @Resource
-    private StrategyBusiness strategyBusiness;
-
-    @Resource
     private SyncCoinBusiness syncCoinBusiness;
 
-    @Resource
-    private RedisService redisService;
 
     @Transactional(rollbackFor = Exception.class)
     public boolean syncTicker() throws ServiceException{
@@ -134,6 +122,12 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
             throw new ServiceException("syncTicker error");
         }
         return true;
+    }
+
+    public List<OkxCoinTicker> findTodayTicker() {
+        LambdaQueryWrapper<OkxCoinTicker> wrapper = new LambdaQueryWrapper();
+        wrapper.gt(OkxCoinTicker::getCreateTime, DateUtil.getMinTime(new Date()));
+        return tickerMapper.selectList(wrapper);
     }
 
 
