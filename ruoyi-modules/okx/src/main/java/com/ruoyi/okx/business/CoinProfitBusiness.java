@@ -4,15 +4,19 @@ package com.ruoyi.okx.business;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.redis.service.RedisService;
+import com.ruoyi.okx.domain.OkxBuyRecord;
 import com.ruoyi.okx.domain.OkxCoinProfit;
+import com.ruoyi.okx.domain.OkxCoinTicker;
 import com.ruoyi.okx.domain.OkxSellRecord;
 import com.ruoyi.okx.mapper.CoinProfitMapper;
+import com.ruoyi.okx.params.dto.AccountProfitDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.math.BigDecimal;
 import java.util.List;
 
 @Component
@@ -24,7 +28,6 @@ public class CoinProfitBusiness extends ServiceImpl<CoinProfitMapper, OkxCoinPro
 
     @Autowired
     private RedisService redisService;
-
 
     public List<OkxCoinProfit> selectList(OkxCoinProfit profit){
         LambdaQueryWrapper<OkxCoinProfit> wrapper = new LambdaQueryWrapper();

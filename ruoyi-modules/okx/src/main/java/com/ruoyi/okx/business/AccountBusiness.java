@@ -31,15 +31,7 @@ public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
 
     @Resource
     private SettingService settingService;
-
-    @Resource
-    private CoinProfitBusiness profitBusiness;
-
-    @Resource
-    private BuyRecordBusiness buyRecordBusiness;
-
-    @Resource
-    private TickerBusiness tickerBusiness;
+    
 
     public List<OkxAccount> list(OkxAccountDO account) {
         LambdaQueryWrapper<OkxAccount> wrapper = new LambdaQueryWrapper();
@@ -110,26 +102,4 @@ public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
         return settingService.selectSettingByIds(DtoUtils.StringToLong(settingIds.split(",")));
     }
 
-
-    public AccountProfitDto profit(Integer accountId) {
-        AccountProfitDto profitDto = new AccountProfitDto();
-
-        List<OkxCoinProfit> profits = profitBusiness.selectList(new OkxCoinProfit(null,null,accountId,null));
-        profitDto.setCoinProfits(profits);
-
-        BigDecimal finishProfit  = profits.stream().map(OkxCoinProfit::getProfit).reduce(BigDecimal.ZERO, BigDecimal::add);
-        profitDto.setFinishProfit(finishProfit);
-
-        BigDecimal unfinishProfit = BigDecimal.ZERO;
-        List<OkxBuyRecord> buyRecords = buyRecordBusiness.findUnfinish(accountId,10000);
-        List<OkxCoinTicker> tickers = tickerBusiness.findTodayTicker();
-        buyRecords.stream().forEach(item -> {
-            tickers.stream().filter(obj -> obj.getCoin().equals(item.getCoin())).findFirst().ifPresent(ticker -> {
-                unfinishProfit.add(ticker.getLast().subtract(item.getPrice()).multiply(item.getQuantity()));
-            });
-        });
-        profitDto.setUnFinishProfit(unfinishProfit);
-        profitDto.setProfit(finishProfit.add(unfinishProfit));
-        return profitDto;
-    }
 }
