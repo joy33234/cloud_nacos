@@ -10,6 +10,7 @@ import com.ruoyi.common.log.enums.BusinessType;
 import com.ruoyi.common.security.annotation.RequiresPermissions;
 import com.ruoyi.common.security.utils.SecurityUtils;
 import com.ruoyi.okx.business.AccountBusiness;
+import com.ruoyi.okx.business.ProfitBusiness;
 import com.ruoyi.okx.business.StrategyBusiness;
 import com.ruoyi.okx.domain.OkxAccount;
 import com.ruoyi.okx.domain.OkxSetting;
@@ -23,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 import java.util.Date;
@@ -46,6 +48,9 @@ public class AccountController extends BaseController
 
     @Autowired
     private SettingService settingService;
+
+    @Resource
+    private ProfitBusiness profitBusiness;
     /**
      * 获取参数配置列表
      */
@@ -147,7 +152,7 @@ public class AccountController extends BaseController
      */
     @GetMapping("profit")
     public AjaxResult profit(Integer accountId){
-        return success(accountBusiness.profit(accountId));
+        return success(profitBusiness.profit(accountId));
     }
 
 }
