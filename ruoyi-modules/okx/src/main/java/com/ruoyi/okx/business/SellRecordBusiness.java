@@ -67,7 +67,7 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
     @Transactional(rollbackFor = {Exception.class})
     public void syncSellOrderStatus(Map<String, String> map) {
         SellRecordDO recordDO = new SellRecordDO();
-        recordDO.setStatus(OrderStatusEnum.SELLING.getStatus());
+        recordDO.setStatus(OrderStatusEnum.PENDING.getStatus());
         List<OkxSellRecord> list = selectList(recordDO);
         list.stream().forEach(item -> {
             item.setStatus(OrderStatusEnum.FINISH.getStatus());
