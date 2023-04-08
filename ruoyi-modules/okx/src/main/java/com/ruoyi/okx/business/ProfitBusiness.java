@@ -3,6 +3,7 @@ package com.ruoyi.okx.business;
 import com.ruoyi.okx.domain.OkxBuyRecord;
 import com.ruoyi.okx.domain.OkxCoinProfit;
 import com.ruoyi.okx.domain.OkxCoinTicker;
+import com.ruoyi.okx.params.DO.OkxCoinProfitDo;
 import com.ruoyi.okx.params.dto.AccountProfitDto;
 import org.springframework.stereotype.Component;
 
@@ -26,8 +27,7 @@ public class ProfitBusiness {
     public AccountProfitDto profit(Integer accountId) {
         AccountProfitDto profitDto = new AccountProfitDto();
 
-        List<OkxCoinProfit> profits = coinProfitBusiness.selectList(new OkxCoinProfit(null,null,accountId,null));
-        profitDto.setCoinProfits(profits);
+        List<OkxCoinProfit> profits = coinProfitBusiness.selectList(new OkxCoinProfitDo(accountId,null,null));
 
         BigDecimal finishProfit  = profits.stream().map(OkxCoinProfit::getProfit).reduce(BigDecimal.ZERO, BigDecimal::add);
         profitDto.setFinishProfit(finishProfit);

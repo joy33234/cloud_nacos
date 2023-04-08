@@ -23,6 +23,8 @@ public class OkxAccountDO extends PageRequestForm implements Serializable {
 
     private String password;
 
+    private Integer status;
+
     private Long[] settingIds;
 
     private String remark;
