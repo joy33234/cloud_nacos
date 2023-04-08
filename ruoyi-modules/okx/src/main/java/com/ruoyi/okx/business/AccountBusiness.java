@@ -31,7 +31,7 @@ public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
 
     @Resource
     private SettingService settingService;
-    
+
 
     public List<OkxAccount> list(OkxAccountDO account) {
         LambdaQueryWrapper<OkxAccount> wrapper = new LambdaQueryWrapper();
@@ -52,6 +52,10 @@ public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
 
     public boolean delete(OkxAccount account) {
         return accountMapper.deleteById(account) > 0 ? true : false;
+    }
+
+    public OkxAccount findOne(Integer accountId) {
+        return accountMapper.selectById(accountId);
     }
 
 

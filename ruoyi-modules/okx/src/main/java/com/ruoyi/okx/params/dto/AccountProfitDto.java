@@ -11,6 +11,8 @@ public class AccountProfitDto {
 
     private Integer accountId;
 
+    private String accountName;
+
     /**
      * 总盈亏
      */
@@ -27,5 +29,4 @@ public class AccountProfitDto {
     private BigDecimal unFinishProfit;
 
 
-    private List<OkxCoinProfit> coinProfits;
 }

@@ -9,6 +9,7 @@ import com.ruoyi.okx.domain.OkxCoinProfit;
 import com.ruoyi.okx.domain.OkxCoinTicker;
 import com.ruoyi.okx.domain.OkxSellRecord;
 import com.ruoyi.okx.mapper.CoinProfitMapper;
+import com.ruoyi.okx.params.DO.OkxCoinProfitDo;
 import com.ruoyi.okx.params.dto.AccountProfitDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,14 +30,14 @@ public class CoinProfitBusiness extends ServiceImpl<CoinProfitMapper, OkxCoinPro
     @Autowired
     private RedisService redisService;
 
-    public List<OkxCoinProfit> selectList(OkxCoinProfit profit){
+    public List<OkxCoinProfit> selectList(OkxCoinProfitDo profitDo){
         LambdaQueryWrapper<OkxCoinProfit> wrapper = new LambdaQueryWrapper();
-        if (profit == null) {
+        if (profitDo == null) {
             return list();
         }
-        wrapper.eq(profit.getAccountId() != null ,OkxCoinProfit::getAccountId, profit.getAccountId());
-        wrapper.eq(profit.getCoin() != null ,OkxCoinProfit::getCoin, profit.getCoin());
-        wrapper.eq(profit.getId() != null ,OkxCoinProfit::getId, profit.getId());
+        wrapper.eq(profitDo.getAccountId() != null ,OkxCoinProfit::getAccountId, profitDo.getAccountId());
+        wrapper.eq(profitDo.getCoin() != null ,OkxCoinProfit::getCoin, profitDo.getCoin());
+        wrapper.eq(profitDo.getId() != null ,OkxCoinProfit::getId, profitDo.getId());
         return mapper.selectList(wrapper);
     }
 

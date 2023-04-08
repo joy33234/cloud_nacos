@@ -308,6 +308,8 @@ public class TradeBusiness {
                     temp.setMarketStatus(MarketStatusEnum.RISE.getStatus());
                     list.add(temp);
                 });
+                log.info("Highest:{},risePecent:{},marketRiseSellPercent:{},marketBUyRecords:{}",riseDto.getHighest(),riseDto.getRisePercent(),okxSettings.stream()
+                        .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_RISE_SELL_PERCENT)).findFirst().get().getSettingValue(),JSON.toJSONString(marketBuyRecords));
                 riseDto.setSellPercent(riseDto.getRisePercent());
                 return list;
             }

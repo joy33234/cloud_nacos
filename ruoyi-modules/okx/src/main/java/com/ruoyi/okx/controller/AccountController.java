@@ -1,5 +1,6 @@
 package com.ruoyi.okx.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.ruoyi.common.core.constant.UserConstants;
 import com.ruoyi.common.core.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.web.controller.BaseController;
@@ -10,11 +11,14 @@ import com.ruoyi.common.log.enums.BusinessType;
 import com.ruoyi.common.security.annotation.RequiresPermissions;
 import com.ruoyi.common.security.utils.SecurityUtils;
 import com.ruoyi.okx.business.AccountBusiness;
+import com.ruoyi.okx.business.CoinProfitBusiness;
 import com.ruoyi.okx.business.ProfitBusiness;
 import com.ruoyi.okx.business.StrategyBusiness;
 import com.ruoyi.okx.domain.OkxAccount;
+import com.ruoyi.okx.domain.OkxCoinProfit;
 import com.ruoyi.okx.domain.OkxSetting;
 import com.ruoyi.okx.params.DO.OkxAccountDO;
+import com.ruoyi.okx.params.DO.OkxCoinProfitDo;
 import com.ruoyi.okx.service.SettingService;
 import com.ruoyi.okx.utils.DtoUtils;
 import org.apache.commons.compress.utils.Lists;
@@ -51,6 +55,9 @@ public class AccountController extends BaseController
 
     @Resource
     private ProfitBusiness profitBusiness;
+
+    @Resource
+    private CoinProfitBusiness coinProfitBusiness;
     /**
      * 获取参数配置列表
      */
@@ -128,10 +135,21 @@ public class AccountController extends BaseController
         if (!settingService.checkSettingKey(accountDO.getSettingIds())) {
             return error("配置策略失败，参数键名异常");
         }
+        System.out.println("accountDo:"  +  JSON.toJSONString(accountDO));
         OkxAccount okxAccount = DtoUtils.transformBean(accountDO, OkxAccount.class);
         okxAccount.setSettingIds(StringUtils.join(accountDO.getSettingIds(),","));
         okxAccount.setUpdateBy(SecurityUtils.getUsername());
         okxAccount.setUpdateTime(new Date());
+        return toAjax(accountBusiness.update(okxAccount));
+    }
+
+    @RequiresPermissions("okx:account:changeStatus")
+    @Log(title = "参数管理", businessType = BusinessType.UPDATE)
+    @PutMapping("changeStatus")
+    public AjaxResult changeStatus(@Validated @RequestBody OkxAccountDO accountDO)
+    {
+        OkxAccount okxAccount = accountBusiness.findOne(accountDO.getId());
+        okxAccount.setStatus(accountDO.getStatus());
         return toAjax(accountBusiness.update(okxAccount));
     }
 
@@ -153,6 +171,17 @@ public class AccountController extends BaseController
     @GetMapping("profit")
     public AjaxResult profit(Integer accountId){
         return success(profitBusiness.profit(accountId));
+    }
+
+    /**
+     * 删除参数配置
+     */
+    @GetMapping("profit/detail")
+    public TableDataInfo detail(OkxCoinProfitDo profitDo)
+    {
+        startPage();
+        List<OkxCoinProfit> list = coinProfitBusiness.selectList(profitDo);
+        return getDataTable(list);
     }
 
 }
