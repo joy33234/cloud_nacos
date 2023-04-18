@@ -172,6 +172,7 @@ public class SyncCoinBusiness {
         riseDto.setRisePercent(risePercent);
         if (risePercent.compareTo(riseDto.getHighest()) > 0) {
             riseDto.setHighest(risePercent);
+            log.info("refreshRiseCount-hightest:{}",risePercent);
         }
         riseDto.setLowCount(okxCoins.size() - riseCount);
         if (lowPercent.compareTo(riseDto.getLowPercent()) > 0) {

@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.Date;
 
 @Data
 @NoArgsConstructor
@@ -33,7 +34,11 @@ public class RiseDto {
 
     private Boolean riseBought = false; //当日大盘上涨是否交易过
 
+    private Date riseBoughtTime;
+
     private Boolean fallBought = false; //当日大盘下跌是否交易过
+
+    private Date fallBoughtTime;
 
     private BigDecimal BTCIns = BigDecimal.ZERO;
 
