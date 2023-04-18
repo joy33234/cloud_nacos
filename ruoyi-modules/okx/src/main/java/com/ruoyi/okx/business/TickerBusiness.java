@@ -81,6 +81,8 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
                     ticker.setCoin(arr[0]);
                     ticker.setOpen24h(item.getBigDecimal("sodUtc8"));
 
+                    //ticker.setLast(ticker.getLast().add(ticker.getLast().multiply(new BigDecimal(0.018))));
+
                     Optional<OkxCoinTicker> dbticker = dbTickerList.stream().filter(obj -> obj.getCoin().equals(ticker.getCoin()))
                             .filter(obj -> obj.getCreateTime().getTime() >= DateUtil.getMinTime(now).getTime()).findFirst();
                     if (dbticker.isPresent()) {

@@ -54,7 +54,6 @@ public class SyncBusiness {
 
     @Async
     public void syncCurrencies() {
-        log.info("syncCurrencies");
         List<OkxCoin> saveCoins = Lists.newArrayList();
         try {
             OkxAccount account = accountBusiness.list().get(0);
@@ -127,8 +126,6 @@ public class SyncBusiness {
 
     @Async
     public void syncCoinBalance() {
-        log.info("syncCoinBalance");
-
         syncCoinCountBusiness.syncOkxBalance();
     }
 
@@ -136,7 +133,6 @@ public class SyncBusiness {
 
     @Async
     public void syncBuyOrder() throws ServiceException {
-        log.info("syncBuyOrder");
         try {
             List<OkxAccount> accounts = accountBusiness.list().stream()
                     .filter(item -> item.getStatus().intValue() == Status.OK.getCode()).collect(Collectors.toList());;
@@ -155,8 +151,6 @@ public class SyncBusiness {
 
     @Async
     public void syncSellOrder() {
-        log.info("syncSellOrder");
-
         try {
             List<OkxAccount> accounts = accountBusiness.list().stream()
                     .filter(item -> item.getStatus().intValue() == Status.OK.getCode()).collect(Collectors.toList());;
@@ -171,7 +165,6 @@ public class SyncBusiness {
 
     @Async
     public void syncTicker() {
-        log.info("syncTicker");
         try {
             tickerBusiness.syncTicker();
         } catch (Exception e) {
