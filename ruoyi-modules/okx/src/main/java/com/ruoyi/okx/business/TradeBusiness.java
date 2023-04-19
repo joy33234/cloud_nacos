@@ -160,11 +160,6 @@ public class TradeBusiness {
             Integer accountId = Integer.valueOf(map.get("id"));
             RiseDto riseDto = redisService.getCacheObject(this.getCacheMarketKey(accountId));
 
-            int diffMinute = 0;
-            if (ObjectUtil.isNotEmpty(riseDto) && ObjectUtil.isNotEmpty(riseDto.getRiseBoughtTime())) {
-                diffMinute = DateUtil.diffMins(riseDto.getRiseBoughtTime(), new Date());
-            }
-
             //coin set balance
             List<OkxAccountBalance> balances = balanceBusiness.list(new OkxAccountBalanceDO(null,null,null,accountId,null));
             coins.stream().forEach(item -> {
@@ -185,7 +180,7 @@ public class TradeBusiness {
                 }
                 List<OkxBuyRecord> tempBuyRecords = buyRecords.stream().filter(item -> item.getCoin().equals(ticker.getCoin())).collect(Collectors.toList());
                 //获取交易参数
-                List<TradeDto> tradeDtoList = getTradeDto( OkxCoin.get(), ticker, map, riseDto, tempBuyRecords,okxSettings, diffMinute);
+                List<TradeDto> tradeDtoList = getTradeDto( OkxCoin.get(), ticker, map, riseDto, tempBuyRecords,okxSettings);
                 if (CollectionUtils.isEmpty(tradeDtoList)) {
                     continue;
                 }
@@ -205,9 +200,7 @@ public class TradeBusiness {
                     riseDto.setBuyLowPercent(riseDto.getLowPercent());
                     riseDto.setFallBoughtTime(new Date());
                 }
-//                if (riseDto.getRiseBought() && riseDto.getFallBought()) {
-//                    riseDto.setStatus(Status.DISABLE.getCode());
-//                }
+
                 redisService.setCacheObject(this.getCacheMarketKey(accountId), riseDto);
 
                 List<OkxCoin> counts = coins.stream().filter(item -> item.getStatus() == CoinStatusEnum.OPEN.getStatus()).collect(Collectors.toList());
@@ -221,7 +214,7 @@ public class TradeBusiness {
         }
     }
 
-    private List<TradeDto> getTradeDto( OkxCoin coin, OkxCoinTicker ticker, Map<String, String> map,RiseDto riseDto,List<OkxBuyRecord> buyRecords,List<OkxSetting> okxSettings ,int diffMinute) {
+    private List<TradeDto> getTradeDto( OkxCoin coin, OkxCoinTicker ticker, Map<String, String> map,RiseDto riseDto,List<OkxBuyRecord> buyRecords,List<OkxSetting> okxSettings) {
         List<TradeDto> list = Lists.newArrayList();
         TradeDto tradeDto =  DtoUtils.transformBean(ticker, TradeDto.class);
         tradeDto.setUnit(coin.getUnit());
@@ -299,7 +292,7 @@ public class TradeBusiness {
             }
 
             //卖出 - 当天上涨超过设置最大值
-            if (CollectionUtils.isNotEmpty(marketBuyRecords) && riseDto.getRiseBought() == true && diffMinute >= 1
+            if (CollectionUtils.isNotEmpty(marketBuyRecords) && riseDto.getRiseBought() == true
                     && riseDto.getRisePercent().compareTo(new BigDecimal(okxSettings.stream()
                             .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_RISE_MAX_SELL_PERCENT)).findFirst().get().getSettingValue())) > 0) {
                 marketBuyRecords.stream().filter(obj -> obj.getMarketStatus() == MarketStatusEnum.RISE.getStatus()).forEach(item -> {
@@ -314,7 +307,7 @@ public class TradeBusiness {
                 riseDto.setSellPercent(riseDto.getRisePercent());
             }
             //卖出 - 当天上涨最大值百分比
-            if (CollectionUtils.isNotEmpty(marketBuyRecords) && riseDto.getRiseBought() == true && diffMinute >= 1
+            if (CollectionUtils.isNotEmpty(marketBuyRecords) && riseDto.getRiseBought() == true
                 && riseDto.getHighest().multiply(new BigDecimal(okxSettings.stream()
                     .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_RISE_SELL_PERCENT)).findFirst().get().getSettingValue())).compareTo(riseDto.getRisePercent()) >= 0)
             {
@@ -324,12 +317,11 @@ public class TradeBusiness {
                         TradeDto temp =  getSellDto(tradeDto,ticker,coin,item);
                         temp.setMarketStatus(MarketStatusEnum.RISE.getStatus());
                         list.add(temp);
+                        log.info("marekt-卖出 - 当天上涨最大值百分比coin:{},Highest:{},risePecent:{},marketRiseSellPercent:{},marketBUyRecords:{}",ticker.getCoin(),riseDto.getHighest(), riseDto.getRisePercent(), okxSettings.stream()
+                                .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_RISE_SELL_PERCENT)).findFirst().get().getSettingValue(),JSON.toJSONString(marketBuyRecords));
+                        riseDto.setSellPercent(riseDto.getRisePercent());
                     }
                 });
-                log.info("marekt-卖出 - 当天上涨最大值百分比coin:{}",ticker.getCoin());
-                log.info("Highest:{},risePecent:{},marketRiseSellPercent:{},marketBUyRecords:{}",riseDto.getHighest(), riseDto.getRisePercent(), okxSettings.stream()
-                        .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_RISE_SELL_PERCENT)).findFirst().get().getSettingValue(),JSON.toJSONString(marketBuyRecords));
-                riseDto.setSellPercent(riseDto.getRisePercent());
             }
 
             //卖出 —— 大盘下跌时买入的

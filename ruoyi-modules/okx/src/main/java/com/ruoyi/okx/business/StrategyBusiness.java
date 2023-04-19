@@ -69,19 +69,14 @@ public class StrategyBusiness  {
     }
 
     public boolean checkSell(OkxSellRecord sellRecord, OkxCoin coin, TradeDto tradeDto) {
-        if (sellRecord.getQuantity().compareTo(coin.getCount()) >= 0) {
-            if (coin.getCount().compareTo(BigDecimal.ZERO) > 0 && coin.getCount().compareTo(coin.getUnit()) > 0) {
-//                sellRecord.setQuantity(coin.getCount());
-//                tradeDto.setSz(coin.getCount());
-                log.warn("卖出数据变更:accountId:{}, coin:{}, count:{}", sellRecord.getAccountId(), coin.getCoin(), coin.getCount() );
-            } else {
-                log.error("卖出失败-余额不足accountId:{}, coin:{}, sellQuantity:{},coinQuantity:{}", sellRecord.getAccountId(), coin.getCoin(), sellRecord.getQuantity(), coin.getCount() );
-                return false;
-            }
+        if (sellRecord.getQuantity().compareTo(coin.getCount()) > 0) {
+            log.warn("卖出失败-余额不足accountId:{}, coin:{}, sellQuantity:{},coinQuantity:{}", sellRecord.getAccountId(), coin.getCoin(), sellRecord.getQuantity(), coin.getCount() );
+            return false;
         }
         OkxBuyRecord buyRecord = buyRecordBusiness.getById(sellRecord.getBuyRecordId());
         if (sellRecord.getPrice().compareTo(buyRecord.getPrice().add(buyRecord.getPrice().multiply(new BigDecimal(settingService.selectSettingByKey(OkxConstants.GRIDE_MIN_PERCENT_FOR_SELL))))) < 0
             && tradeDto.getOrdType().equals(OkxOrdTypeEnum.LIMIT.getValue())) {
+            log.warn("limit low min Percent coin:{}",  coin.getCoin());
             return false;
         }
         return true;
