@@ -21,9 +21,11 @@ public class SellRecordDO extends PageRequestForm implements Serializable {
 
     private BigDecimal amount;
 
-    protected Date startTime;
+    protected Date beginTime;
 
     protected Date endTime;
 
     private Integer status;
+
+    private String accountName;
 }

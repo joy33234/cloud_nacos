@@ -23,6 +23,7 @@ import com.ruoyi.common.core.utils.DateUtil;
 import com.ruoyi.common.core.utils.HttpUtil;
 import com.ruoyi.okx.domain.OkxBuyRecord;
 import com.ruoyi.okx.domain.OkxAccount;
+import com.ruoyi.okx.domain.OkxSellRecord;
 import com.ruoyi.okx.enums.OrderStatusEnum;
 import com.ruoyi.okx.mapper.BuyRecordMapper;
 import com.ruoyi.okx.params.DO.BuyRecordDO;
@@ -53,7 +54,7 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
     public List<OkxBuyRecord> selectList(BuyRecordDO buyRecordDO) {
         LambdaQueryWrapper<OkxBuyRecord> wrapper = new LambdaQueryWrapper();
         wrapper.eq((null != buyRecordDO.getCoin()), OkxBuyRecord::getCoin, buyRecordDO.getCoin());
-        wrapper.between((buyRecordDO.getStartTime() != null), OkxBuyRecord::getUpdateTime, buyRecordDO.getStartTime(), buyRecordDO.getEndTime());
+        wrapper.between((buyRecordDO.getParams().get("beginTime") != null), OkxBuyRecord::getCreateTime, buyRecordDO.getParams().get("beginTime"), buyRecordDO.getParams().get("endTime"));
         return buyRecordMapper.selectList(wrapper);
     }
 

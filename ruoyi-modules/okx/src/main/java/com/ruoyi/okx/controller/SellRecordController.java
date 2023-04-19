@@ -1,5 +1,6 @@
 package com.ruoyi.okx.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.ruoyi.common.core.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.web.controller.BaseController;
 import com.ruoyi.common.core.web.domain.AjaxResult;
@@ -39,6 +40,7 @@ public class SellRecordController extends BaseController
     public TableDataInfo list(SellRecordDO sellRecordDO)
     {
         startPage();
+        logger.info("sellRe:{}", JSON.toJSONString(sellRecordDO));
         List<OkxSellRecord> list = sellRecordBusiness.selectList(sellRecordDO);
         return getDataTable(list);
     }
