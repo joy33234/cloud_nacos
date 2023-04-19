@@ -37,6 +37,7 @@ public class SettingController extends BaseController
     @GetMapping("/list")
     public TableDataInfo list(OkxSetting setting)
     {
+        logger.info("setting list");
         startPage();
         List<OkxSetting> list = settingService.selectSettingList(setting);
         list.stream().forEach(item -> item.setDesc(item.getSettingName() + "-" + item.getSettingValue()));

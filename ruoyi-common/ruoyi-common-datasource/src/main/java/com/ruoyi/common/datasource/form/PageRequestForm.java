@@ -1,7 +1,28 @@
 package com.ruoyi.common.datasource.form;
 
 
+import java.util.HashMap;
+import java.util.Map;
+
+
 public class PageRequestForm implements PageForm {
+
+    private Map<String, Object> params;
+
+    public Map<String, Object> getParams()
+    {
+        if (params == null)
+        {
+            params = new HashMap<>();
+        }
+        return params;
+    }
+
+    public void setParams(Map<String, Object> params)
+    {
+        this.params = params;
+    }
+
     public boolean equals(Object o) {
         if (o == this)
             return true;
