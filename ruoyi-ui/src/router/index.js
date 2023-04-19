@@ -87,6 +87,20 @@ export const constantRoutes = [
         meta: { title: '个人中心', icon: 'user' }
       }
     ]
+  },
+  {
+    path: '/okx',
+    component: Layout,
+    hidden: true,
+    redirect: 'noredirect',
+    children: [
+      {
+        path: 'profit',
+        component: () => import('@/views/okx/account/profit'),
+        name: 'Profile',
+        meta: { title: '利润表', icon: 'money' }
+      }
+    ]
   }
 ]
 
@@ -141,7 +155,7 @@ export const dynamicRoutes = [
     permissions: ['monitor:job:list'],
     children: [
       {
-        path: 'index/:jobId(\\d+)',
+        path: 'index',
         component: () => import('@/views/monitor/job/log'),
         name: 'JobLog',
         meta: { title: '调度日志', activeMenu: '/monitor/job' }
@@ -162,6 +176,24 @@ export const dynamicRoutes = [
       }
     ]
   }
+
+
+//    {
+//    path: '/system/role-auth',
+//    component: Layout,
+//    hidden: true,
+//    permissions: ['system:role:edit'],
+//    children: [
+//      {
+//        path: 'user/:roleId(\\d+)',
+//        component: () => import('@/views/system/role/authUser'),
+//        name: 'AuthUser',
+//        meta: { title: '分配用户', activeMenu: '/system/role' }
+//      }
+//    ]
+//  },
+
+
 ]
 
 // 防止连续点击多次路由报错
