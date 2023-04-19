@@ -1,4 +1,4 @@
-
+﻿
 
 /**
  * 通用js方法封装处理
@@ -86,13 +86,10 @@ export function selectDictLabel(datas, value) {
   return actions.join('');
 }
 
-// 回显数据字典（字符串、数组）
+// 回显数据字典（字符串数组）
 export function selectDictLabels(datas, value, separator) {
-  if (value === undefined || value.length ===0) {
+  if (value === undefined) {
     return "";
-  }
-  if (Array.isArray(value)) {
-    value = value.join(",");
   }
   var actions = [];
   var currentSeparator = undefined === separator ? "," : separator;

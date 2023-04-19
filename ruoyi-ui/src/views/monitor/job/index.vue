@@ -454,7 +454,7 @@ export default {
     /** 任务日志列表查询 */
     handleJobLog(row) {
       const jobId = row.jobId || 0;
-      this.$router.push('/monitor/job-log/index/' + jobId)
+      this.$router.push({ path: '/monitor/job-log/index', query: { jobId: jobId } })
     },
     /** 新增按钮操作 */
     handleAdd() {
