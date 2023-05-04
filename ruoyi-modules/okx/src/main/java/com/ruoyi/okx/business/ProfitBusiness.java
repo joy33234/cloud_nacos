@@ -1,5 +1,8 @@
 package com.ruoyi.okx.business;
 
+import cn.hutool.core.util.ObjectUtil;
+import com.alibaba.spring.util.ObjectUtils;
+import com.ruoyi.okx.domain.OkxAccount;
 import com.ruoyi.okx.domain.OkxBuyRecord;
 import com.ruoyi.okx.domain.OkxCoinProfit;
 import com.ruoyi.okx.domain.OkxCoinTicker;
@@ -23,9 +26,20 @@ public class ProfitBusiness {
     @Resource
     private CoinProfitBusiness coinProfitBusiness;
 
+    @Resource
+    private AccountBusiness accountBusiness;
+
 
     public AccountProfitDto profit(Integer accountId) {
         AccountProfitDto profitDto = new AccountProfitDto();
+
+        if (ObjectUtil.isEmpty(accountId)) {
+            return profitDto;
+        } else {
+            OkxAccount account = accountBusiness.findOne(accountId);
+            profitDto.setAccountId(accountId);
+            profitDto.setAccountName(account.getName());
+        }
 
         List<OkxCoinProfit> profits = coinProfitBusiness.selectList(new OkxCoinProfitDo(accountId,null,null));
 
