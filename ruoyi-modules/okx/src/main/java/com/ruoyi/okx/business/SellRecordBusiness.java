@@ -47,8 +47,9 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
     public List<OkxSellRecord> selectList(SellRecordDO sellRecordDO) {
         LambdaQueryWrapper<OkxSellRecord> wrapper = new LambdaQueryWrapper();
         wrapper.eq((null != sellRecordDO.getCoin()), OkxSellRecord::getCoin, sellRecordDO.getCoin());
+        wrapper.eq((null != sellRecordDO.getAccountName()), OkxSellRecord::getAccountName, sellRecordDO.getAccountName());
         wrapper.eq((null != sellRecordDO.getStatus()), OkxSellRecord::getStatus, sellRecordDO.getStatus());
-        wrapper.between((sellRecordDO.getStartTime() != null), OkxSellRecord::getUpdateTime, sellRecordDO.getStartTime(), sellRecordDO.getEndTime());
+        wrapper.between((sellRecordDO.getParams().get("beginTime") != null), OkxSellRecord::getCreateTime, sellRecordDO.getParams().get("beginTime"), sellRecordDO.getParams().get("endTime"));
         return sellRecordMapper.selectList( wrapper);
     }
 
