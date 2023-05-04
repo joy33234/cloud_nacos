@@ -247,9 +247,6 @@ public class TradeBusiness {
 //                return list;
 //            }
 
-            if (ticker.getCoin().equalsIgnoreCase("BTC")) {
-                log.info("coin:{} status:{},ins:{}",coin.getCoin(),coin.getStatus(),ins);
-            }
 
             //买入
             if ((new BigDecimal(-0.011D)).compareTo(ins) >= 0
