@@ -50,6 +50,9 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
     @Resource
     private CommonBusiness commonBusiness;
 
+    @Resource
+    private AccountBalanceBusiness accountBalanceBusiness;
+
 
     public List<OkxBuyRecord> selectList(BuyRecordDO buyRecordDO) {
         LambdaQueryWrapper<OkxBuyRecord> wrapper = new LambdaQueryWrapper();
@@ -139,56 +142,48 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
     @Async
     public void syncBuyOrder(Map<String, String> map) {
         this.syncOrderStatus(map);
-//        this.syncOrderFee(map);
+        this.syncOrderFee(map);
     }
     @Transactional(rollbackFor = {Exception.class})
     public void syncOrderStatus(Map<String, String> map) throws ServiceException {
-        List<OkxBuyRecord> list = findPendings(Integer.valueOf(map.get("id")));
-        list.stream().forEach(item -> {
-            if (item.getStatus() == OrderStatusEnum.PENDING.getStatus()) {
-                item.setStatus(OrderStatusEnum.SUCCESS.getStatus());
-            }
-        });
-        saveOrUpdateBatch(list);
+        try {
+            //未完成订单
+            List<OkxBuyRecord> list = findPendings(Integer.valueOf(map.get("id")));
 
-//        try {
-//            //未完成订单
-//            List<OkxBuyRecord> list = findPendings(Integer.valueOf(map.get("id")));
-//
-//            Date now = new Date();
-//            for (OkxBuyRecord buyRecord:list) {
-//                String str = HttpUtil.getOkx("/api/v5/trade/order?instId=" + buyRecord.getInstId() + "&ordId=" + buyRecord.getOkxOrderId(), null, map);
-//                if (org.apache.commons.lang.StringUtils.isEmpty(str)) {
-//                    log.error("查询订单状态异常{}", str);
-//                }
-//                JSONObject json = JSONObject.parseObject(str);
-//                if (json == null || !json.getString("code").equals("0")) {
-//                    log.error("下单异常params:{} :{}", JSON.toJSONString(buyRecord), (json == null) ? "null" : json.toJSONString());
-//                    return false;
-//                }
-//                JSONObject data = json.getJSONArray("data").getJSONObject(0);
-//                buyRecord.setStatus((commonBusiness.getOrderStatus(data.getString("state")) == null) ? buyRecord.getStatus() : commonBusiness.getOrderStatus(data.getString("state")));
-//                if (buyRecord.getStatus().equals(OrderStatusEnum.PENDING.getStatus()) && DateUtil.diffDay(DateUtil.getMinTime(buyRecord.getCreateTime()), DateUtil.getMinTime(now)) > 0) {
-//                    boolean cancelOrder = cancelOrder(buyRecord.getInstId(), buyRecord.getOkxOrderId(), map);
-//                    if (cancelOrder) {
-//                        buyRecord.setStatus(OrderStatusEnum.CANCEL.getStatus());
-//                        log.info("订单买入超过1天自动撤销");
-//                        updateById(buyRecord);
-//                        return false;
-//                    }
-//                }
-//                buyRecord.setFee(data.getBigDecimal("fee").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP).abs());
-//                buyRecord.setFeeUsdt(data.getBigDecimal("fee").multiply(buyRecord.getPrice().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP)).abs());
-//                updateById(buyRecord);
-//                if (buyRecord.getStatus().equals(OrderStatusEnum.SUCCESS)) {
-//                    this.coinBusiness.addCount(buyRecord.getCoin(), buyRecord.getAccountId(), buyRecord.getQuantity());
-//                }
-//                Thread.sleep(50);
-//            }
-//        } catch (Exception e) {
-//            log.error("同步订单异常", e);
-//            throw new ServiceException("同步订单异常");
-//        }
+            Date now = new Date();
+            for (OkxBuyRecord buyRecord:list) {
+                String str = HttpUtil.getOkx("/api/v5/trade/order?instId=" + buyRecord.getInstId() + "&ordId=" + buyRecord.getOkxOrderId(), null, map);
+                if (org.apache.commons.lang.StringUtils.isEmpty(str)) {
+                    log.error("查询订单状态异常{}", str);
+                }
+                JSONObject json = JSONObject.parseObject(str);
+                if (json == null || !json.getString("code").equals("0")) {
+                    log.error("下单异常params:{} :{}", JSON.toJSONString(buyRecord), (json == null) ? "null" : json.toJSONString());
+                    return;
+                }
+                JSONObject data = json.getJSONArray("data").getJSONObject(0);
+                buyRecord.setStatus((commonBusiness.getOrderStatus(data.getString("state")) == null) ? buyRecord.getStatus() : commonBusiness.getOrderStatus(data.getString("state")));
+                if (buyRecord.getStatus().equals(OrderStatusEnum.PENDING.getStatus()) && DateUtil.diffDay(DateUtil.getMinTime(buyRecord.getCreateTime()), DateUtil.getMinTime(now)) > 0) {
+                    boolean cancelOrder = cancelOrder(buyRecord.getInstId(), buyRecord.getOkxOrderId(), map);
+                    if (cancelOrder) {
+                        buyRecord.setStatus(OrderStatusEnum.CANCEL.getStatus());
+                        log.info("订单买入超过1天自动撤销");
+                        updateById(buyRecord);
+                        return;
+                    }
+                }
+                buyRecord.setFee(data.getBigDecimal("fee").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP).abs());
+                buyRecord.setFeeUsdt(data.getBigDecimal("fee").multiply(buyRecord.getPrice().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP)).abs());
+                updateById(buyRecord);
+                if (buyRecord.getStatus().equals(OrderStatusEnum.SUCCESS)) {
+                    accountBalanceBusiness.addCount(buyRecord.getCoin(), buyRecord.getAccountId(), buyRecord.getQuantity());
+                }
+                Thread.sleep(50);
+            }
+        } catch (Exception e) {
+            log.error("同步订单异常", e);
+            throw new ServiceException("同步订单异常");
+        }
     }
 
     public void syncOrderFee(Map<String, String> map) {

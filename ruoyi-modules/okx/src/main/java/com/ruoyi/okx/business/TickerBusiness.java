@@ -36,9 +36,6 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
     @Resource
     private CoinBusiness coinBusiness;
 
-//    @Resource
-//    private TradeBusiness tradeBusiness;
-
     @Resource
     private AccountBusiness accountBusiness;
 

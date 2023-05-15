@@ -23,8 +23,6 @@ public class AccountBalanceBusiness extends ServiceImpl<OkxAccountBalanceMapper,
     @Resource
     private OkxAccountBalanceMapper accountBalanceMapper;
 
-    @Resource
-    private BuyRecordBusiness buyRecordBusiness;
 
     public List<OkxAccountBalance> list(OkxAccountBalanceDO accountBalanceDO) {
         LambdaQueryWrapper<OkxAccountBalance> wrapper = new LambdaQueryWrapper();
@@ -70,24 +68,6 @@ public class AccountBalanceBusiness extends ServiceImpl<OkxAccountBalanceMapper,
         wrapper.eq((null != accountId), OkxAccountBalance::getAccountId, accountId);
         wrapper.eq((StringUtils.isNotEmpty(coin)), OkxAccountBalance::getCoin, coin);
         return accountBalanceMapper.selectOne(wrapper);
-    }
-
-
-
-    @Async
-    public void syncBanlance (OkxCoin coin, List<OkxAccount> accounts) {
-        OkxCoin finalCoin = coin;
-        accounts.stream().forEach(obj -> {
-            List<OkxBuyRecord> buyRecords = buyRecordBusiness.findSuccessRecord(coin.getCoin(),obj.getId(),null,null);
-            BigDecimal balance = finalCoin.getUnit().multiply(new BigDecimal(buyRecords.size() * 2));
-            OkxAccountBalance accountBalance = getAccountBalance(finalCoin.getCoin(),obj.getId());
-            if (accountBalance == null) {
-                save(new OkxAccountBalance(null,obj.getId(),obj.getName(),finalCoin.getCoin(),balance));
-            } else {
-                accountBalance.setBalance(balance);
-                updateById(accountBalance);
-            }
-        });
     }
 
 }
