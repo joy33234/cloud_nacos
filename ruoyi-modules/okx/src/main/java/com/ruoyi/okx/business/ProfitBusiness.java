@@ -1,11 +1,10 @@
 package com.ruoyi.okx.business;
 
 import cn.hutool.core.util.ObjectUtil;
-import com.alibaba.spring.util.ObjectUtils;
-import com.ruoyi.okx.domain.OkxAccount;
-import com.ruoyi.okx.domain.OkxBuyRecord;
-import com.ruoyi.okx.domain.OkxCoinProfit;
-import com.ruoyi.okx.domain.OkxCoinTicker;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ruoyi.okx.domain.*;
+import com.ruoyi.okx.mapper.OkxProfitMapper;
 import com.ruoyi.okx.params.DO.OkxCoinProfitDo;
 import com.ruoyi.okx.params.dto.AccountProfitDto;
 import org.springframework.stereotype.Component;
@@ -15,7 +14,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Component
-public class ProfitBusiness {
+public class ProfitBusiness extends ServiceImpl<OkxProfitMapper, OkxCoinProfit> {
 
     @Resource
     private BuyRecordBusiness buyRecordBusiness;
@@ -58,4 +57,6 @@ public class ProfitBusiness {
         profitDto.setProfit(finishProfit.add(unfinishProfit));
         return profitDto;
     }
+
+
 }

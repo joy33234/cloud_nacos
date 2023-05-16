@@ -68,6 +68,7 @@ public class SyncCoinBusiness {
 
     public void syncOkxBalance() {
         try {
+            Date now = new Date();
             List<OkxAccount> accounts = accountBusiness.list().stream()
                     .filter(item -> item.getStatus().intValue() == Status.OK.getCode()).collect(Collectors.toList());
             for (OkxAccount account:accounts) {
@@ -98,7 +99,7 @@ public class SyncCoinBusiness {
                         subBalanceList = DbBalanceList.subList(i * 20, ((i + 1) * 20 <= DbBalanceList.size()) ? ((i + 1) * 20) : DbBalanceList.size());
                         coins = StringUtils.join(subBalanceList.stream().map(OkxAccountBalance::getCoin).collect(Collectors.toList()), ",");
                     }
-                    balanceList.addAll(getBalance(coins, map, subBalanceList));
+                    balanceList.addAll(getBalance(coins, map, subBalanceList, now));
                     Thread.sleep(200);
                 }
                 balanceBusiness.saveOrUpdateBatch(balanceList.stream().distinct().collect(Collectors.toList()));
@@ -117,7 +118,7 @@ public class SyncCoinBusiness {
         return pages;
     }
 
-    private List<OkxAccountBalance> getBalance(String coinsStr, Map<String, String> map,List<OkxAccountBalance> subList) {
+    private List<OkxAccountBalance> getBalance(String coinsStr, Map<String, String> map,List<OkxAccountBalance> subList, Date now) {
         String str = HttpUtil.getOkx("/api/v5/account/balance?ccy=" + coinsStr, null, map);
         JSONObject json = JSONObject.parseObject(str);
         if (json == null || !json.getString("code").equals("0")) {
@@ -130,6 +131,7 @@ public class SyncCoinBusiness {
             JSONObject balance = detail.getJSONObject(j);
             subList.stream().filter(item -> item.getCoin().equals(balance.getString("ccy"))).findFirst().ifPresent(obj -> {
                 obj.setBalance(balance.getBigDecimal("availBal"));
+                obj.setUpdateTime(now);
             });
         }
         return subList;
