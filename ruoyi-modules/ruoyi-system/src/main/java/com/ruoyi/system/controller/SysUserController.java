@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletResponse;
 
+import com.alibaba.fastjson.JSON;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -170,6 +171,18 @@ public class SysUserController extends BaseController
         ajax.put("roles", roles);
         ajax.put("permissions", permissions);
         return ajax;
+    }
+
+
+    /**
+     * H5获取用户信息
+     *
+     * @return 用户信息
+     */
+    @GetMapping("getinfo")
+    public R<?> getInfo(String username)
+    {
+        return R.ok(userService.selectUserById(SecurityUtils.getUserId()));
     }
 
     /**

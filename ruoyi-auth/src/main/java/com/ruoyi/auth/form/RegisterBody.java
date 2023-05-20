@@ -5,7 +5,15 @@ package com.ruoyi.auth.form;
  * 
  * @author ruoyi
  */
-public class RegisterBody extends LoginBody
-{
+public class RegisterBody extends LoginBody {
 
+    private String code;
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
 }

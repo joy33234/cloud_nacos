@@ -40,7 +40,6 @@ public class SellRecordController extends BaseController
     public TableDataInfo list(SellRecordDO sellRecordDO)
     {
         startPage();
-        logger.info("sellRe:{}", JSON.toJSONString(sellRecordDO));
         List<OkxSellRecord> list = sellRecordBusiness.selectList(sellRecordDO);
         return getDataTable(list);
     }
