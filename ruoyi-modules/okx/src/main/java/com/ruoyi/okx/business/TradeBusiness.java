@@ -136,7 +136,8 @@ public class TradeBusiness {
         params.put("side", tradeDto.getSide());
         params.put("ordType", tradeDto.getOrdType());
         params.put("sz", tradeDto.getSz().toString());
-        if (tradeDto.getOrdType().equals(OkxOrdTypeEnum.LIMIT.getValue())) {
+        if (tradeDto.getSide().equalsIgnoreCase(OkxSideEnum.BUY.getSide())) {
+            params.put("ordType", OkxOrdTypeEnum.LIMIT.getValue());
             params.put("px", tradeDto.getPx().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP) + "");
         }
         String str = HttpUtil.postOkx("/api/v5/trade/order", params, map);
