@@ -11,6 +11,7 @@ import com.ruoyi.common.security.annotation.RequiresPermissions;
 import com.ruoyi.okx.business.SellRecordBusiness;
 import com.ruoyi.okx.domain.OkxBuyRecord;
 import com.ruoyi.okx.domain.OkxSellRecord;
+import com.ruoyi.okx.enums.OrderStatusEnum;
 import com.ruoyi.okx.params.DO.BuyRecordDO;
 import com.ruoyi.okx.params.DO.SellRecordDO;
 import com.ruoyi.okx.utils.DtoUtils;
@@ -41,6 +42,7 @@ public class SellRecordController extends BaseController
     {
         startPage();
         List<OkxSellRecord> list = sellRecordBusiness.selectList(sellRecordDO);
+        list.stream().forEach(item -> item.setStatusName(OrderStatusEnum.getDesc(item.getStatus())));
         return getDataTable(list);
     }
 

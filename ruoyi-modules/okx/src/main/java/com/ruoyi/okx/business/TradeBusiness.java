@@ -86,7 +86,7 @@ public class TradeBusiness {
                     OkxBuyRecord buyRecord =
                             new OkxBuyRecord(null, tradeDto.getCoin(), tradeDto.getInstId(), tradeDto.getPx(), tradeDto.getSz(),
                                     tradeDto.getPx().multiply(tradeDto.getSz()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP), BigDecimal.ZERO, BigDecimal.ZERO,
-                                    OrderStatusEnum.PENDING.getStatus(), UUID.randomUUID().toString(), "", tradeDto.getBuyStrategyId(), tradeDto.getTimes(), accountId,accountName,tradeDto.getMarketStatus(),tradeDto.getModeType());
+                                    OrderStatusEnum.PENDING.getStatus(), UUID.randomUUID().toString(), "", tradeDto.getBuyStrategyId(), tradeDto.getTimes(), accountId,accountName,tradeDto.getMarketStatus(),tradeDto.getModeType(),null);
                     if (!strategyBusiness.checkBuy(buyRecord, coin, okxSettings)){
                         return;
                     }
@@ -102,7 +102,7 @@ public class TradeBusiness {
                 } else {
                     OkxSellRecord sellRecord = new OkxSellRecord(null, tradeDto.getBuyRecordId(), tradeDto.getCoin(), tradeDto.getInstId(), tradeDto.getPx(), tradeDto.getSz(),
                             tradeDto.getPx().multiply(tradeDto.getSz()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP), BigDecimal.ZERO, BigDecimal.ZERO, OrderStatusEnum.PENDING.getStatus(),
-                            UUID.randomUUID().toString(), "", tradeDto.getSellStrategyId(), tradeDto.getBuyStrategyId(), tradeDto.getTimes(), accountId,accountName);
+                            UUID.randomUUID().toString(), "", tradeDto.getSellStrategyId(), tradeDto.getBuyStrategyId(), tradeDto.getTimes(), accountId,accountName,null);
                     if (!strategyBusiness.checkSell(sellRecord, coin, tradeDto)) {
                         return;
                     }
