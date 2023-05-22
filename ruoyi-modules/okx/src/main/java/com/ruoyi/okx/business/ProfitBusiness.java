@@ -53,7 +53,6 @@ public class ProfitBusiness extends ServiceImpl<OkxProfitMapper, OkxCoinProfit> 
         List<OkxCoinTicker> tickers = tickerBusiness.findTodayTicker();
         buyRecords.stream().forEach(item -> {
             tickers.stream().filter(obj -> obj.getCoin().equals(item.getCoin())).findFirst().ifPresent(ticker -> {
-                System.out.println("ticker-profit" + ticker.getLast().subtract(item.getPrice()).multiply(item.getQuantity()).setScale(8, RoundingMode.DOWN));
                 profitDto.setUnFinishProfit(profitDto.getUnFinishProfit().add(ticker.getLast().subtract(item.getPrice()).multiply(item.getQuantity()).setScale(8, RoundingMode.DOWN)));
             });
         });

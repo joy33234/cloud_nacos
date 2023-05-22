@@ -385,7 +385,8 @@ public class TradeBusiness {
                 map.put("fallBuy","true");
             }
         }
-        return list;
+        return list.stream().collect(Collectors.collectingAndThen(
+                Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(TradeDto::getBuyRecordId))), ArrayList::new ));
     }
 
     private TradeDto getSellDto (TradeDto tradeDto,OkxCoinTicker ticker,OkxCoin coin,OkxBuyRecord item) {
