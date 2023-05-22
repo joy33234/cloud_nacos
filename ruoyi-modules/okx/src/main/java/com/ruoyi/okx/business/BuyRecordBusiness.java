@@ -104,6 +104,15 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
         return buyRecordMapper.selectList(wrapper);
     }
 
+    public List<OkxBuyRecord> findPARTIALLYFILLED(Integer accountId) {
+        LambdaQueryWrapper<OkxBuyRecord> wrapper = new LambdaQueryWrapper();
+        wrapper.eq(OkxBuyRecord::getStatus, OrderStatusEnum.PARTIALLYFILLED.getStatus());
+        if (accountId != null && accountId > 0) {
+            wrapper.eq(OkxBuyRecord::getAccountId, accountId);
+        }
+        return buyRecordMapper.selectList(wrapper);
+    }
+
     public boolean updateBySell(Integer buyRecordId, Integer status) {
         OkxBuyRecord buyRecord = getById(buyRecordId);
         if (buyRecord == null) {
@@ -139,6 +148,13 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
         return buyRecordMapper.selectById(id);
     }
 
+    public boolean todayHadBuy() {
+        LambdaQueryWrapper<OkxBuyRecord> wrapper = new LambdaQueryWrapper();
+        Date now = new Date();
+        wrapper.between( OkxBuyRecord::getCreateTime, DateUtil.getMinTime(now), now);
+        return CollectionUtils.isNotEmpty(buyRecordMapper.selectList(wrapper));
+    }
+
     @Async
     public void syncBuyOrder(Map<String, String> map) {
         this.syncOrderStatus(map);
@@ -148,8 +164,11 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
     public void syncOrderStatus(Map<String, String> map) throws ServiceException {
         try {
             //未完成订单
-            List<OkxBuyRecord> list = findPendings(Integer.valueOf(map.get("id")));
-
+            List<OkxBuyRecord> pendings = findPendings(Integer.valueOf(map.get("id")));
+            List<OkxBuyRecord> pARTIALLYFILLED = findPARTIALLYFILLED(Integer.valueOf(map.get("id")));
+            List<OkxBuyRecord> list = Lists.newArrayList();
+            list.addAll(pendings);
+            list.addAll(pARTIALLYFILLED);
             Date now = new Date();
             for (OkxBuyRecord buyRecord:list) {
                 String str = HttpUtil.getOkx("/api/v5/trade/order?instId=" + buyRecord.getInstId() + "&ordId=" + buyRecord.getOkxOrderId(), null, map);
@@ -188,7 +207,7 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
 
     public void syncOrderFee(Map<String, String> map) {
         List<OkxBuyRecord> list = findUnfinish(Integer.valueOf(map.get("id")), Integer.valueOf(24));
-        list.stream().forEach(buyRecord -> {
+        list.stream().filter(item -> item.getStatus().intValue() == OrderStatusEnum.SUCCESS.getStatus()).forEach(buyRecord -> {
             try {
                 String str = HttpUtil.getOkx("/api/v5/trade/fills?instType=SPOT&ordId=" + buyRecord.getOkxOrderId(), null, map);
                 JSONObject json = JSONObject.parseObject(str);
@@ -198,7 +217,7 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
                 }
                 JSONArray dataArray = json.getJSONArray("data");
                 if (dataArray.size() <= 0) {
-                    log.error("查询订单返回数据异常:{}", str);
+                    log.error("查询订单返回数据异常params:{}, res:{}",buyRecord.getOkxOrderId(), str);
                     return;
                 }
                 BigDecimal fee = BigDecimal.ZERO;

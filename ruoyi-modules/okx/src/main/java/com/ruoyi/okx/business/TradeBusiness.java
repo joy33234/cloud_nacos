@@ -151,7 +151,6 @@ public class TradeBusiness {
             log.error("tradeDto：{}", JSON.toJSONString(tradeDto));
             return null;
         }
-        log.info("dataJSON:{}",dataJSON.toJSONString());
         return dataJSON.getString("ordId");
     }
 
@@ -159,8 +158,8 @@ public class TradeBusiness {
     @Async
     public void trade(List<OkxCoin> coins, List<OkxCoinTicker> tickers,List<OkxSetting> okxSettings, Map<String, String> map) throws ServiceException {
         try {
-            redisLock.lock(RedisConstants.OKX_TICKER_TRADE,10,3,1000);
-
+            redisLock.lock(RedisConstants.OKX_TICKER_TRADE,600,3,10000);
+            Long start = System.currentTimeMillis();
             Integer accountId = Integer.valueOf(map.get("id"));
             RiseDto riseDto = redisService.getCacheObject(this.getCacheMarketKey(accountId));
 
@@ -207,9 +206,9 @@ public class TradeBusiness {
 
                 redisService.setCacheObject(this.getCacheMarketKey(accountId), riseDto);
 
-                List<OkxCoin> counts = coins.stream().filter(item -> item.getStatus() == CoinStatusEnum.OPEN.getStatus()).collect(Collectors.toList());
-                log.info("大盘交易-rise count:{}",counts.size());
+                log.info("market-update-riseDto:{}",JSON.toJSONString(riseDto));
             }
+            log.info("coin trade time :{}", System.currentTimeMillis() - start);
             redisLock.releaseLock(RedisConstants.OKX_TICKER_TRADE);
         } catch (Exception e) {
             redisLock.releaseLock(RedisConstants.OKX_TICKER_TRADE);
@@ -369,8 +368,7 @@ public class TradeBusiness {
                     && riseDto.getLowPercent().compareTo(new BigDecimal(okxSettings.stream()
                             .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_LOW_BUY_PERCENT)).findFirst().get().getSettingValue())) > 0
                     && new BigDecimal(okxSettings.stream()
-                            .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_BTC_FALL_INS)).findFirst().get().getSettingValue())
-                    .compareTo(riseDto.getBTCIns()) > 0 ) {
+                            .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_BTC_FALL_INS)).findFirst().get().getSettingValue()).compareTo(riseDto.getBTCIns()) > 0 ) {
                 tradeDto.setTimes(marketBuyTimes);
                 tradeDto.setSz(coin.getUnit().multiply(BigDecimal.valueOf(tradeDto.getTimes())).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                 tradeDto.setPx(ticker.getLast());
@@ -383,10 +381,12 @@ public class TradeBusiness {
                 tradeDto.setSide(OkxSideEnum.BUY.getSide());
                 tradeDto.setBuyStrategyId(0);
                 list.add(tradeDto);
+                log.info("fall-buy-riseDto:{}",JSON.toJSONString(riseDto));
                 map.put("fallBuy","true");
             }
         }
-        return list;
+        return list.stream().collect(Collectors.collectingAndThen(
+                Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(TradeDto::getBuyRecordId))), ArrayList::new ));
     }
 
     private TradeDto getSellDto (TradeDto tradeDto,OkxCoinTicker ticker,OkxCoin coin,OkxBuyRecord item) {

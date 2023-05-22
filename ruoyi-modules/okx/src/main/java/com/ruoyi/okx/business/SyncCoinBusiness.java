@@ -139,7 +139,7 @@ public class SyncCoinBusiness {
 
 
     @Async
-    public void updateCoin(List<JSONObject> items, List<OkxCoinTicker> tickers, Date now, Map<String, String> map) throws Exception {
+    public void updateCoin(List<JSONObject> items, List<OkxCoinTicker> tickers, Date now) throws Exception {
         try {
             redisLock.lock(RedisConstants.OKX_TICKER_UPDATE_COIN,10,3,1000);
 
@@ -198,16 +198,19 @@ public class SyncCoinBusiness {
         Integer riseCount = okxCoins.stream().filter(item -> (item.isRise() == true)).collect(Collectors.toList()).size();
         BigDecimal risePercent = new BigDecimal(riseCount).divide(new BigDecimal(okxCoins.size()), 4,BigDecimal.ROUND_DOWN);
         BigDecimal lowPercent = BigDecimal.ONE.subtract(risePercent).setScale(4);
-        RiseDto riseDto = redisService.getCacheObject(tradeBusiness.getCacheMarketKey(accountId));
-        if (riseDto == null) {
-            riseDto = new RiseDto();
-            riseDto.setModeType(modeType);
+        String key = tradeBusiness.getCacheMarketKey(accountId);
+        RiseDto riseDto = redisService.getCacheObject(key);
+        if (riseDto == null && now.getTime() > (DateUtil.getMinTime(now).getTime() + 60000)) {//redis异常 TODO
+            if (buyRecordBusiness.todayHadBuy() == false) {
+                log.info("refreshRiseCount key:{} hasBuy:{}",key,buyRecordBusiness.todayHadBuy());
+                riseDto = new RiseDto();
+                riseDto.setModeType(modeType);
+            }
         }
         riseDto.setRiseCount(riseCount);
         riseDto.setRisePercent(risePercent);
         if (risePercent.compareTo(riseDto.getHighest()) > 0) {
             riseDto.setHighest(risePercent);
-            log.info("refreshRiseCount-hightest:{}",risePercent);
         }
         riseDto.setLowCount(okxCoins.size() - riseCount);
         if (lowPercent.compareTo(riseDto.getLowPercent()) > 0) {
