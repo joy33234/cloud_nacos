@@ -1,6 +1,7 @@
 package com.ruoyi.system.controller;
 
 import com.ruoyi.common.core.constant.UserConstants;
+import com.ruoyi.common.core.domain.R;
 import com.ruoyi.common.core.utils.HttpUtil;
 import com.ruoyi.common.core.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.web.controller.BaseController;
@@ -13,14 +14,18 @@ import com.ruoyi.common.security.utils.SecurityUtils;
 import com.ruoyi.system.api.domain.SysUser;
 import com.ruoyi.system.api.domain.SysUserAi;
 import com.ruoyi.system.domain.SysConfig;
+import com.ruoyi.system.domain.vo.ChatLog;
 import com.ruoyi.system.service.ISysAiService;
 import com.ruoyi.system.service.ISysConfigService;
 import com.ruoyi.system.service.ISysUserService;
+import com.ruoyi.system.service.impl.ChatBusiness;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -35,6 +40,9 @@ public class OpenAiController extends BaseController
 {
     @Autowired
     private ISysAiService aiService;
+
+    @Resource
+    private ChatBusiness chatBusiness;
 
     /**
      * 新增参数配置
@@ -53,4 +61,15 @@ public class OpenAiController extends BaseController
         return success(res);
     }
 
+
+
+
+    /**
+     * 新增参数配置
+     */
+    @Log(title = "参数管理", businessType = BusinessType.INSERT)
+    @PostMapping(value = "/chat")
+    public R<?> updateChat(@Validated @RequestBody ChatLog chatLog) {
+        return R.ok(chatBusiness.updateChat(chatLog));
+    }
 }
