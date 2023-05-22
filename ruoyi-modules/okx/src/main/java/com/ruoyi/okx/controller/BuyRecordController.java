@@ -9,6 +9,7 @@ import com.ruoyi.common.log.enums.BusinessType;
 import com.ruoyi.common.security.annotation.RequiresPermissions;
 import com.ruoyi.okx.business.BuyRecordBusiness;
 import com.ruoyi.okx.domain.OkxBuyRecord;
+import com.ruoyi.okx.enums.OrderStatusEnum;
 import com.ruoyi.okx.params.DO.BuyRecordDO;
 import com.ruoyi.okx.utils.DtoUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +40,7 @@ public class BuyRecordController extends BaseController
     {
         startPage();
         List<OkxBuyRecord> list = buyRecordBusiness.selectList(buyRecordDO);
+        list.stream().forEach(item -> item.setStatusName(OrderStatusEnum.getDesc(item.getStatus())));
         return getDataTable(list);
     }
 

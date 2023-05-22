@@ -16,17 +16,17 @@ public class AccountProfitDto {
     /**
      * 总盈亏
      */
-    private BigDecimal profit;
+    private BigDecimal profit = BigDecimal.ZERO;
 
     /**
      * 交易完成订单盈亏
      */
-    private BigDecimal finishProfit;
+    private BigDecimal finishProfit = BigDecimal.ZERO;
 
     /**
      * 未完成订单当前盈亏
      */
-    private BigDecimal unFinishProfit;
+    private BigDecimal unFinishProfit = BigDecimal.ZERO;
 
 
 }

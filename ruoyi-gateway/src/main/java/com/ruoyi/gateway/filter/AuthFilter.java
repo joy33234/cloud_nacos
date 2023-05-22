@@ -51,6 +51,7 @@ public class AuthFilter implements GlobalFilter, Ordered
         {
             return chain.filter(exchange);
         }
+
         String token = getToken(request);
         if (StringUtils.isEmpty(token))
         {

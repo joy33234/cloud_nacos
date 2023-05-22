@@ -36,9 +36,6 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
     @Resource
     private CoinBusiness coinBusiness;
 
-//    @Resource
-//    private TradeBusiness tradeBusiness;
-
     @Resource
     private AccountBusiness accountBusiness;
 
@@ -116,7 +113,7 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
                 }
             }
             saveOrUpdateBatch(tickerList);
-            syncCoinBusiness.updateCoin(jsonObjectList, tickerList, now, accountMap);
+            syncCoinBusiness.updateCoin(jsonObjectList, tickerList, now);
             redisLock.releaseLock(RedisConstants.OKX_TICKER);
         } catch (Exception e) {
             log.error("syncTicker error:", e);
@@ -128,7 +125,7 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
 
     public List<OkxCoinTicker> findTodayTicker() {
         LambdaQueryWrapper<OkxCoinTicker> wrapper = new LambdaQueryWrapper();
-        wrapper.gt(OkxCoinTicker::getCreateTime, DateUtil.getMinTime(new Date()));
+        wrapper.ge(OkxCoinTicker::getCreateTime, DateUtil.getMinTime(new Date()));
         return tickerMapper.selectList(wrapper);
     }
 

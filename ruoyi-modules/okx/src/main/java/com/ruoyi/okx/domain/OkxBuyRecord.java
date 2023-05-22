@@ -1,11 +1,13 @@
 package com.ruoyi.okx.domain;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.ruoyi.common.core.web.domain.CommonEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Transient;
 
 import java.math.BigDecimal;
 
@@ -48,5 +50,9 @@ public class OkxBuyRecord extends CommonEntity {
     private Integer marketStatus;
 
     private String modeType;
+
+    @Transient
+    @TableField(exist = false)
+    private String statusName;
 
 }

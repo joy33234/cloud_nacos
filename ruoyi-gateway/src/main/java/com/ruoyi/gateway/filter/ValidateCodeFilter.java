@@ -26,7 +26,7 @@ import reactor.core.publisher.Flux;
 @Component
 public class ValidateCodeFilter extends AbstractGatewayFilterFactory<Object>
 {
-    private final static String[] VALIDATE_URL = new String[] { "/auth/login", "/auth/register" };
+    private final static String[] VALIDATE_URL = new String[] { "/auth/login"};//, "/auth/register"
 
     @Autowired
     private ValidateCodeService validateCodeService;
@@ -54,7 +54,9 @@ public class ValidateCodeFilter extends AbstractGatewayFilterFactory<Object>
             {
                 String rspStr = resolveBodyFromRequest(request);
                 JSONObject obj = JSON.parseObject(rspStr);
-                validateCodeService.checkCaptcha(obj.getString(CODE), obj.getString(UUID));
+                if (obj.getBoolean("needcode") == true) {
+                    validateCodeService.checkCaptcha(obj.getString(CODE), obj.getString(UUID));
+                }
             }
             catch (Exception e)
             {

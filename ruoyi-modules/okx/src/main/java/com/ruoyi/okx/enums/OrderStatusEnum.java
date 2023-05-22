@@ -65,6 +65,10 @@ public enum OrderStatusEnum {
         return this.desc;
     }
 
+    public static String getDesc(Integer status) {
+        return typeEnumMap.get(status).getDesc();
+    }
+
     public Boolean setFinished() {
         return this.finished;
     }

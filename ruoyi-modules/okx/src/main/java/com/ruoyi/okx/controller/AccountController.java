@@ -67,6 +67,17 @@ public class AccountController extends BaseController
     {
         startPage();
         List<OkxAccount> list = accountBusiness.list(account);
+        list.stream().forEach(item -> {
+            String password = item.getPassword().substring(0,8) + "....";
+            item.setPassword(password);
+
+            String secret = item.getSecretkey().substring(0,8) + "....";
+            item.setSecretkey(secret);
+
+            String apikey = item.getApikey().substring(0,8) + "....";
+            item.setApikey(apikey);
+
+        });
         return getDataTable(list);
     }
 

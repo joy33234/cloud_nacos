@@ -173,6 +173,18 @@ public class SysUserController extends BaseController
         return ajax;
     }
 
+
+    /**
+     * H5获取用户信息
+     *
+     * @return 用户信息
+     */
+    @GetMapping("getinfo")
+    public R<?> getInfo(String username)
+    {
+        return R.ok(userService.selectUserById(SecurityUtils.getUserId()));
+    }
+
     /**
      * 根据用户编号获取详细信息
      */

@@ -20,4 +20,6 @@ public class RedisConstants
 
     public static final String OKX_TICKER_TRADE = "okx_ticker_trade";
 
+    public static final String CHAT_USER = "CHAT_USER:";
+
 }

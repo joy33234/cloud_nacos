@@ -52,6 +52,8 @@ public class SyncBusiness {
     @Resource
     private RedisService redisService;
 
+
+
     @Async
     public void syncCurrencies() {
         List<OkxCoin> saveCoins = Lists.newArrayList();
@@ -87,9 +89,6 @@ public class SyncBusiness {
                     coin.setCoin(item.getString("ccy"));
                     coin.setUpdateTime(now);
                     saveCoins.add(coin);
-                } else {
-                    //TODO delete
-                    balanceBusiness.syncBanlance(coin,accounts);
                 }
             }
 

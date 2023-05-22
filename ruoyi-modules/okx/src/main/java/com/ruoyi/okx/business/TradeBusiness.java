@@ -10,13 +10,16 @@ import java.util.*;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 
+import com.alibaba.fastjson.JSONObject;
 import com.ruoyi.common.core.constant.CacheConstants;
 import com.ruoyi.common.core.constant.OkxConstants;
 import com.ruoyi.common.core.constant.RedisConstants;
 import com.ruoyi.common.core.enums.Status;
 import com.ruoyi.common.core.exception.ServiceException;
 import com.ruoyi.common.core.utils.DateUtil;
+import com.ruoyi.common.core.utils.HttpUtil;
 import com.ruoyi.common.core.utils.StringUtils;
+import com.ruoyi.common.core.utils.TokenUtil;
 import com.ruoyi.common.redis.service.RedisLock;
 import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.*;
@@ -83,7 +86,7 @@ public class TradeBusiness {
                     OkxBuyRecord buyRecord =
                             new OkxBuyRecord(null, tradeDto.getCoin(), tradeDto.getInstId(), tradeDto.getPx(), tradeDto.getSz(),
                                     tradeDto.getPx().multiply(tradeDto.getSz()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP), BigDecimal.ZERO, BigDecimal.ZERO,
-                                    OrderStatusEnum.PENDING.getStatus(), UUID.randomUUID().toString(), "", tradeDto.getBuyStrategyId(), tradeDto.getTimes(), accountId,accountName,tradeDto.getMarketStatus(),tradeDto.getModeType());
+                                    OrderStatusEnum.PENDING.getStatus(), UUID.randomUUID().toString(), "", tradeDto.getBuyStrategyId(), tradeDto.getTimes(), accountId,accountName,tradeDto.getMarketStatus(),tradeDto.getModeType(),null);
                     if (!strategyBusiness.checkBuy(buyRecord, coin, okxSettings)){
                         return;
                     }
@@ -99,7 +102,7 @@ public class TradeBusiness {
                 } else {
                     OkxSellRecord sellRecord = new OkxSellRecord(null, tradeDto.getBuyRecordId(), tradeDto.getCoin(), tradeDto.getInstId(), tradeDto.getPx(), tradeDto.getSz(),
                             tradeDto.getPx().multiply(tradeDto.getSz()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP), BigDecimal.ZERO, BigDecimal.ZERO, OrderStatusEnum.PENDING.getStatus(),
-                            UUID.randomUUID().toString(), "", tradeDto.getSellStrategyId(), tradeDto.getBuyStrategyId(), tradeDto.getTimes(), accountId,accountName);
+                            UUID.randomUUID().toString(), "", tradeDto.getSellStrategyId(), tradeDto.getBuyStrategyId(), tradeDto.getTimes(), accountId,accountName,null);
                     if (!strategyBusiness.checkSell(sellRecord, coin, tradeDto)) {
                         return;
                     }
@@ -125,38 +128,38 @@ public class TradeBusiness {
     }
 
     public String tradeOkx(TradeDto tradeDto, Date now, Map<String, String> map) {
-        return System.currentTimeMillis() + "";
-        //TODO
-//        Map<String, String> params = new HashMap<>(8);
-//        params.put("instId", tradeDto.getInstId());
-//        params.put("tdMode", "cash");
-//        params.put("clOrdId", TokenUtil.getOkxOrderId(now));
-//        params.put("side", tradeDto.getSide());
-//        params.put("ordType", tradeDto.getOrdType());
-//        params.put("sz", tradeDto.getSz().toString());
-//        if (tradeDto.getOrdType().equals(OkxOrdTypeEnum.LIMIT.getValue())) {
-//            params.put("px", tradeDto.getPx().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP) + "");
-//        }
-//        String str = HttpUtil.postOkx("/api/v5/trade/order", params, map);
-//        JSONObject json = JSONObject.parseObject(str);
-//        if (json == null || !json.getString("code").equals("0")) {
-//            log.error("trade_param:{},str:{},px:{}", JSON.toJSONString(params), str, tradeDto.getPx().toString());
-//            return null;
-//        }
-//        JSONObject dataJSON = json.getJSONArray("data").getJSONObject(0);
-//        if (dataJSON == null || !dataJSON.getString("sCode").equals("0")) {
-//            log.error("tradeDto：{}", JSON.toJSONString(tradeDto));
-//            return null;
-//        }
-//        return dataJSON.getString("ordId");
+
+        Map<String, String> params = new HashMap(8);
+        params.put("instId", tradeDto.getInstId());
+        params.put("tdMode", "cash");
+        params.put("clOrdId", TokenUtil.getOkxOrderId(now));
+        params.put("side", tradeDto.getSide());
+        params.put("ordType", tradeDto.getOrdType());
+        params.put("sz", tradeDto.getSz().toString());
+        if (tradeDto.getSide().equalsIgnoreCase(OkxSideEnum.BUY.getSide())) {
+            params.put("ordType", OkxOrdTypeEnum.LIMIT.getValue());
+            params.put("px", tradeDto.getPx().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP) + "");
+        }
+        String str = HttpUtil.postOkx("/api/v5/trade/order", params, map);
+        JSONObject json = JSONObject.parseObject(str);
+        if (json == null || !json.getString("code").equals("0")) {
+            log.error("trade_param:{},str:{},px:{}", JSON.toJSONString(params), str, tradeDto.getPx().toString());
+            return null;
+        }
+        JSONObject dataJSON = json.getJSONArray("data").getJSONObject(0);
+        if (dataJSON == null || !dataJSON.getString("sCode").equals("0")) {
+            log.error("tradeDto：{}", JSON.toJSONString(tradeDto));
+            return null;
+        }
+        return dataJSON.getString("ordId");
     }
 
 
     @Async
     public void trade(List<OkxCoin> coins, List<OkxCoinTicker> tickers,List<OkxSetting> okxSettings, Map<String, String> map) throws ServiceException {
         try {
-            redisLock.lock(RedisConstants.OKX_TICKER_TRADE,10,3,1000);
-
+            redisLock.lock(RedisConstants.OKX_TICKER_TRADE,600,3,10000);
+            Long start = System.currentTimeMillis();
             Integer accountId = Integer.valueOf(map.get("id"));
             RiseDto riseDto = redisService.getCacheObject(this.getCacheMarketKey(accountId));
 
@@ -203,9 +206,9 @@ public class TradeBusiness {
 
                 redisService.setCacheObject(this.getCacheMarketKey(accountId), riseDto);
 
-                List<OkxCoin> counts = coins.stream().filter(item -> item.getStatus() == CoinStatusEnum.OPEN.getStatus()).collect(Collectors.toList());
-                log.info("大盘交易-rise count:{}",counts.size());
+                log.info("market-update-riseDto:{}",JSON.toJSONString(riseDto));
             }
+            log.info("coin trade time :{}", System.currentTimeMillis() - start);
             redisLock.releaseLock(RedisConstants.OKX_TICKER_TRADE);
         } catch (Exception e) {
             redisLock.releaseLock(RedisConstants.OKX_TICKER_TRADE);
@@ -233,7 +236,6 @@ public class TradeBusiness {
                 TradeDto temp =  getSellDto(tradeDto,ticker,coin,item);
                 temp.setMarketStatus(MarketStatusEnum.MAX_RISE.getStatus());
                 list.add(temp);
-                log.info("grid-卖出coin:{}",ticker.getCoin());
             });
 
 
@@ -247,9 +249,6 @@ public class TradeBusiness {
 //                return list;
 //            }
 
-            if (ticker.getCoin().equalsIgnoreCase("BTC")) {
-                log.info("coin:{} status:{},ins:{}",coin.getCoin(),coin.getStatus(),ins);
-            }
 
             //买入
             if ((new BigDecimal(-0.011D)).compareTo(ins) >= 0
@@ -267,9 +266,7 @@ public class TradeBusiness {
                     tradeDto.setPx(buyPrice.setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                 }
                 tradeDto.setSide(OkxSideEnum.BUY.getSide());
-                if (ticker.getCoin().equalsIgnoreCase("BTC")) {
-                    log.info("grid-buy coin:{}",ticker.getCoin());
-                }
+
                 list.add(tradeDto);
             }
         } else if (modeType.equals(ModeTypeEnum.MARKET.getValue())) {
@@ -289,7 +286,6 @@ public class TradeBusiness {
                         TradeDto temp =  getSellDto(tradeDto,ticker,coin,item);
                         temp.setMarketStatus(MarketStatusEnum.RISE.getStatus());
                         list.add(temp);
-                        log.info("marekt-卖出 - 当天以前的订单coin:{}",ticker.getCoin());
                     }
                 });
             }
@@ -304,7 +300,6 @@ public class TradeBusiness {
                         TradeDto temp =  getSellDto(tradeDto,ticker,coin,item);
                         temp.setMarketStatus(MarketStatusEnum.MAX_RISE.getStatus());
                         list.add(temp);
-                        log.info("marekt-卖出 - 当天上涨超过设置最大值coin:{}",ticker.getCoin());
                     }
                 });
                 riseDto.setSellPercent(riseDto.getRisePercent());
@@ -320,8 +315,6 @@ public class TradeBusiness {
                         TradeDto temp =  getSellDto(tradeDto,ticker,coin,item);
                         temp.setMarketStatus(MarketStatusEnum.RISE.getStatus());
                         list.add(temp);
-                        log.info("marekt-卖出 - 当天上涨最大值百分比coin:{},Highest:{},risePecent:{},marketRiseSellPercent:{},marketBUyRecords:{}",ticker.getCoin(),riseDto.getHighest(), riseDto.getRisePercent(), okxSettings.stream()
-                                .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_RISE_SELL_PERCENT)).findFirst().get().getSettingValue(),JSON.toJSONString(marketBuyRecords));
                         riseDto.setSellPercent(riseDto.getRisePercent());
                     }
                 });
@@ -337,7 +330,6 @@ public class TradeBusiness {
                         TradeDto temp =  getSellDto(tradeDto,ticker,coin,item);
                         temp.setMarketStatus(MarketStatusEnum.FALL.getStatus());
                         list.add(temp);
-                        log.info("marekt-卖出 —— 大盘下跌时买入的coin:{}",ticker.getCoin());
                     }
                 });
             }
@@ -368,7 +360,6 @@ public class TradeBusiness {
                 tradeDto.setSide(OkxSideEnum.BUY.getSide());
                 tradeDto.setBuyStrategyId(0);
                 list.add(tradeDto);
-                log.info("marekt-买入- 大盘上涨coin:{}",ticker.getCoin());
                 map.put("riseBuy","true");
             }
 
@@ -377,8 +368,7 @@ public class TradeBusiness {
                     && riseDto.getLowPercent().compareTo(new BigDecimal(okxSettings.stream()
                             .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_LOW_BUY_PERCENT)).findFirst().get().getSettingValue())) > 0
                     && new BigDecimal(okxSettings.stream()
-                            .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_BTC_FALL_INS)).findFirst().get().getSettingValue())
-                    .compareTo(riseDto.getBTCIns()) > 0 ) {
+                            .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_BTC_FALL_INS)).findFirst().get().getSettingValue()).compareTo(riseDto.getBTCIns()) > 0 ) {
                 tradeDto.setTimes(marketBuyTimes);
                 tradeDto.setSz(coin.getUnit().multiply(BigDecimal.valueOf(tradeDto.getTimes())).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                 tradeDto.setPx(ticker.getLast());
@@ -391,7 +381,7 @@ public class TradeBusiness {
                 tradeDto.setSide(OkxSideEnum.BUY.getSide());
                 tradeDto.setBuyStrategyId(0);
                 list.add(tradeDto);
-                log.info("marekt-买入- 大盘下跌coin:{}",ticker.getCoin());
+                log.info("fall-buy-riseDto:{}",JSON.toJSONString(riseDto));
                 map.put("fallBuy","true");
             }
         }
