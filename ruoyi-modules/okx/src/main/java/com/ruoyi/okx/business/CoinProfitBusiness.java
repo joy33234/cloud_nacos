@@ -4,13 +4,12 @@ package com.ruoyi.okx.business;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.redis.service.RedisService;
-import com.ruoyi.okx.domain.OkxBuyRecord;
-import com.ruoyi.okx.domain.OkxCoinProfit;
-import com.ruoyi.okx.domain.OkxCoinTicker;
-import com.ruoyi.okx.domain.OkxSellRecord;
+import com.ruoyi.okx.domain.*;
 import com.ruoyi.okx.mapper.CoinProfitMapper;
+import com.ruoyi.okx.params.DO.OkxAccountBalanceDO;
 import com.ruoyi.okx.params.DO.OkxCoinProfitDo;
 import com.ruoyi.okx.params.dto.AccountProfitDto;
+import jdk.nashorn.internal.ir.annotations.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,15 +29,26 @@ public class CoinProfitBusiness extends ServiceImpl<CoinProfitMapper, OkxCoinPro
     @Autowired
     private RedisService redisService;
 
+    @Resource
+    private AccountBalanceBusiness accountBalanceBusiness;
+
     public List<OkxCoinProfit> selectList(OkxCoinProfitDo profitDo){
-        LambdaQueryWrapper<OkxCoinProfit> wrapper = new LambdaQueryWrapper();
         if (profitDo == null) {
             return list();
         }
+        LambdaQueryWrapper<OkxCoinProfit> wrapper = new LambdaQueryWrapper();
         wrapper.eq(profitDo.getAccountId() != null ,OkxCoinProfit::getAccountId, profitDo.getAccountId());
         wrapper.eq(profitDo.getCoin() != null ,OkxCoinProfit::getCoin, profitDo.getCoin());
         wrapper.eq(profitDo.getId() != null ,OkxCoinProfit::getId, profitDo.getId());
-        return mapper.selectList(wrapper);
+        List<OkxCoinProfit> profits =  mapper.selectList(wrapper);
+
+        List<OkxAccountBalance> balances = accountBalanceBusiness.list(new OkxAccountBalanceDO(null,null,null,profitDo.getAccountId(),null));
+        for (OkxCoinProfit profit:profits) {
+            balances.stream().filter(item -> item.getCoin().equals(profit.getCoin())).findFirst().ifPresent(obj -> {
+                profit.setBalance(obj.getBalance());
+            });
+        }
+        return profits;
     }
 
     public OkxCoinProfit findOne(Integer accountId, String coin) {
@@ -51,7 +61,7 @@ public class CoinProfitBusiness extends ServiceImpl<CoinProfitMapper, OkxCoinPro
     public void calculateProfit(OkxSellRecord sellRecord) {
         OkxCoinProfit profit = findOne(sellRecord.getAccountId(),sellRecord.getCoin());
         if (profit == null) {
-            profit = new OkxCoinProfit(null,sellRecord.getCoin(), sellRecord.getAccountId(),sellRecord.getProfit());
+            profit = new OkxCoinProfit(null,sellRecord.getCoin(), sellRecord.getAccountId(),sellRecord.getProfit(),null);
         } else {
             profit.setProfit(profit.getProfit().add(sellRecord.getProfit()));
         }

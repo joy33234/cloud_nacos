@@ -1,6 +1,7 @@
 package com.ruoyi.okx.domain;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.ruoyi.common.core.web.domain.CommonEntity;
 import lombok.AllArgsConstructor;
@@ -22,5 +23,8 @@ public class OkxCoinProfit extends CommonEntity {
     private Integer accountId;
 
     private BigDecimal profit;
+
+    @TableField(exist = false)
+    private BigDecimal balance;
 
 }

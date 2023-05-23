@@ -58,6 +58,7 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
     public List<OkxBuyRecord> selectList(BuyRecordDO buyRecordDO) {
         LambdaQueryWrapper<OkxBuyRecord> wrapper = new LambdaQueryWrapper();
         wrapper.eq((null != buyRecordDO.getCoin()), OkxBuyRecord::getCoin, buyRecordDO.getCoin());
+        wrapper.eq((null != buyRecordDO.getAccountName()), OkxBuyRecord::getAccountName, buyRecordDO.getAccountName());
         wrapper.eq((null != buyRecordDO.getStatus()), OkxBuyRecord::getStatus, buyRecordDO.getStatus());
         wrapper.between((buyRecordDO.getParams().get("beginTime") != null), OkxBuyRecord::getCreateTime, buyRecordDO.getParams().get("beginTime"), buyRecordDO.getParams().get("endTime"));
         return buyRecordMapper.selectList(wrapper);

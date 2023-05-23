@@ -223,9 +223,11 @@ public class TradeBusiness {
         tradeDto.setUnit(coin.getUnit());
         tradeDto.setOrdType(map.get(OkxConstants.ORD_TYPE));
         String modeType = map.get(OkxConstants.MODE_TYPE);
+
+        BigDecimal ins = ticker.getLast().subtract(coin.getStandard()).divide(coin.getStandard(), 8, RoundingMode.HALF_UP);
+
         if (modeType.equals(ModeTypeEnum.GRID.getValue())) {
             //卖出
-            BigDecimal ins = ticker.getLast().subtract(coin.getStandard()).divide(coin.getStandard(), 8, RoundingMode.HALF_UP);
             tradeDto.setModeType(ModeTypeEnum.GRID.getValue());
 
 
@@ -364,7 +366,7 @@ public class TradeBusiness {
             }
 
             //买入- 大盘下跌
-            if (!riseDto.getFallBought() && coin.getStatus() == CoinStatusEnum.OPEN.getStatus()
+            if (!riseDto.getFallBought() && coin.getStatus() == CoinStatusEnum.OPEN.getStatus() && ins.compareTo(BigDecimal.ZERO) <= 0 //当前价格小于等于标准值
                     && riseDto.getLowPercent().compareTo(new BigDecimal(okxSettings.stream()
                             .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_LOW_BUY_PERCENT)).findFirst().get().getSettingValue())) > 0
                     && new BigDecimal(okxSettings.stream()

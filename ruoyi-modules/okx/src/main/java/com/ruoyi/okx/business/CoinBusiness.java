@@ -12,6 +12,8 @@ import com.ruoyi.common.core.constant.CacheConstants;
 import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.*;
 import com.ruoyi.okx.mapper.CoinMapper;
+import com.ruoyi.okx.params.DO.OkxAccountBalanceDO;
+import jdk.nashorn.internal.ir.annotations.Reference;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
