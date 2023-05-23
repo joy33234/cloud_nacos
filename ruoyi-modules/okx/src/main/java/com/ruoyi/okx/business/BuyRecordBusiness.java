@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.Resource;
 
-import com.google.common.collect.Lists;
 import com.ruoyi.common.core.exception.ServiceException;
 import com.ruoyi.common.core.utils.DateUtil;
 import com.ruoyi.common.core.utils.HttpUtil;
@@ -31,6 +30,7 @@ import com.ruoyi.okx.params.DO.BuyRecordDO;
 import com.ruoyi.okx.utils.Constant;
 import io.swagger.models.auth.In;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +58,7 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
     public List<OkxBuyRecord> selectList(BuyRecordDO buyRecordDO) {
         LambdaQueryWrapper<OkxBuyRecord> wrapper = new LambdaQueryWrapper();
         wrapper.eq((null != buyRecordDO.getCoin()), OkxBuyRecord::getCoin, buyRecordDO.getCoin());
+        wrapper.eq((null != buyRecordDO.getStatus()), OkxBuyRecord::getStatus, buyRecordDO.getStatus());
         wrapper.between((buyRecordDO.getParams().get("beginTime") != null), OkxBuyRecord::getCreateTime, buyRecordDO.getParams().get("beginTime"), buyRecordDO.getParams().get("endTime"));
         return buyRecordMapper.selectList(wrapper);
     }

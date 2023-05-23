@@ -27,4 +27,6 @@ public class BuyRecordDO extends PageRequestForm implements Serializable {
     protected Date endTime;
 
     private String accountName;
+
+    private Integer status;
 }

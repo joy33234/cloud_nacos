@@ -42,7 +42,6 @@ public class SellRecordController extends BaseController
     {
         startPage();
         List<OkxSellRecord> list = sellRecordBusiness.selectList(sellRecordDO);
-        list.stream().forEach(item -> item.setStatusName(OrderStatusEnum.getDesc(item.getStatus())));
         return getDataTable(list);
     }
 

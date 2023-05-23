@@ -200,12 +200,12 @@ public class SyncCoinBusiness {
         BigDecimal lowPercent = BigDecimal.ONE.subtract(risePercent).setScale(4);
         String key = tradeBusiness.getCacheMarketKey(accountId);
         RiseDto riseDto = redisService.getCacheObject(key);
-        if (riseDto == null && now.getTime() > (DateUtil.getMinTime(now).getTime() + 60000)) {//redis异常 TODO
-            if (buyRecordBusiness.todayHadBuy() == false) {
-                log.info("refreshRiseCount key:{} hasBuy:{}",key,buyRecordBusiness.todayHadBuy());
-                riseDto = new RiseDto();
-                riseDto.setModeType(modeType);
-            }
+        if (riseDto == null && buyRecordBusiness.todayHadBuy() == false) {//redis异常 TODO
+            log.info("refreshRiseCount key:{} hasBuy:{}",key,buyRecordBusiness.todayHadBuy());
+            riseDto = new RiseDto();
+            riseDto.setModeType(modeType);
+        } else {
+            return;
         }
         riseDto.setRiseCount(riseCount);
         riseDto.setRisePercent(risePercent);

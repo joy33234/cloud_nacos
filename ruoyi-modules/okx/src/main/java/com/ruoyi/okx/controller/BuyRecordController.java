@@ -40,7 +40,6 @@ public class BuyRecordController extends BaseController
     {
         startPage();
         List<OkxBuyRecord> list = buyRecordBusiness.selectList(buyRecordDO);
-        list.stream().forEach(item -> item.setStatusName(OrderStatusEnum.getDesc(item.getStatus())));
         return getDataTable(list);
     }
 

@@ -3,14 +3,10 @@ package com.ruoyi.okx.business;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.core.utils.StringUtils;
-import com.ruoyi.okx.domain.OkxAccount;
 import com.ruoyi.okx.domain.OkxAccountBalance;
-import com.ruoyi.okx.domain.OkxBuyRecord;
-import com.ruoyi.okx.domain.OkxCoin;
 import com.ruoyi.okx.mapper.OkxAccountBalanceMapper;
 import com.ruoyi.okx.params.DO.OkxAccountBalanceDO;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 import java.math.BigDecimal;
@@ -23,8 +19,6 @@ public class AccountBalanceBusiness extends ServiceImpl<OkxAccountBalanceMapper,
     @Resource
     private OkxAccountBalanceMapper accountBalanceMapper;
 
-    @Resource
-    private BuyRecordBusiness buyRecordBusiness;
 
     public List<OkxAccountBalance> list(OkxAccountBalanceDO accountBalanceDO) {
         LambdaQueryWrapper<OkxAccountBalance> wrapper = new LambdaQueryWrapper();
@@ -70,24 +64,6 @@ public class AccountBalanceBusiness extends ServiceImpl<OkxAccountBalanceMapper,
         wrapper.eq((null != accountId), OkxAccountBalance::getAccountId, accountId);
         wrapper.eq((StringUtils.isNotEmpty(coin)), OkxAccountBalance::getCoin, coin);
         return accountBalanceMapper.selectOne(wrapper);
-    }
-
-
-
-    @Async
-    public void syncBanlance (OkxCoin coin, List<OkxAccount> accounts) {
-        OkxCoin finalCoin = coin;
-        accounts.stream().forEach(obj -> {
-            List<OkxBuyRecord> buyRecords = buyRecordBusiness.findSuccessRecord(coin.getCoin(),obj.getId(),null,null);
-            BigDecimal balance = finalCoin.getUnit().multiply(new BigDecimal(buyRecords.size() * 2));
-            OkxAccountBalance accountBalance = getAccountBalance(finalCoin.getCoin(),obj.getId());
-            if (accountBalance == null) {
-                save(new OkxAccountBalance(null,obj.getId(),obj.getName(),finalCoin.getCoin(),balance));
-            } else {
-                accountBalance.setBalance(balance);
-                updateById(accountBalance);
-            }
-        });
     }
 
 }
