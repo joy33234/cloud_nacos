@@ -65,6 +65,12 @@ public class OkxConstants
 
 
     /**
+     * 买入每次交易额度
+     */
+    public static final String BUY_USDT_AMOUNT = "buy_usdt_amount";
+
+
+    /**
      * 大盘模式买入倍数
      */
     public static final String MARKET_BUY_TIMES = "market_buy_times";

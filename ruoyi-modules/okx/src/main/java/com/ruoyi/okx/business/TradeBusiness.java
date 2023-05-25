@@ -137,8 +137,11 @@ public class TradeBusiness {
         params.put("ordType", tradeDto.getOrdType());
         params.put("sz", tradeDto.getSz().toString());
         if (tradeDto.getSide().equalsIgnoreCase(OkxSideEnum.BUY.getSide())) {
-            params.put("ordType", OkxOrdTypeEnum.LIMIT.getValue());
-            params.put("px", tradeDto.getPx().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP) + "");
+//            params.put("ordType", OkxOrdTypeEnum.LIMIT.getValue());
+//            params.put("px", tradeDto.getPx().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP) + "");
+
+            //平均每个币种买入相同U数量
+            params.put("ordType", OkxOrdTypeEnum.MARKET.getValue());
         }
         String str = HttpUtil.postOkx("/api/v5/trade/order", params, map);
         JSONObject json = JSONObject.parseObject(str);
@@ -159,7 +162,6 @@ public class TradeBusiness {
     public void trade(List<OkxCoin> coins, List<OkxCoinTicker> tickers,List<OkxSetting> okxSettings, Map<String, String> map) throws ServiceException {
         try {
             redisLock.lock(RedisConstants.OKX_TICKER_TRADE,600,3,10000);
-            Long start = System.currentTimeMillis();
             Integer accountId = Integer.valueOf(map.get("id"));
             RiseDto riseDto = redisService.getCacheObject(this.getCacheMarketKey(accountId));
 
@@ -203,12 +205,9 @@ public class TradeBusiness {
                     riseDto.setBuyLowPercent(riseDto.getLowPercent());
                     riseDto.setFallBoughtTime(new Date());
                 }
-
                 redisService.setCacheObject(this.getCacheMarketKey(accountId), riseDto);
-
                 log.info("market-update-riseDto:{}",JSON.toJSONString(riseDto));
             }
-            log.info("coin trade time :{}", System.currentTimeMillis() - start);
             redisLock.releaseLock(RedisConstants.OKX_TICKER_TRADE);
         } catch (Exception e) {
             redisLock.releaseLock(RedisConstants.OKX_TICKER_TRADE);
@@ -223,7 +222,8 @@ public class TradeBusiness {
         tradeDto.setUnit(coin.getUnit());
         tradeDto.setOrdType(map.get(OkxConstants.ORD_TYPE));
         String modeType = map.get(OkxConstants.MODE_TYPE);
-
+        //买入数量
+        BigDecimal buyUsdtAmout = new BigDecimal(okxSettings.stream().filter(item -> item.getSettingKey().equals(OkxConstants.BUY_USDT_AMOUNT)).findFirst().get().getSettingValue());
         BigDecimal ins = ticker.getLast().subtract(coin.getStandard()).divide(coin.getStandard(), 8, RoundingMode.HALF_UP);
 
         if (modeType.equals(ModeTypeEnum.GRID.getValue())) {
@@ -258,7 +258,8 @@ public class TradeBusiness {
                 OkxBuyStrategy buyStrategy = buyStrategyBusiness.list().stream()
                         .filter(strategy -> (strategy.getFallPercent().compareTo(ins.abs().setScale(2, RoundingMode.DOWN)) >= 0))
                         .sorted(comparing(OkxBuyStrategy::getFallPercent)).findFirst().get();
-                tradeDto.setSz(coin.getUnit().multiply(BigDecimal.valueOf(buyStrategy.getTimes())).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+//                tradeDto.setSz(coin.getUnit().multiply(BigDecimal.valueOf(buyStrategy.getTimes())).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+                tradeDto.setSz(buyUsdtAmout.setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                 tradeDto.setTimes(buyStrategy.getTimes());
                 tradeDto.setBuyStrategyId(buyStrategy.getId());
                 tradeDto.setPx(ticker.getLast().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
@@ -351,7 +352,8 @@ public class TradeBusiness {
                     && riseDto.getBTCIns().compareTo(new BigDecimal(okxSettings.stream()
                             .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_BTC_RISE_INS)).findFirst().get().getSettingValue())) > 0 ) {
                 tradeDto.setTimes(marketBuyTimes);
-                tradeDto.setSz(coin.getUnit().multiply(BigDecimal.valueOf(tradeDto.getTimes())).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+//                tradeDto.setSz(coin.getUnit().multiply(BigDecimal.valueOf(tradeDto.getTimes())).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+                tradeDto.setSz(buyUsdtAmout.setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                 tradeDto.setPx(ticker.getLast().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
                 //设置价格
                 if (OkxOrdTypeEnum.LIMIT.getValue().equals(tradeDto.getOrdType())) {
@@ -372,7 +374,8 @@ public class TradeBusiness {
                     && new BigDecimal(okxSettings.stream()
                             .filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_BTC_FALL_INS)).findFirst().get().getSettingValue()).compareTo(riseDto.getBTCIns()) > 0 ) {
                 tradeDto.setTimes(marketBuyTimes);
-                tradeDto.setSz(coin.getUnit().multiply(BigDecimal.valueOf(tradeDto.getTimes())).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+                tradeDto.setSz(buyUsdtAmout.setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+//                tradeDto.setSz(coin.getUnit().multiply(BigDecimal.valueOf(tradeDto.getTimes())).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                 tradeDto.setPx(ticker.getLast());
                 //设置价格
                 if (OkxOrdTypeEnum.LIMIT.getValue().equals(tradeDto.getOrdType())) {

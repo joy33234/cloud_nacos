@@ -15,8 +15,10 @@ public class TradeDto implements Serializable {
 
     private String instId;
 
+    //数量
     private BigDecimal sz;
 
+    //价格
     private BigDecimal px;
 
     private String side;
