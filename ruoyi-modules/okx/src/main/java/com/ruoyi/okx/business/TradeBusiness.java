@@ -383,11 +383,10 @@ public class TradeBusiness {
                 tradeDto.setSide(OkxSideEnum.BUY.getSide());
                 tradeDto.setBuyStrategyId(0);
                 list.add(tradeDto);
-                log.info("fall-buy-riseDto:{}",JSON.toJSONString(riseDto));
                 map.put("fallBuy","true");
             }
         }
-        return list.stream().collect(Collectors.collectingAndThen(
+        return list.size() <= 1 ? list : list.stream().collect(Collectors.collectingAndThen(
                 Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(TradeDto::getBuyRecordId))), ArrayList::new ));
     }
 

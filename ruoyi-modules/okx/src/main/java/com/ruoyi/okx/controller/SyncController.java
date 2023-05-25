@@ -28,6 +28,12 @@ public class SyncController extends BaseController
         return success();
     }
 
+    @GetMapping(value = "/buy/order/fee")
+    public AjaxResult syncBuyFee(){
+        syncBusiness.syncBuyOrderFee();
+        return success();
+    }
+
     /**
      * 根据参数获取详细信息
      */

@@ -68,10 +68,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </where>
     </select>
 
-<!--    <select id="checkSettingKeyUnique" parameterType="String" resultMap="SettingResult">-->
-<!--        <include refid="selectSettingVo"/>-->
-<!--        where setting_key = #{settingKey} limit 1-->
-<!--    </select>-->
+    <select id="checkSettingKeyUnique" parameterType="String" resultMap="SettingResult">
+        <include refid="selectSettingVo"/>
+        where setting_key = #{settingKey} limit 1
+    </select>
 
     <insert id="insertSetting" parameterType="com.ruoyi.okx.domain.OkxSetting">
         insert into okx_setting (

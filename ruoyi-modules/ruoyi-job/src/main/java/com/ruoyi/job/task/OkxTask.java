@@ -48,6 +48,11 @@ public class OkxTask
         remoteOkxService.syncBuyOrder(SecurityConstants.INNER);
     }
 
+    public void syncOrderBuyFee(){
+        System.out.println("syncOrderBuyFee-执行无参方法");
+        remoteOkxService.syncBuyOrderFee(SecurityConstants.INNER);
+    }
+
     public void syncOrderSell(){
         System.out.println("syncOrderSell-执行无参方法");
         remoteOkxService.syncSellOrder(SecurityConstants.INNER);

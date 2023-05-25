@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
+import java.util.Date;
 import java.util.List;
 
 @Component
@@ -31,6 +32,9 @@ public class CoinProfitBusiness extends ServiceImpl<CoinProfitMapper, OkxCoinPro
 
     @Resource
     private AccountBalanceBusiness accountBalanceBusiness;
+
+    @Resource
+    private CoinBusiness coinBusiness;
 
     public List<OkxCoinProfit> selectList(OkxCoinProfitDo profitDo){
         if (profitDo == null) {
@@ -61,10 +65,12 @@ public class CoinProfitBusiness extends ServiceImpl<CoinProfitMapper, OkxCoinPro
     public void calculateProfit(OkxSellRecord sellRecord) {
         OkxCoinProfit profit = findOne(sellRecord.getAccountId(),sellRecord.getCoin());
         if (profit == null) {
-            profit = new OkxCoinProfit(null,sellRecord.getCoin(), sellRecord.getAccountId(),sellRecord.getProfit(),null);
+            profit = new OkxCoinProfit(null,sellRecord.getCoin(), sellRecord.getAccountId(),sellRecord.getProfit(),null,coinBusiness.getCoin(sellRecord.getCoin()).getUnit());
         } else {
             profit.setProfit(profit.getProfit().add(sellRecord.getProfit()));
         }
+        profit.setUpdateTime(new Date());
+        profit.setRemark("计算利润");
         saveOrUpdate(profit);
     }
 }

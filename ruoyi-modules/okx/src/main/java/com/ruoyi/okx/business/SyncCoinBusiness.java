@@ -100,7 +100,7 @@ public class SyncCoinBusiness {
                         coins = StringUtils.join(subBalanceList.stream().map(OkxAccountBalance::getCoin).collect(Collectors.toList()), ",");
                     }
                     balanceList.addAll(getBalance(coins, map, subBalanceList, now));
-                    Thread.sleep(200);
+                    Thread.sleep(500);
                 }
                 balanceBusiness.saveOrUpdateBatch(balanceList.stream().distinct().collect(Collectors.toList()));
             }
@@ -173,7 +173,9 @@ public class SyncCoinBusiness {
                 accountBusiness.list().stream()
                         .filter(item -> item.getStatus().intValue() == Status.OK.getCode()).forEach(item -> {
                     List<OkxSetting> okxSettings =   accountBusiness.listByAccountId(item.getId());
-                    this.refreshRiseCount(okxCoins, now, item.getId(), okxSettings);
+                    if (this.refreshRiseCount(okxCoins, now, item.getId(), okxSettings) == false) {
+                        return;
+                    }
                     tradeBusiness.trade( okxCoins, tickers, okxSettings,accountBusiness.getAccountMap(item));
                 });
             }
@@ -181,6 +183,7 @@ public class SyncCoinBusiness {
         } catch (Exception e) {
             log.error("updateCoin error",e);
             redisLock.releaseLock(RedisConstants.OKX_TICKER_UPDATE_COIN);
+            throw new Exception(e.getMessage());
         }
     }
 
@@ -190,22 +193,24 @@ public class SyncCoinBusiness {
      * @param okxCoins
      * @param now
      */
-    public void refreshRiseCount(List<OkxCoin> okxCoins, Date now, Integer accountId,List<OkxSetting> settingList){
+    public boolean refreshRiseCount(List<OkxCoin> okxCoins, Date now, Integer accountId,List<OkxSetting> settingList){
         String modeType = settingList.stream().filter(item -> item.getSettingKey().equals(OkxConstants.MODE_TYPE)).findFirst().get().getSettingValue();
         if (!modeType.equals(ModeTypeEnum.MARKET.getValue())) {
-            return;
+            return true;
         }
         Integer riseCount = okxCoins.stream().filter(item -> (item.isRise() == true)).collect(Collectors.toList()).size();
         BigDecimal risePercent = new BigDecimal(riseCount).divide(new BigDecimal(okxCoins.size()), 4,BigDecimal.ROUND_DOWN);
         BigDecimal lowPercent = BigDecimal.ONE.subtract(risePercent).setScale(4);
         String key = tradeBusiness.getCacheMarketKey(accountId);
         RiseDto riseDto = redisService.getCacheObject(key);
-        if (riseDto == null && buyRecordBusiness.todayHadBuy() == false) {//redis异常 TODO
-            log.info("refreshRiseCount key:{} hasBuy:{}",key,buyRecordBusiness.todayHadBuy());
-            riseDto = new RiseDto();
-            riseDto.setModeType(modeType);
-        } else {
-            return;
+        if (riseDto == null) {//redis异常 TODO
+            log.info("refreshRiseCount key:{} riseDto:{}",key,riseDto);
+            if (now.getTime() > (DateUtil.getMinTime(now).getTime() + 3000000) && now.getTime() < (DateUtil.getMinTime(now).getTime() + 3600000)) {
+                riseDto = new RiseDto();
+                riseDto.setModeType(modeType);
+            } else {
+                return false;
+            }
         }
         riseDto.setRiseCount(riseCount);
         riseDto.setRisePercent(risePercent);
@@ -224,6 +229,7 @@ public class SyncCoinBusiness {
         }
         long diff = DateUtil.diffSecond(now, DateUtil.getMaxTime(now));
         redisService.setCacheObject(tradeBusiness.getCacheMarketKey(accountId), riseDto, diff, TimeUnit.SECONDS);
+        return true;
     }
 
 }

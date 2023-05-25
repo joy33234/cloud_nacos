@@ -51,8 +51,11 @@ public class OkxBuyRecord extends CommonEntity {
 
     private String modeType;
 
+    /**
+     * 当前价格
+     */
     @Transient
     @TableField(exist = false)
-    private String statusName;
+    private BigDecimal last;
 
 }

@@ -53,6 +53,15 @@ public interface RemoteOkxService
     @GetMapping("/sync/buy/order")
     public R<Void> syncBuyOrder(@RequestHeader(SecurityConstants.FROM_SOURCE) String source);
 
+    /**
+     * 同步买入订单手续费
+     *
+     * @param source 请求来源
+     * @return 结果
+     */
+    @GetMapping("/sync/buy/order/fee")
+    public R<Void> syncBuyOrderFee(@RequestHeader(SecurityConstants.FROM_SOURCE) String source);
+
 
     /**
      * 同步卖出订单

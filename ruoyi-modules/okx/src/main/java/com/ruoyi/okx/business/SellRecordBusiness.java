@@ -99,7 +99,7 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
                 if (update) {
                     OkxBuyRecord buyRecord = this.buyRecordBusiness.getById(sellRecord.getBuyRecordId());
                     if (buyRecord == null) {
-                        log.error("{}", sellRecord.getBuyRecordId());
+                        log.error("syncSellOrderStatus 对应买入订单不存在:{}", sellRecord.getBuyRecordId());
                         return;
                     }
                 }

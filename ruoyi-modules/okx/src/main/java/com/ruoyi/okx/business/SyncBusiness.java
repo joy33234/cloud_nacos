@@ -146,6 +146,21 @@ public class SyncBusiness {
     }
 
 
+    @Async
+    public void syncBuyOrderFee() throws ServiceException {
+        try {
+            List<OkxAccount> accounts = accountBusiness.list().stream()
+                    .filter(item -> item.getStatus().intValue() == Status.OK.getCode()).collect(Collectors.toList());;
+            for (OkxAccount account:accounts) {
+                Map<String, String> map = accountBusiness.getAccountMap(account);
+                buyRecordBusiness.syncOrderFeeAgain(map);
+            }
+        } catch (Exception e) {
+            log.error("同步订单异常", e);
+            throw new ServiceException("同步订单异常");
+        }
+    }
+
 
 
     @Async

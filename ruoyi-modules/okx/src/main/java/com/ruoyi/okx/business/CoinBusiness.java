@@ -62,13 +62,11 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
 
 
     public List<OkxCoin> selectCoinList(OkxCoin coin){
-        LambdaQueryWrapper<OkxCoin> wrapper = new LambdaQueryWrapper();
         if (coin == null) {
             return list();
         }
-        if (StringUtils.isNotEmpty(coin.getCoin())) {
-            wrapper.eq(OkxCoin::getCoin, coin.getCoin());
-        }
+        LambdaQueryWrapper<OkxCoin> wrapper = new LambdaQueryWrapper();
+        wrapper.eq(coin.getCoin() != null, OkxCoin::getCoin, coin.getCoin());
         return coinMapper.selectList(wrapper);
     }
 

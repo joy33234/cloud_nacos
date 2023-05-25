@@ -67,4 +67,9 @@ public class CacheConstants
      */
     public static final String OKX_MARKET = "okx_market_";
 
+    /**
+     * okx 同步买入订单手续费异常
+     */
+    public static final String OKX_BUY_ORDER_AGAIN = "okx_sync_buy_order:";
+
 }
