@@ -204,8 +204,8 @@ public class SyncCoinBusiness {
         String key = tradeBusiness.getCacheMarketKey(accountId);
         RiseDto riseDto = redisService.getCacheObject(key);
         if (riseDto == null) {//redis异常 TODO
-            log.info("refreshRiseCount key:{} riseDto:{}",key,riseDto);
-            if (now.getTime() > (DateUtil.getMinTime(now).getTime() + 3000000) && now.getTime() < (DateUtil.getMinTime(now).getTime() + 3600000)) {
+            //当天前5分钟禁止买卖
+            if (now.getTime() > (DateUtil.getMinTime(now).getTime() + 300000) && now.getTime() < (DateUtil.getMinTime(now).getTime() + 360000)) {
                 riseDto = new RiseDto();
                 riseDto.setModeType(modeType);
             } else {
