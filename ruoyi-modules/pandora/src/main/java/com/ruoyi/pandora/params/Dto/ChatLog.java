@@ -1,16 +1,11 @@
-package com.ruoyi.system.domain.vo;
+package com.ruoyi.pandora.params.Dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.ruoyi.system.api.domain.SysDept;
-import com.ruoyi.system.domain.SysMenu;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  *

@@ -9,14 +9,11 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>okx</artifactId>
+    <artifactId>pandora</artifactId>
 
-    <description>
-        okx
-    </description>
+    <description> pandora </description>
 
     <dependencies>
-
         <!-- SpringCloud Alibaba Nacos -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
@@ -77,15 +74,6 @@
             <groupId>com.ruoyi</groupId>
             <artifactId>ruoyi-common-swagger</artifactId>
         </dependency>
-
-
-
-
-        <!--        <dependency>-->
-<!--            <groupId>org.projectlombok</groupId>-->
-<!--            <artifactId>lombok</artifactId>-->
-<!--            <version>${lombok.version}</version>-->
-<!--        </dependency>-->
 
         <dependency>
             <groupId>commons-lang</groupId>

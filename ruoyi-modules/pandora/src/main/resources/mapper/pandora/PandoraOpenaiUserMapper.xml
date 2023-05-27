@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
 PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.ruoyi.system.mapper.SysAiMapper">
+<mapper namespace="com.ruoyi.pandora.mapper.PandoraOpenaiUserMapper">
 
-	<resultMap type="com.ruoyi.system.api.domain.SysUserAi" id="SysAiResult">
+	<resultMap type="com.ruoyi.pandora.domain.PandoraOpenaiUser" id="PandoraOpenaiUserResult">
 		<id     property="userId"     column="user_id"     />
 		<result property="count"   column="count"   />
 		<result property="type"  column="type"   />
@@ -16,11 +16,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	</resultMap>
 	
 	<sql id="selectAiVo">
-        select d.dept_id, d.user_name, d.count, d.type, d.create_by, d.create_time
-        from sys_ai d
+        select user_id, user_name, count, type, create_by, create_time
+        from pandora_openai_user
     </sql>
     
-    <select id="selectAiByUserId" parameterType="Long" resultMap="SysAiResult">
+    <select id="selectAiByUserId" parameterType="Long" resultMap="PandoraOpenaiUserResult">
 		<include refid="selectAiVo"/>
 		where user_id = #{userId}
 	</select>
