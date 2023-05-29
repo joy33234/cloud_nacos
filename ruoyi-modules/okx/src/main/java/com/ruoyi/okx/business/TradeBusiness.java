@@ -233,7 +233,6 @@ public class TradeBusiness {
             //卖出
             tradeDto.setModeType(ModeTypeEnum.GRID.getValue());
 
-
             BigDecimal gridMinSellPercent = new BigDecimal(okxSettings.stream().filter(item -> item.getSettingKey().equals(OkxConstants.GRIDE_MIN_PERCENT_FOR_SELL)).findFirst().get().getSettingValue());
             buyRecords.stream().filter(item -> item.getModeType().equals(ModeTypeEnum.GRID.getValue()))
                     .filter(item -> (ticker.getLast().subtract(item.getPrice()).divide(item.getPrice(), Constant.OKX_BIG_DECIMAL,RoundingMode.DOWN)).compareTo(gridMinSellPercent) > 0)

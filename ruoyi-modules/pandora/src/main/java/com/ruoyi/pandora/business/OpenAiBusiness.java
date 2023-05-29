@@ -55,7 +55,7 @@ public class OpenAiBusiness extends ServiceImpl<PandoraOpenaiUserMapper, Pandora
     }
 
     private ChatLog getGptContent(ChatLog chatLog) {
-        return new ChatLog(1L,-1L,chatLog.getSenderGuId(),getChatGptRes(chatLog.getChatLogContent()),"gpt", DateUtil.addMinutes(chatLog.getChatLogSendTime() ,1));
+        return new ChatLog(1L,-1L,chatLog.getSenderGuId(),getChatGptRes(chatLog.getChatLogContent()),"gpt", null);
     }
 
     public void initOpenAiUser (Long userId, String username) {
@@ -80,28 +80,31 @@ public class OpenAiBusiness extends ServiceImpl<PandoraOpenaiUserMapper, Pandora
     }
 
     public String getChatGptRes (String question) {
-        String result = "连接异常，请重试";
-        try {
-            Map<String, String> params = new HashMap(8);
-            params.put( "model" , "gpt-3.5-turbo");
-
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put("role", "user");
-            jsonObject.put("role", question);
-            params.put("messages", jsonObject.toJSONString());
-
-            String str = HttpUtil.postOpenAi("/api/v5/trade/order", params, openAiKeyBusiness.getkey());
-            JSONObject resJSON = JSONObject.parseObject(str);
-            if (resJSON == null) {
-                return result;
-            }
-            JSONArray jsonArray = jsonObject.getJSONArray("choices");
-            String message =  jsonArray.getJSONObject(0).getString("message");
-            result = JSONObject.parseObject(message).getString("content");
-        } catch (Exception e) {
-            log.error("getChatGptRes error: ",e);
-        }
-        return result ;
+        return "gpt response";
+//
+//
+//        String result = "连接异常，请重试";
+//        try {
+//            Map<String, String> params = new HashMap(8);
+//            params.put( "model" , "gpt-3.5-turbo");
+//
+//            JSONObject jsonObject = new JSONObject();
+//            jsonObject.put("role", "user");
+//            jsonObject.put("role", question);
+//            params.put("messages", jsonObject.toJSONString());
+//
+//            String str = HttpUtil.postOpenAi("/api/v5/trade/order", params, openAiKeyBusiness.getkey());
+//            JSONObject resJSON = JSONObject.parseObject(str);
+//            if (resJSON == null) {
+//                return result;
+//            }
+//            JSONArray jsonArray = jsonObject.getJSONArray("choices");
+//            String message =  jsonArray.getJSONObject(0).getString("message");
+//            result = JSONObject.parseObject(message).getString("content");
+//        } catch (Exception e) {
+//            log.error("getChatGptRes error: ",e);
+//        }
+//        return result ;
     }
 
 }

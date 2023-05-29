@@ -1,5 +1,6 @@
 package com.ruoyi.pandora.domain;
 
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.ruoyi.common.core.web.domain.BaseEntity;
 import lombok.AllArgsConstructor;
@@ -22,6 +23,7 @@ public class PandoraOpenaiUser extends BaseEntity
     private static final long serialVersionUID = 1L;
 
     /** 用户ID */
+    @TableId
     private Long userId;
 
 

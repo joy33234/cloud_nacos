@@ -26,7 +26,7 @@ public class AfterConfigListener implements SmartApplicationListener, Ordered {
         RestTemplate restTemplate=new RestTemplate();
         if (applicationEvent instanceof ApplicationEnvironmentPreparedEvent)
         {
-            System.setProperty("spring.cloud.nacos.discovery.ip", "8.217.76.186");
+//            System.setProperty("spring.cloud.nacos.discovery.ip", "8.217.76.186");
         }
     }
 }
