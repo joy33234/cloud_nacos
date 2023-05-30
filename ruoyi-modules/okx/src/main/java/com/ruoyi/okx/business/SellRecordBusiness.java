@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 
 import java.math.RoundingMode;
 import java.util.*;
+import java.util.stream.Collectors;
 import javax.annotation.Resource;
 
 import com.ruoyi.common.core.utils.DateUtil;
@@ -19,7 +20,6 @@ import com.ruoyi.okx.enums.OrderStatusEnum;
 import com.ruoyi.okx.mapper.SellRecordMapper;
 import com.ruoyi.okx.params.DO.SellRecordDO;
 import com.ruoyi.okx.utils.Constant;
-import org.apache.commons.compress.utils.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -50,7 +50,7 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
         wrapper.eq((null != sellRecordDO.getAccountName()), OkxSellRecord::getAccountName, sellRecordDO.getAccountName());
         wrapper.eq((null != sellRecordDO.getStatus()), OkxSellRecord::getStatus, sellRecordDO.getStatus());
         wrapper.between((sellRecordDO.getParams().get("beginTime") != null), OkxSellRecord::getCreateTime, sellRecordDO.getParams().get("beginTime"), sellRecordDO.getParams().get("endTime"));
-        return sellRecordMapper.selectList( wrapper);
+        return sellRecordMapper.selectList( wrapper).stream().sorted(Comparator.comparing(OkxSellRecord::getCreateTime).reversed()).collect(Collectors.toList());
     }
 
     public List<OkxSellRecord> findPendings(Integer accountId) {

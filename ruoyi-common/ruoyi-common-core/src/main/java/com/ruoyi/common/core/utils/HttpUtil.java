@@ -226,22 +226,22 @@ public class HttpUtil {
 
 
     public static String getOpenAi(String url, Map<String, String> params, String key) {
-        Map<String, String> head = getOpenAiHead("GET", url, "", key);
+        Map<String, String> head = getOpenAiHead( key);
         url = "https://api.openai.com" + url;
         return get(url, head, params, new DefaultStringHandler(true));
     }
 
-    public static String postOpenAi(String url, Map<String, String> params, String key) {
-        Map<String, String> head = getOpenAiHead("POST", url, JSON.toJSONString(params), key);
+    public static String postOpenAi(String url, Map<String, Object> params, String key) {
+        Map<String, String> head = getOpenAiHead( key);
         url = "https://api.openai.com" + url;
         List<NameValuePair> args = new ArrayList<>();
         if (null != params && params.size() > 0)
-            for (Map.Entry<String, String> entry : params.entrySet())
-                args.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+            for (Map.Entry<String, Object> entry : params.entrySet())
+                args.add(new BasicNameValuePair(entry.getKey(), entry.getValue().toString()));
         return postWithBody(url, head, JSON.toJSONString(params), "application/json");
     }
 
-    public static Map<String, String> getOpenAiHead(String method, String path, String body, String key) {
+    public static Map<String, String> getOpenAiHead( String key) {
         Map<String, String> head = new HashMap<>();
         head.put("Content-Type", "application/json");
         head.put("Authorization", "Bearer " + key);

@@ -1,20 +1,17 @@
 package com.ruoyi.pandora.business;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.core.domain.R;
-import com.ruoyi.common.core.utils.DateUtil;
 import com.ruoyi.common.core.utils.HttpUtil;
-import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.common.security.utils.SecurityUtils;
 import com.ruoyi.pandora.domain.PandoraOpenaiUser;
 import com.ruoyi.pandora.mapper.PandoraOpenaiUserMapper;
 import com.ruoyi.pandora.params.Dto.ChatLog;
-import com.ruoyi.system.api.RemoteUserService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -42,7 +39,6 @@ public class OpenAiBusiness extends ServiceImpl<PandoraOpenaiUserMapper, Pandora
      * @return 部门信息
      */
     public PandoraOpenaiUser selectAiByUserId(Long userId) {
-        log.info("userId:{}",userId);
         return openAiUserMapper.selectAiByUserId(userId);
     }
 
@@ -80,31 +76,33 @@ public class OpenAiBusiness extends ServiceImpl<PandoraOpenaiUserMapper, Pandora
     }
 
     public String getChatGptRes (String question) {
-        return "gpt response";
-//
-//
-//        String result = "连接异常，请重试";
-//        try {
-//            Map<String, String> params = new HashMap(8);
-//            params.put( "model" , "gpt-3.5-turbo");
-//
-//            JSONObject jsonObject = new JSONObject();
-//            jsonObject.put("role", "user");
-//            jsonObject.put("role", question);
-//            params.put("messages", jsonObject.toJSONString());
-//
-//            String str = HttpUtil.postOpenAi("/api/v5/trade/order", params, openAiKeyBusiness.getkey());
-//            JSONObject resJSON = JSONObject.parseObject(str);
-//            if (resJSON == null) {
-//                return result;
-//            }
-//            JSONArray jsonArray = jsonObject.getJSONArray("choices");
-//            String message =  jsonArray.getJSONObject(0).getString("message");
-//            result = JSONObject.parseObject(message).getString("content");
-//        } catch (Exception e) {
-//            log.error("getChatGptRes error: ",e);
-//        }
-//        return result ;
+
+        String result = "连接异常，请重试";
+        try {
+            Map<String, Object> params = new HashMap(8);
+            params.put( "model" , "gpt-3.5-turbo");
+
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("role", "user");
+            jsonObject.put("content", question);
+            JSONArray array = new JSONArray();
+            array.add(jsonObject);
+            params.put("messages", array);
+
+            String str = HttpUtil.postOpenAi("/v1/chat/completions", params, openAiKeyBusiness.getkey());
+            log.info("getChatGptRes request Response:{}", str);
+            JSONObject resJSON = JSONObject.parseObject(str);
+            if (resJSON == null) {
+                log.info("postOpenAi  gpt request err res:{}", str);
+            }
+
+            JSONArray jsonArray = resJSON.getJSONArray("choices");
+            String message =  jsonArray.getJSONObject(0).getString("message");
+            result = JSONObject.parseObject(message).getString("content");
+        } catch (Exception e) {
+            log.error("getChatGptRes error:{} ",e);
+        }
+        return result ;
     }
 
 }

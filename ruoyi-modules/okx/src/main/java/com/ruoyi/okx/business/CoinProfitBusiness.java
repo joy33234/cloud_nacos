@@ -17,8 +17,10 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class CoinProfitBusiness extends ServiceImpl<CoinProfitMapper, OkxCoinProfit> {
@@ -38,7 +40,7 @@ public class CoinProfitBusiness extends ServiceImpl<CoinProfitMapper, OkxCoinPro
 
     public List<OkxCoinProfit> selectList(OkxCoinProfitDo profitDo){
         if (profitDo == null) {
-            return list();
+            return list().stream().sorted(Comparator.comparing(OkxCoinProfit::getUpdateTime).reversed()).collect(Collectors.toList());
         }
         LambdaQueryWrapper<OkxCoinProfit> wrapper = new LambdaQueryWrapper();
         wrapper.eq(profitDo.getAccountId() != null ,OkxCoinProfit::getAccountId, profitDo.getAccountId());
@@ -52,7 +54,7 @@ public class CoinProfitBusiness extends ServiceImpl<CoinProfitMapper, OkxCoinPro
                 profit.setBalance(obj.getBalance());
             });
         }
-        return profits;
+        return profits.stream().sorted(Comparator.comparing(OkxCoinProfit::getUpdateTime).reversed()).collect(Collectors.toList());
     }
 
     public OkxCoinProfit findOne(Integer accountId, String coin) {

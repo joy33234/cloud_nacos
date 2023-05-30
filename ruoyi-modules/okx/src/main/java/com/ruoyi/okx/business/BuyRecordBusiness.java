@@ -10,6 +10,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
+import java.util.stream.Collectors;
 import javax.annotation.Resource;
 
 import com.ruoyi.common.core.constant.CacheConstants;
@@ -18,6 +19,7 @@ import com.ruoyi.common.core.utils.DateUtil;
 import com.ruoyi.common.core.utils.HttpUtil;
 import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.OkxBuyRecord;
+import com.ruoyi.okx.domain.OkxCoinProfit;
 import com.ruoyi.okx.domain.OkxCoinTicker;
 import com.ruoyi.okx.enums.OrderStatusEnum;
 import com.ruoyi.okx.mapper.BuyRecordMapper;
@@ -69,7 +71,7 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
                 record.setLast(obj.getLast());
             });
         }
-        return list;
+        return list.stream().sorted(Comparator.comparing(OkxBuyRecord::getCreateTime).reversed()).collect(Collectors.toList());
     }
 
     public List<OkxBuyRecord> findSuccessRecord(String coin, Integer accountId, String modeType, Integer marketStatus) {
