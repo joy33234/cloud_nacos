@@ -1,6 +1,10 @@
 # Tomcat
 server: 
   port: 9900
+  tomcat:
+    max-connections: 2000
+    connection-timeout: 61000
+
 
 # Spring
 spring: 

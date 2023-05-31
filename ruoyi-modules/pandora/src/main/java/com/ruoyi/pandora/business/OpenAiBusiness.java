@@ -88,12 +88,13 @@ public class OpenAiBusiness extends ServiceImpl<PandoraOpenaiUserMapper, Pandora
             JSONArray array = new JSONArray();
             array.add(jsonObject);
             params.put("messages", array);
+            log.info("getChatGptRes request params:{}", question);
 
             String str = HttpUtil.postOpenAi("/v1/chat/completions", params, openAiKeyBusiness.getkey());
             log.info("getChatGptRes request Response:{}", str);
             JSONObject resJSON = JSONObject.parseObject(str);
             if (resJSON == null) {
-                log.info("postOpenAi  gpt request err res:{}", str);
+                log.info("postOpenAi request err:{}", str);
             }
 
             JSONArray jsonArray = resJSON.getJSONArray("choices");

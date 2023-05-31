@@ -51,7 +51,7 @@ public class HttpUtil {
 
     private static CloseableHttpClient httpClient;
 
-    private static RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(30000).setConnectTimeout(60000).build();
+    private static RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(60000).setConnectTimeout(80000).build();
 
     static {
         SSLConnectionSocketFactory sslsf = createSSLConnSocketFactory();

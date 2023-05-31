@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.apache.commons.collections4.CollectionUtils;
@@ -65,6 +66,9 @@ public class SyncCoinBusiness {
 
     @Resource
     private BuyRecordBusiness buyRecordBusiness;
+
+    @Value("${okx.newRedis}")
+    public boolean newRedis;
 
     public void syncOkxBalance() {
         try {
@@ -205,7 +209,7 @@ public class SyncCoinBusiness {
         RiseDto riseDto = redisService.getCacheObject(key);
         if (riseDto == null) {//redis异常 TODO
             //当天前5分钟禁止买卖
-            if (now.getTime() > (DateUtil.getMinTime(now).getTime() + 300000) && now.getTime() < (DateUtil.getMinTime(now).getTime() + 360000)) {
+            if ((now.getTime() > (DateUtil.getMinTime(now).getTime() + 300000) && now.getTime() < (DateUtil.getMinTime(now).getTime() + 360000)) || newRedis) {
                 riseDto = new RiseDto();
                 riseDto.setModeType(modeType);
             } else {
