@@ -46,6 +46,7 @@ public class CoinProfitBusiness extends ServiceImpl<CoinProfitMapper, OkxCoinPro
         wrapper.eq(profitDo.getAccountId() != null ,OkxCoinProfit::getAccountId, profitDo.getAccountId());
         wrapper.eq(profitDo.getCoin() != null ,OkxCoinProfit::getCoin, profitDo.getCoin());
         wrapper.eq(profitDo.getId() != null ,OkxCoinProfit::getId, profitDo.getId());
+        wrapper.orderByDesc(OkxCoinProfit::getUpdateTime);
         List<OkxCoinProfit> profits =  mapper.selectList(wrapper);
 
         List<OkxAccountBalance> balances = accountBalanceBusiness.list(new OkxAccountBalanceDO(null,null,null,profitDo.getAccountId(),null));
@@ -54,7 +55,7 @@ public class CoinProfitBusiness extends ServiceImpl<CoinProfitMapper, OkxCoinPro
                 profit.setBalance(obj.getBalance());
             });
         }
-        return profits.stream().sorted(Comparator.comparing(OkxCoinProfit::getUpdateTime).reversed()).collect(Collectors.toList());
+        return profits;
     }
 
     public OkxCoinProfit findOne(Integer accountId, String coin) {

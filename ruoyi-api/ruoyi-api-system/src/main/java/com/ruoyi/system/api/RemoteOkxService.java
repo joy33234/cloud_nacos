@@ -73,4 +73,14 @@ public interface RemoteOkxService
     public R<Void> syncSellOrder(@RequestHeader(SecurityConstants.FROM_SOURCE) String source);
 
 
+    /**
+     * 同步coin standard
+     *
+     * @param source 请求来源
+     * @return 结果
+     */
+    @GetMapping("/sync/coin")
+    public R<Void> syncCoin(@RequestHeader(SecurityConstants.FROM_SOURCE) String source);
+
+
 }

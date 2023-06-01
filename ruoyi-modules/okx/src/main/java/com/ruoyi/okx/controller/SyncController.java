@@ -22,6 +22,15 @@ public class SyncController extends BaseController
     /**
      * 根据参数获取详细信息
      */
+    @GetMapping(value = "/coin")
+    public AjaxResult syncCoin(){
+        syncBusiness.syncCoin();
+        return success();
+    }
+
+    /**
+     * 根据参数获取详细信息
+     */
     @GetMapping(value = "/buy/order")
     public AjaxResult syncBuy(){
         syncBusiness.syncBuyOrder();

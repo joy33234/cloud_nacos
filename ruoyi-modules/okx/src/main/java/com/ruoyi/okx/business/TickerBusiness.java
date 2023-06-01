@@ -16,6 +16,7 @@ import com.ruoyi.common.core.exception.ServiceException;
 import com.ruoyi.common.core.utils.DateUtil;
 import com.ruoyi.common.core.utils.HttpUtil;
 import com.ruoyi.common.redis.service.RedisLock;
+import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.OkxCoinTicker;
 import com.ruoyi.okx.mapper.CoinTickerMapper;
 import org.apache.commons.collections4.CollectionUtils;
@@ -41,6 +42,9 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
 
     @Autowired
     private RedisLock redisLock;
+
+    @Resource
+    private RedisService redisService;
 
     @Resource
     private SyncCoinBusiness syncCoinBusiness;

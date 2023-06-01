@@ -50,7 +50,8 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
         wrapper.eq((null != sellRecordDO.getAccountName()), OkxSellRecord::getAccountName, sellRecordDO.getAccountName());
         wrapper.eq((null != sellRecordDO.getStatus()), OkxSellRecord::getStatus, sellRecordDO.getStatus());
         wrapper.between((sellRecordDO.getParams().get("beginTime") != null), OkxSellRecord::getCreateTime, sellRecordDO.getParams().get("beginTime"), sellRecordDO.getParams().get("endTime"));
-        return sellRecordMapper.selectList( wrapper).stream().sorted(Comparator.comparing(OkxSellRecord::getCreateTime).reversed()).collect(Collectors.toList());
+        wrapper.orderByDesc(OkxSellRecord::getUpdateTime);
+        return sellRecordMapper.selectList( wrapper);
     }
 
     public List<OkxSellRecord> findPendings(Integer accountId) {

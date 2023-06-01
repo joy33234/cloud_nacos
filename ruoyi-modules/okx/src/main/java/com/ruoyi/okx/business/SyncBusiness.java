@@ -3,6 +3,7 @@ package com.ruoyi.okx.business;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
+import com.ruoyi.common.core.constant.CacheConstants;
 import com.ruoyi.common.core.enums.Status;
 import com.ruoyi.common.core.exception.ServiceException;
 import com.ruoyi.common.core.utils.HttpUtil;
@@ -126,6 +127,11 @@ public class SyncBusiness {
     @Async
     public void syncCoinBalance() {
         syncCoinCountBusiness.syncOkxBalance();
+    }
+
+    @Async
+    public void syncCoin() {
+        coinBusiness.syncCoin();
     }
 
 

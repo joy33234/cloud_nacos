@@ -14,6 +14,7 @@ import com.ruoyi.okx.domain.*;
 import com.ruoyi.okx.mapper.CoinMapper;
 import com.ruoyi.okx.params.DO.OkxAccountBalanceDO;
 import jdk.nashorn.internal.ir.annotations.Reference;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,13 +54,30 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
         return this.coinMapper.selectOne(wrapper);
     }
 
-    @Transactional(rollbackFor = Exception.class)
-    public boolean updateList(List<OkxCoin> coins) {
-        saveOrUpdateBatch(coins);
-        resetSettingCache();
+    public boolean updateCache(List<OkxCoin> coins) {
+        resetSettingCache(coins);
         return true;
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    public void syncCoin() {
+        Collection<String> keys = redisService.keys(CacheConstants.OKX_COIN_KEY + "*");
+        for (String key:keys) {
+            OkxCoin coin = redisService.getCacheObject(key);
+            if (coin != null) {
+                coinMapper.updateById(coin);
+            }
+        }
+    }
+
+    public List<OkxCoin> getCoinCache() {
+        List<OkxCoin> list = Lists.newArrayList();
+        Collection<String> keys = redisService.keys(CacheConstants.OKX_COIN_KEY + "*");
+        for (String key:keys) {
+            list.add(redisService.getCacheObject(key));
+        }
+        return list;
+    }
 
     public List<OkxCoin> selectCoinList(OkxCoin coin){
         if (coin == null) {
@@ -86,8 +104,19 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
         loadingCache();
     }
 
+    public void resetSettingCache(List<OkxCoin> coins){
+        clearSettingCache();
+        loadingCache(coins);
+    }
+
     public void loadingCache() {
         List<OkxCoin> coins = list();
+        for (OkxCoin coin : coins)
+        {
+            redisService.setCacheObject(CacheConstants.OKX_COIN_KEY + coin.getCoin(), coin);
+        }
+    }
+    public void loadingCache(List<OkxCoin> coins) {
         for (OkxCoin coin : coins)
         {
             redisService.setCacheObject(CacheConstants.OKX_COIN_KEY + coin.getCoin(), coin);

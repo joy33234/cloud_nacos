@@ -42,17 +42,26 @@ public class StrategyBusiness  {
         }
 
         //现有数量与买入数量不能超过最高手持数量
-        BigDecimal totalTimes = coin.getCount().add(buyRecord.getQuantity()).divide(coin.getUnit());
-        BigDecimal buyMaxTime = new BigDecimal(settingList.stream()
-                .filter(item -> item.getSettingKey().equalsIgnoreCase(OkxConstants.BUY_MAX_TIMES)).findFirst().get().getSettingValue());
-        if (totalTimes.compareTo(buyMaxTime) > 0) {
-            log.warn("不能高于最高手持倍数 coin:{},count:{}", coin.getCoin());
-            return false;
-        }
+//        BigDecimal totalTimes = coin.getCount().add(buyRecord.getQuantity()).divide(coin.getUnit());
+//        BigDecimal buyMaxTime = new BigDecimal(settingList.stream()
+//                .filter(item -> item.getSettingKey().equalsIgnoreCase(OkxConstants.BUY_MAX_TIMES)).findFirst().get().getSettingValue());
+//        if (totalTimes.compareTo(buyMaxTime) > 0) {
+//            log.warn("不能高于最高手持倍数 coin:{},count:{}", coin.getCoin());
+//            return false;
+//        }  改为每种币买入相同数量U
+
 
         if (buyRecord.getAmount().compareTo(new BigDecimal(settingList.stream()
                         .filter(item -> item.getSettingKey().equals(OkxConstants.BUY_MAX_USDT)).findFirst().get().getSettingValue())) > 0) {
             log.warn("买入金额高于最高买入值 accountId{}, amount:{}", buyRecord.getAccountId(), buyRecord.getAmount());
+            return false;
+        }
+
+        BigDecimal totalUSDT = coin.getCount().add(buyRecord.getAmount());
+        BigDecimal buySumMaxUsdt = new BigDecimal(settingList.stream()
+                .filter(item -> item.getSettingKey().equalsIgnoreCase(OkxConstants.BUY_SUM_MAX_USDT)).findFirst().get().getSettingValue());
+        if (totalUSDT.compareTo(buySumMaxUsdt) > 0) {
+            log.warn("订单总额不能高于最高买入USDT值 coin:{},count:{}", coin.getCoin(),totalUSDT);
             return false;
         }
 

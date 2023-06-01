@@ -1,5 +1,6 @@
 package com.ruoyi.auth;
 
+import com.ruoyi.auth.config.AfterConfigListener;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -15,7 +16,10 @@ public class RuoYiAuthApplication
 {
     public static void main(String[] args)
     {
-        SpringApplication.run(RuoYiAuthApplication.class, args);
+        SpringApplication springApplication = new SpringApplication(RuoYiAuthApplication.class);
+        springApplication.addListeners(new AfterConfigListener());
+        springApplication.run(args);
+
         System.out.println("(♥◠‿◠)ﾉﾞ  认证授权中心启动成功   ლ(´ڡ`ლ)ﾞ  \n" +
                 " .-------.       ____     __        \n" +
                 " |  _ _   \\      \\   \\   /  /    \n" +

@@ -64,6 +64,7 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
         wrapper.eq((null != buyRecordDO.getAccountName()), OkxBuyRecord::getAccountName, buyRecordDO.getAccountName());
         wrapper.eq((null != buyRecordDO.getStatus()), OkxBuyRecord::getStatus, buyRecordDO.getStatus());
         wrapper.between((buyRecordDO.getParams().get("beginTime") != null), OkxBuyRecord::getCreateTime, buyRecordDO.getParams().get("beginTime"), buyRecordDO.getParams().get("endTime"));
+        wrapper.orderByDesc(OkxBuyRecord::getUpdateTime);
         List<OkxBuyRecord> list =buyRecordMapper.selectList(wrapper);
         List<OkxCoinTicker> tickerList = tickerBusiness.findTodayTicker();
         for (OkxBuyRecord record:list) {
@@ -71,7 +72,7 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
                 record.setLast(obj.getLast());
             });
         }
-        return list.stream().sorted(Comparator.comparing(OkxBuyRecord::getCreateTime).reversed()).collect(Collectors.toList());
+        return list;
     }
 
     public List<OkxBuyRecord> findSuccessRecord(String coin, Integer accountId, String modeType, Integer marketStatus) {

@@ -170,7 +170,7 @@ public class SyncCoinBusiness {
                     obj.setStandard(coinBusiness.calculateStandard(tickers.get(finalI)));
                 });
             }
-            boolean update = coinBusiness.updateList(okxCoins);
+            boolean update = coinBusiness.updateCache(okxCoins);
 
             if (update == true) {
                 //更新涨跌数据

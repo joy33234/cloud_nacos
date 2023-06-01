@@ -65,6 +65,12 @@ public class OkxConstants
 
 
     /**
+     * 买入订单总USDT最大值
+     */
+    public static final String BUY_SUM_MAX_USDT = "BUY_SUM_MAX_USDT";
+
+
+    /**
      * 买入每次交易额度
      */
     public static final String BUY_USDT_AMOUNT = "buy_usdt_amount";
