@@ -34,4 +34,7 @@ public class OkxCoin extends CommonEntity {
 
     @TableField(exist = false)
     private BigDecimal btcIns;
+
+    @TableField(exist = false)
+    private BigDecimal tradeMinAmount;
 }

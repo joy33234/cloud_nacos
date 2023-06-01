@@ -68,15 +68,9 @@ public class AccountController extends BaseController
         startPage();
         List<OkxAccount> list = accountBusiness.list(account);
         list.stream().forEach(item -> {
-            String password = item.getPassword().substring(0,8) + "....";
-            item.setPassword(password);
-
-            String secret = item.getSecretkey().substring(0,8) + "....";
-            item.setSecretkey(secret);
-
-            String apikey = item.getApikey().substring(0,8) + "....";
-            item.setApikey(apikey);
-
+            item.setPassword(item.getPassword().substring(0,8) + "....");
+            item.setSecretkey(item.getSecretkey().substring(0,8) + "....");
+            item.setApikey(item.getApikey().substring(0,8) + "....");
         });
         return getDataTable(list);
     }
@@ -103,6 +97,10 @@ public class AccountController extends BaseController
         ajax.put("settings", settingList);
         if (ObjectUtils.isNotEmpty(accountId)) {
             OkxAccount okxAccount = accountBusiness.getById(accountId);
+            okxAccount.setPassword(okxAccount.getPassword().substring(0,8) + "....");
+            okxAccount.setSecretkey(okxAccount.getSecretkey().substring(0,8) + "....");
+            okxAccount.setApikey(okxAccount.getApikey().substring(0,8) + "....");
+
             ajax.put(AjaxResult.DATA_TAG, okxAccount);
             ajax.put("settingIds", StringUtils.isEmpty(okxAccount.getSettingIds()) ? Lists.newArrayList() : Arrays.asList(okxAccount.getSettingIds().split(","))
                     .parallelStream()

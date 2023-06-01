@@ -85,7 +85,12 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
         }
         LambdaQueryWrapper<OkxCoin> wrapper = new LambdaQueryWrapper();
         wrapper.eq(coin.getCoin() != null, OkxCoin::getCoin, coin.getCoin());
-        return coinMapper.selectList(wrapper);
+        List<OkxCoin> list =  coinMapper.selectList(wrapper);
+        list.stream().forEach(item -> {
+            item.setTradeMinAmount(item.getStandard().multiply(item.getUnit()).setScale(6, RoundingMode.DOWN));
+            item.setVolUsdt24h(item.getVolUsdt24h().setScale(6,RoundingMode.DOWN));
+        });
+        return list;
     }
 
     public OkxCoin getCoin(String coin) {
@@ -99,23 +104,12 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
         return okxCoin;
     }
 
-    public void resetSettingCache(){
-        clearSettingCache();
-        loadingCache();
-    }
 
     public void resetSettingCache(List<OkxCoin> coins){
         clearSettingCache();
         loadingCache(coins);
     }
 
-    public void loadingCache() {
-        List<OkxCoin> coins = list();
-        for (OkxCoin coin : coins)
-        {
-            redisService.setCacheObject(CacheConstants.OKX_COIN_KEY + coin.getCoin(), coin);
-        }
-    }
     public void loadingCache(List<OkxCoin> coins) {
         for (OkxCoin coin : coins)
         {
