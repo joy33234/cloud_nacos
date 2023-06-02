@@ -58,4 +58,11 @@ public class OkxBuyRecord extends CommonEntity {
     @TableField(exist = false)
     private BigDecimal last;
 
+    /**
+     * 当前价格
+     */
+    @Transient
+    @TableField(exist = false)
+    private BigDecimal profit;
+
 }
