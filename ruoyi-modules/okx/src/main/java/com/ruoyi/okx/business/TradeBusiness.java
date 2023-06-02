@@ -84,8 +84,8 @@ public class TradeBusiness {
             for (TradeDto tradeDto:list) {
                 if (tradeDto.getSide().equals(OkxSideEnum.BUY.getSide())) {
                     OkxBuyRecord buyRecord =
-                            new OkxBuyRecord(null, tradeDto.getCoin(), tradeDto.getInstId(), tradeDto.getPx(), tradeDto.getSz(),
-                                    tradeDto.getPx().multiply(tradeDto.getSz()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP), BigDecimal.ZERO, BigDecimal.ZERO,
+                            new OkxBuyRecord(null, tradeDto.getCoin(), tradeDto.getInstId(), tradeDto.getPx(), tradeDto.getSz().setScale(4, RoundingMode.DOWN),
+                                    tradeDto.getPx().multiply(tradeDto.getSz()).setScale(4, RoundingMode.DOWN), BigDecimal.ZERO, BigDecimal.ZERO,
                                     OrderStatusEnum.PENDING.getStatus(), UUID.randomUUID().toString(), "", tradeDto.getBuyStrategyId(), tradeDto.getTimes(), accountId,accountName,tradeDto.getMarketStatus(),tradeDto.getModeType(),null);
                     if (!strategyBusiness.checkBuy(buyRecord, coin, okxSettings)){
                         return;
