@@ -52,11 +52,20 @@ public class OpenAiController extends BaseController
 
 
     /**
-     * 新增参数配置
+     * chatGpt 聊天
      */
     @Log(title = "参数管理", businessType = BusinessType.INSERT)
     @PostMapping(value = "/chat")
     public R<?> updateChat(@Validated @RequestBody ChatLog chatLog) {
+        return openAiBusiness.updateChat(chatLog);
+    }
+
+    /**
+     * chatGpt 生成图片
+     */
+    @Log(title = "参数管理", businessType = BusinessType.INSERT)
+    @PostMapping(value = "/images")
+    public R<?> getImages(@Validated @RequestBody ChatLog chatLog) {
         return openAiBusiness.updateChat(chatLog);
     }
 }
