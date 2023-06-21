@@ -54,10 +54,6 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
         return this.coinMapper.selectOne(wrapper);
     }
 
-    public boolean updateCache(List<OkxCoin> coins) {
-        resetSettingCache(coins);
-        return true;
-    }
 
     @Transactional(rollbackFor = Exception.class)
     public void syncCoin() {
@@ -105,16 +101,11 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
     }
 
 
-    public void resetSettingCache(List<OkxCoin> coins){
-        clearSettingCache();
-        loadingCache(coins);
-    }
-
-    public void loadingCache(List<OkxCoin> coins) {
-        for (OkxCoin coin : coins)
-        {
+    public boolean updateCache(List<OkxCoin> coins) {
+        for (OkxCoin coin : coins) {
             redisService.setCacheObject(CacheConstants.OKX_COIN_KEY + coin.getCoin(), coin);
         }
+        return true;
     }
 
     public void clearSettingCache()

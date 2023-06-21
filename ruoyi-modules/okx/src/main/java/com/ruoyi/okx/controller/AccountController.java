@@ -18,6 +18,7 @@ import com.ruoyi.okx.domain.OkxAccount;
 import com.ruoyi.okx.domain.OkxCoinProfit;
 import com.ruoyi.okx.domain.OkxSetting;
 import com.ruoyi.okx.params.DO.OkxAccountDO;
+import com.ruoyi.okx.params.DO.OkxAccountEditDO;
 import com.ruoyi.okx.params.DO.OkxCoinProfitDo;
 import com.ruoyi.okx.service.SettingService;
 import com.ruoyi.okx.utils.DtoUtils;
@@ -139,7 +140,7 @@ public class AccountController extends BaseController
     @RequiresPermissions("okx:account:edit")
     @Log(title = "参数管理", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@Validated @RequestBody OkxAccountDO accountDO)
+    public AjaxResult edit(@Validated @RequestBody OkxAccountEditDO accountDO)
     {
         if (!settingService.checkSettingKey(accountDO.getSettingIds())) {
             return error("配置策略失败，参数键名异常");
