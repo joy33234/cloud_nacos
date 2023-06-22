@@ -76,7 +76,8 @@ public class TradeBusiness {
      * @throws Exception
      */
     @Transactional(rollbackFor = Exception.class)
-    public void trade(List<TradeDto> list, OkxCoin coin, Map<String, String> map, List<OkxSetting> okxSettings, RiseDto riseDto,BigDecimal tickerIns) throws ServiceException {
+    @Async
+    public void trade(List<TradeDto> list, OkxCoin coin, Map<String, String> map, List<OkxSetting> okxSettings, RiseDto riseDto,BigDecimal tickerIns, BigDecimal totalBuyAmount) throws ServiceException {
         try {
             Date now = new Date();
             Integer accountId = Integer.valueOf(map.get("id"));
@@ -87,7 +88,7 @@ public class TradeBusiness {
                             new OkxBuyRecord(null, tradeDto.getCoin(), tradeDto.getInstId(), tradeDto.getPx(), tradeDto.getSz(),
                                     tradeDto.getPx().multiply(tradeDto.getSz()), BigDecimal.ZERO, BigDecimal.ZERO,
                                     OrderStatusEnum.PENDING.getStatus(), UUID.randomUUID().toString(), "", tradeDto.getBuyStrategyId(), tradeDto.getTimes(), accountId,accountName,tradeDto.getMarketStatus(),tradeDto.getModeType(),null,null);
-                    if (!strategyBusiness.checkBuy(buyRecord, coin, okxSettings)){
+                    if (!strategyBusiness.checkBuy(buyRecord, coin, okxSettings, totalBuyAmount)){
                         return;
                     }
                     String okxOrderId = tradeOkx(tradeDto, now, map);
@@ -163,7 +164,7 @@ public class TradeBusiness {
         try {
             Long start = System.currentTimeMillis();
             Integer accountId = Integer.valueOf(map.get("id"));
-            boolean lock = redisLock.lock(RedisConstants.OKX_TICKER_TRADE + accountId,600,3,3000);
+            boolean lock = redisLock.lock(RedisConstants.OKX_TICKER_TRADE + accountId,30,3,5000);
             if (lock == false) {
                 log.error("获取锁失败，交易取消");
                 return;
@@ -194,8 +195,9 @@ public class TradeBusiness {
                 if (CollectionUtils.isEmpty(tradeDtoList)) {
                     continue;
                 }
+                BigDecimal totalBuyAmount = tempBuyRecords.stream().map(OkxBuyRecord::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
                 //交易
-                trade(tradeDtoList, OkxCoin.get(), map, okxSettings, riseDto,ticker.getIns());
+                trade(tradeDtoList, OkxCoin.get(), map, okxSettings, riseDto,ticker.getIns(),totalBuyAmount);
             }
             //大盘交易
             if (map.get(OkxConstants.MODE_TYPE).equals(ModeTypeEnum.MARKET.getValue())

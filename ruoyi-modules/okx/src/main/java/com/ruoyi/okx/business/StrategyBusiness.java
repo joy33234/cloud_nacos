@@ -31,7 +31,7 @@ public class StrategyBusiness  {
     private CoinBusiness coinBusiness;
 
 
-    public boolean checkBuy(OkxBuyRecord buyRecord, OkxCoin coin, List<OkxSetting> settingList) {
+    public boolean checkBuy(OkxBuyRecord buyRecord, OkxCoin coin, List<OkxSetting> settingList,BigDecimal totalBuyAmount) {
 
         if (coin.getStatus() != CoinStatusEnum.OPEN.getStatus()) {
             return false;
@@ -57,7 +57,7 @@ public class StrategyBusiness  {
             return false;
         }
 
-        BigDecimal totalUSDT = coin.getCount().multiply(buyRecord.getPrice()).add(buyRecord.getAmount());
+        BigDecimal totalUSDT = totalBuyAmount.add(buyRecord.getAmount());
         BigDecimal buySumMaxUsdt = new BigDecimal(settingList.stream()
                 .filter(item -> item.getSettingKey().equalsIgnoreCase(OkxConstants.BUY_SUM_MAX_USDT)).findFirst().get().getSettingValue());
         if (totalUSDT.compareTo(buySumMaxUsdt) > 0) {

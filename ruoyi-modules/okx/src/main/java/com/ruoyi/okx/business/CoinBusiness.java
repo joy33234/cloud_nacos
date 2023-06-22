@@ -103,7 +103,13 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
 
     public boolean updateCache(List<OkxCoin> coins) {
         for (OkxCoin coin : coins) {
+            if (coin.getCoin().equals("eth")) {
+                log.info("updateCache start time:{}" ,System.currentTimeMillis());
+            }
             redisService.setCacheObject(CacheConstants.OKX_COIN_KEY + coin.getCoin(), coin);
+            if (coin.getCoin().equals("eth")) {
+                log.info("updateCache end time:{}" ,System.currentTimeMillis());
+            }
         }
         return true;
     }

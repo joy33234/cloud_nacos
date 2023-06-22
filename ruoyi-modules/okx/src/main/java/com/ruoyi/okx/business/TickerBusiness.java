@@ -54,7 +54,7 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
     public boolean syncTicker() throws ServiceException{
         try {
             Map<String, String> accountMap = accountBusiness.getAccountMap();
-            redisLock.lock(RedisConstants.OKX_TICKER,10,3,1000);
+            redisLock.lock(RedisConstants.OKX_TICKER,30,3,5000);
 
             String str = HttpUtil.getOkx("/api/v5/market/tickers?instType=SPOT", null, accountMap);
             JSONObject json = JSONObject.parseObject(str);

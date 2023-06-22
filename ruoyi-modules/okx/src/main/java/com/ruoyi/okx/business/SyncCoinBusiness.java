@@ -143,10 +143,9 @@ public class SyncCoinBusiness {
     }
 
 
-    @Async
     public void updateCoin(List<JSONObject> items, List<OkxCoinTicker> tickers, Date now) throws Exception {
         try {
-            redisLock.lock(RedisConstants.OKX_TICKER_UPDATE_COIN,10,3,1000);
+            //redisLock.lock(RedisConstants.OKX_TICKER_UPDATE_COIN,10,3,1000);
 
             BigDecimal usdt24h = new BigDecimal(settingService.selectSettingByKey(OkxConstants.USDT_24H));
             List<OkxCoin> okxCoins = coinBusiness.list().stream().filter(item -> item.getUnit().compareTo(BigDecimal.ZERO) > 0).collect(Collectors.toList());
@@ -178,16 +177,15 @@ public class SyncCoinBusiness {
                 accountBusiness.list().stream()
                         .filter(item -> item.getStatus().intValue() == Status.OK.getCode()).forEach(item -> {
                     List<OkxSetting> okxSettings =   accountBusiness.listByAccountId(item.getId());
-                    if (this.refreshRiseCount(okxCoins, now, item.getId(), okxSettings) == false) {
-                        return;
+                    if (this.refreshRiseCount(okxCoins, now, item.getId(), okxSettings) == true) {
+                        tradeBusiness.trade( okxCoins, tickers, okxSettings,accountBusiness.getAccountMap(item));
                     }
-                    tradeBusiness.trade( okxCoins, tickers, okxSettings,accountBusiness.getAccountMap(item));
                 });
             }
-            redisLock.releaseLock(RedisConstants.OKX_TICKER_UPDATE_COIN);
+            //redisLock.releaseLock(RedisConstants.OKX_TICKER_UPDATE_COIN);
         } catch (Exception e) {
             log.error("updateCoin error",e);
-            redisLock.releaseLock(RedisConstants.OKX_TICKER_UPDATE_COIN);
+            //redisLock.releaseLock(RedisConstants.OKX_TICKER_UPDATE_COIN);
             throw new Exception(e.getMessage());
         }
     }
@@ -223,10 +221,10 @@ public class SyncCoinBusiness {
             riseDto.setHighest(risePercent);
         }
         riseDto.setLowCount(okxCoins.size() - riseCount);
+        riseDto.setLowPercent(lowPercent);
         if (lowPercent.compareTo(riseDto.getLowPercent()) > 0) {
             riseDto.setLowest(lowPercent);
         }
-        riseDto.setLowPercent(lowPercent);
         for (OkxCoin okxCoin:okxCoins) {
             if (okxCoin.getCoin().equalsIgnoreCase("BTC")) {
                 riseDto.setBTCIns(okxCoin.getBtcIns());
