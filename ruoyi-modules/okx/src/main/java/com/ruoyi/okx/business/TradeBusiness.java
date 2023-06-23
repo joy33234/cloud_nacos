@@ -163,12 +163,12 @@ public class TradeBusiness {
 
     @Async
     public void trade(List<OkxCoin> coins, List<OkxCoinTicker> tickers,List<OkxSetting> okxSettings, Map<String, String> map) throws ServiceException {
+        Integer accountId = Integer.valueOf(map.get("id"));
+        String lockKey = RedisConstants.OKX_TICKER_TRADE + accountId;
         try {
-            Long start = System.currentTimeMillis();
-            Integer accountId = Integer.valueOf(map.get("id"));
-            boolean lock = redisLock.lock(RedisConstants.OKX_TICKER_TRADE + accountId,30,3,5000);
+            boolean lock = redisLock.lock(lockKey,30,3,5000);
             if (lock == false) {
-                log.error("获取锁失败，交易取消");
+                log.error("trade获取锁失败，交易取消");
                 return;
             }
             RiseDto riseDto = redisService.getCacheObject(this.getCacheMarketKey(accountId));
@@ -215,14 +215,10 @@ public class TradeBusiness {
                     riseDto.setFallBoughtTime(new Date());
                 }
                 redisService.setCacheObject(this.getCacheMarketKey(accountId), riseDto);
-                log.info("market-update-riseDto:{}",JSON.toJSONString(riseDto));
-                Long end = System.currentTimeMillis();
-                log.info("trade method time:{}",end - start);
             }
-            redisLock.releaseLock(RedisConstants.OKX_TICKER_TRADE);
-            log.info("syncTicker - trade time:{}", System.currentTimeMillis() - start);
+            redisLock.releaseLock(lockKey);
         } catch (Exception e) {
-            redisLock.releaseLock(RedisConstants.OKX_TICKER_TRADE);
+            redisLock.releaseLock(lockKey);
             log.error("trade error",e);
             throw new ServiceException("交易异常", 500);
         }

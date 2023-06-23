@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -101,17 +102,11 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
     }
 
 
-    public boolean updateCache(List<OkxCoin> coins) {
+    @Async
+    public void updateCache(List<OkxCoin> coins) {
         for (OkxCoin coin : coins) {
-            if (coin.getCoin().equals("eth")) {
-                log.info("updateCache start time:{}" ,System.currentTimeMillis());
-            }
             redisService.setCacheObject(CacheConstants.OKX_COIN_KEY + coin.getCoin(), coin);
-            if (coin.getCoin().equals("eth")) {
-                log.info("updateCache end time:{}" ,System.currentTimeMillis());
-            }
         }
-        return true;
     }
 
     public void clearSettingCache()

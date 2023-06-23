@@ -145,9 +145,6 @@ public class SyncCoinBusiness {
 
     public void updateCoin(List<JSONObject> items, List<OkxCoinTicker> tickers, Date now) throws Exception {
         try {
-            Long start = System.currentTimeMillis();
-            //redisLock.lock(RedisConstants.OKX_TICKER_UPDATE_COIN,10,3,1000);
-
             BigDecimal usdt24h = new BigDecimal(settingService.selectSettingByKey(OkxConstants.USDT_24H));
             List<OkxCoin> okxCoins = coinBusiness.list().stream().filter(item -> item.getUnit().compareTo(BigDecimal.ZERO) > 0).collect(Collectors.toList());
             for (int i = 0; i < items.size(); i++) {
@@ -171,23 +168,19 @@ public class SyncCoinBusiness {
                     obj.setStandard(coinBusiness.calculateStandard(tickers.get(finalI)));
                 });
             }
-            boolean update = coinBusiness.updateCache(okxCoins);
+            //更新缓存
+            coinBusiness.updateCache(okxCoins);
 
-            if (update == true) {
-                //更新涨跌数据
-                accountBusiness.list().stream()
-                        .filter(item -> item.getStatus().intValue() == Status.OK.getCode()).forEach(item -> {
-                    List<OkxSetting> okxSettings =   accountBusiness.listByAccountId(item.getId());
-                    if (this.refreshRiseCount(okxCoins, now, item.getId(), okxSettings) == true) {
-                        tradeBusiness.trade( okxCoins, tickers, okxSettings,accountBusiness.getAccountMap(item));
-                    }
-                });
-            }
-            log.info("syncTicker - updateCoin time:{}", System.currentTimeMillis() - start);
-            //redisLock.releaseLock(RedisConstants.OKX_TICKER_UPDATE_COIN);
+            //更新涨跌数据
+            accountBusiness.list().stream()
+                    .filter(item -> item.getStatus().intValue() == Status.OK.getCode()).forEach(item -> {
+                List<OkxSetting> okxSettings =   accountBusiness.listByAccountId(item.getId());
+                if (this.refreshRiseCount(okxCoins, now, item.getId(), okxSettings) == true) {
+                    tradeBusiness.trade( okxCoins, tickers, okxSettings,accountBusiness.getAccountMap(item));
+                }
+            });
         } catch (Exception e) {
             log.error("updateCoin error",e);
-            //redisLock.releaseLock(RedisConstants.OKX_TICKER_UPDATE_COIN);
             throw new Exception(e.getMessage());
         }
     }
