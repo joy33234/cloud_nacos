@@ -58,7 +58,7 @@ public class SyncController extends BaseController
      * 根据参数获取详细信息
      */
     @GetMapping(value = "/ticker")
-    public AjaxResult syncTickercker(){
+    public AjaxResult syncTicker(){
         syncBusiness.syncTicker();
         return success();
     }
