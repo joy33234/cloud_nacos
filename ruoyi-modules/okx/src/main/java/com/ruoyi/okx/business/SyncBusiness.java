@@ -106,7 +106,7 @@ public class SyncBusiness {
                     }
                 }
                 if(coinBusiness.saveBatch(saveCoins.stream().distinct().collect(Collectors.toList()))) {
-                    coinBusiness.loadingCache(saveCoins.stream().distinct().collect(Collectors.toList()));
+                    coinBusiness.updateCache(saveCoins.stream().distinct().collect(Collectors.toList()));
                 }
             }
         } catch (Exception e) {

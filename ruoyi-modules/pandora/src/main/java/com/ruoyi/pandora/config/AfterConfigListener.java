@@ -24,7 +24,7 @@ public class AfterConfigListener implements SmartApplicationListener, Ordered {
     @Override
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
         if (applicationEvent instanceof ApplicationEnvironmentPreparedEvent) {
-            System.setProperty("spring.cloud.nacos.discovery.ip", "8.217.76.186");
+            System.setProperty("spring.cloud.nacos.discovery.ip", "43.153.20.79");
         }
     }
 }

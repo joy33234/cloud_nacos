@@ -76,7 +76,8 @@ public class TradeBusiness {
      * @throws Exception
      */
     @Transactional(rollbackFor = Exception.class)
-    public void trade(List<TradeDto> list, OkxCoin coin, Map<String, String> map, List<OkxSetting> okxSettings, RiseDto riseDto,BigDecimal tickerIns) throws ServiceException {
+    @Async
+    public void trade(List<TradeDto> list, OkxCoin coin, Map<String, String> map, List<OkxSetting> okxSettings, RiseDto riseDto,BigDecimal tickerIns, BigDecimal totalBuyAmount) throws ServiceException {
         try {
             Date now = new Date();
             Integer accountId = Integer.valueOf(map.get("id"));
@@ -84,10 +85,10 @@ public class TradeBusiness {
             for (TradeDto tradeDto:list) {
                 if (tradeDto.getSide().equals(OkxSideEnum.BUY.getSide())) {
                     OkxBuyRecord buyRecord =
-                            new OkxBuyRecord(null, tradeDto.getCoin(), tradeDto.getInstId(), tradeDto.getPx(), tradeDto.getSz().setScale(4, RoundingMode.DOWN),
-                                    tradeDto.getPx().multiply(tradeDto.getSz()).setScale(4, RoundingMode.DOWN), BigDecimal.ZERO, BigDecimal.ZERO,
+                            new OkxBuyRecord(null, tradeDto.getCoin(), tradeDto.getInstId(), tradeDto.getPx(), tradeDto.getSz(),
+                                    tradeDto.getPx().multiply(tradeDto.getSz()), BigDecimal.ZERO, BigDecimal.ZERO,
                                     OrderStatusEnum.PENDING.getStatus(), UUID.randomUUID().toString(), "", tradeDto.getBuyStrategyId(), tradeDto.getTimes(), accountId,accountName,tradeDto.getMarketStatus(),tradeDto.getModeType(),null,null);
-                    if (!strategyBusiness.checkBuy(buyRecord, coin, okxSettings)){
+                    if (!strategyBusiness.checkBuy(buyRecord, coin, okxSettings, totalBuyAmount)){
                         return;
                     }
                     String okxOrderId = tradeOkx(tradeDto, now, map);
@@ -161,8 +162,13 @@ public class TradeBusiness {
     @Async
     public void trade(List<OkxCoin> coins, List<OkxCoinTicker> tickers,List<OkxSetting> okxSettings, Map<String, String> map) throws ServiceException {
         try {
-            redisLock.lock(RedisConstants.OKX_TICKER_TRADE,600,3,10000);
+            Long start = System.currentTimeMillis();
             Integer accountId = Integer.valueOf(map.get("id"));
+            boolean lock = redisLock.lock(RedisConstants.OKX_TICKER_TRADE + accountId,30,3,5000);
+            if (lock == false) {
+                log.error("获取锁失败，交易取消");
+                return;
+            }
             RiseDto riseDto = redisService.getCacheObject(this.getCacheMarketKey(accountId));
 
             //coin set balance
@@ -189,8 +195,9 @@ public class TradeBusiness {
                 if (CollectionUtils.isEmpty(tradeDtoList)) {
                     continue;
                 }
+                BigDecimal totalBuyAmount = tempBuyRecords.stream().map(OkxBuyRecord::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
                 //交易
-                trade(tradeDtoList, OkxCoin.get(), map, okxSettings, riseDto,ticker.getIns());
+                trade(tradeDtoList, OkxCoin.get(), map, okxSettings, riseDto,ticker.getIns(),totalBuyAmount);
             }
             //大盘交易
             if (map.get(OkxConstants.MODE_TYPE).equals(ModeTypeEnum.MARKET.getValue())
@@ -207,6 +214,8 @@ public class TradeBusiness {
                 }
                 redisService.setCacheObject(this.getCacheMarketKey(accountId), riseDto);
                 log.info("market-update-riseDto:{}",JSON.toJSONString(riseDto));
+                Long end = System.currentTimeMillis();
+                log.info("trade method time:{}",end - start);
             }
             redisLock.releaseLock(RedisConstants.OKX_TICKER_TRADE);
         } catch (Exception e) {
@@ -216,7 +225,6 @@ public class TradeBusiness {
         }
     }
 
-
     private List<TradeDto> getTradeDto( OkxCoin coin, OkxCoinTicker ticker, Map<String, String> map,RiseDto riseDto,List<OkxBuyRecord> buyRecords,List<OkxSetting> okxSettings) {
         List<TradeDto> list = Lists.newArrayList();
         TradeDto tradeDto =  DtoUtils.transformBean(ticker, TradeDto.class);
@@ -225,8 +233,11 @@ public class TradeBusiness {
         String modeType = map.get(OkxConstants.MODE_TYPE);
         //买入数量
         BigDecimal buyUsdtAmout = new BigDecimal(okxSettings.stream().filter(item -> item.getSettingKey().equals(OkxConstants.BUY_USDT_AMOUNT)).findFirst().get().getSettingValue());
-        BigDecimal buyPrice = ticker.getLast().add(ticker.getLast().multiply(new BigDecimal(0.0012)));
-        BigDecimal buySz = buyUsdtAmout.divide(buyPrice,8, RoundingMode.DOWN);
+        BigDecimal buyPrice = ticker.getLast().add(ticker.getLast().multiply(new BigDecimal(9.0E-4D)));
+        BigDecimal buySz = buyUsdtAmout.divide(buyPrice,Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN);
+        if (buySz.compareTo(BigDecimal.ONE) > 0) {
+            buySz.setScale(4,RoundingMode.DOWN);
+        }
 
         BigDecimal ins = ticker.getLast().subtract(coin.getStandard()).divide(coin.getStandard(), 8, RoundingMode.HALF_UP);
 
