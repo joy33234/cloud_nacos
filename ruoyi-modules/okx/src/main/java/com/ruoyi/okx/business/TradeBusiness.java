@@ -79,6 +79,7 @@ public class TradeBusiness {
     @Async
     public void trade(List<TradeDto> list, OkxCoin coin, Map<String, String> map, List<OkxSetting> okxSettings, RiseDto riseDto,BigDecimal tickerIns, BigDecimal totalBuyAmount) throws ServiceException {
         try {
+            Long start = System.currentTimeMillis();
             Date now = new Date();
             Integer accountId = Integer.valueOf(map.get("id"));
             String accountName = map.get("accountName");
@@ -122,6 +123,7 @@ public class TradeBusiness {
                     }
                 }
             }
+            log.info("syncTicker - trade-okx time:{}", System.currentTimeMillis() - start);
         } catch (Exception e) {
             log.error("okx trade error ", e);
             throw new ServiceException("okx trade error");
@@ -218,6 +220,7 @@ public class TradeBusiness {
                 log.info("trade method time:{}",end - start);
             }
             redisLock.releaseLock(RedisConstants.OKX_TICKER_TRADE);
+            log.info("syncTicker - trade time:{}", System.currentTimeMillis() - start);
         } catch (Exception e) {
             redisLock.releaseLock(RedisConstants.OKX_TICKER_TRADE);
             log.error("trade error",e);

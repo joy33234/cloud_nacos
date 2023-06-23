@@ -53,8 +53,13 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
     @Transactional(rollbackFor = Exception.class)
     public boolean syncTicker() throws ServiceException{
         try {
+            Long start = System.currentTimeMillis();
             Map<String, String> accountMap = accountBusiness.getAccountMap();
-            redisLock.lock(RedisConstants.OKX_TICKER,30,3,5000);
+            boolean result = redisLock.lock(RedisConstants.OKX_TICKER,30,3,5000);
+            if (result == false) {
+                log.error("syncTicker-syncTicker 获取锁异常");
+                return false;
+            }
 
             String str = HttpUtil.getOkx("/api/v5/market/tickers?instType=SPOT", null, accountMap);
             JSONObject json = JSONObject.parseObject(str);
@@ -118,6 +123,8 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
             }
             saveOrUpdateBatch(tickerList);
             syncCoinBusiness.updateCoin(jsonObjectList, tickerList, now);
+
+            log.info("syncTicker-syncTicker time:{}", System.currentTimeMillis() - start);
             redisLock.releaseLock(RedisConstants.OKX_TICKER);
         } catch (Exception e) {
             log.error("syncTicker error:", e);

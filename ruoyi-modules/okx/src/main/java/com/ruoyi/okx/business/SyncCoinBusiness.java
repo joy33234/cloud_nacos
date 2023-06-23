@@ -145,6 +145,7 @@ public class SyncCoinBusiness {
 
     public void updateCoin(List<JSONObject> items, List<OkxCoinTicker> tickers, Date now) throws Exception {
         try {
+            Long start = System.currentTimeMillis();
             //redisLock.lock(RedisConstants.OKX_TICKER_UPDATE_COIN,10,3,1000);
 
             BigDecimal usdt24h = new BigDecimal(settingService.selectSettingByKey(OkxConstants.USDT_24H));
@@ -182,6 +183,7 @@ public class SyncCoinBusiness {
                     }
                 });
             }
+            log.info("syncTicker - updateCoin time:{}", System.currentTimeMillis() - start);
             //redisLock.releaseLock(RedisConstants.OKX_TICKER_UPDATE_COIN);
         } catch (Exception e) {
             log.error("updateCoin error",e);
