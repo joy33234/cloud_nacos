@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 /**
  *
@@ -24,7 +25,6 @@ public class ChatLog implements Serializable
     private String chatLogContent;
     private String sender;
     private Date chatLogSendTime;
-
-
+    private List<String> images;
 
 }

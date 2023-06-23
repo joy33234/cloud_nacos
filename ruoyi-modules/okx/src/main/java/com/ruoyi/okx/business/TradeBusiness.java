@@ -216,6 +216,7 @@ public class TradeBusiness {
         }
     }
 
+
     private List<TradeDto> getTradeDto( OkxCoin coin, OkxCoinTicker ticker, Map<String, String> map,RiseDto riseDto,List<OkxBuyRecord> buyRecords,List<OkxSetting> okxSettings) {
         List<TradeDto> list = Lists.newArrayList();
         TradeDto tradeDto =  DtoUtils.transformBean(ticker, TradeDto.class);
@@ -224,8 +225,8 @@ public class TradeBusiness {
         String modeType = map.get(OkxConstants.MODE_TYPE);
         //买入数量
         BigDecimal buyUsdtAmout = new BigDecimal(okxSettings.stream().filter(item -> item.getSettingKey().equals(OkxConstants.BUY_USDT_AMOUNT)).findFirst().get().getSettingValue());
-        BigDecimal buyPrice = ticker.getLast().add(ticker.getLast().multiply(new BigDecimal(9.0E-4D)));
-        BigDecimal buySz = buyUsdtAmout.divide(buyPrice,Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN);
+        BigDecimal buyPrice = ticker.getLast().add(ticker.getLast().multiply(new BigDecimal(0.0012)));
+        BigDecimal buySz = buyUsdtAmout.divide(buyPrice,8, RoundingMode.DOWN);
 
         BigDecimal ins = ticker.getLast().subtract(coin.getStandard()).divide(coin.getStandard(), 8, RoundingMode.HALF_UP);
 
@@ -390,7 +391,7 @@ public class TradeBusiness {
 
     private TradeDto getSellDto (TradeDto tradeDto,OkxCoinTicker ticker,OkxCoin coin,OkxBuyRecord item) {
         TradeDto temp =  DtoUtils.transformBean(tradeDto, TradeDto.class);
-        temp.setSz(item.getQuantity().subtract(item.getFee().abs()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+        temp.setSz(item.getQuantity().subtract(item.getFee().abs()).setScale(8, RoundingMode.HALF_UP));
         temp.setTimes(item.getTimes());
         temp.setBuyStrategyId(item.getStrategyId());
         temp.setSide(OkxSideEnum.SELL.getSide());

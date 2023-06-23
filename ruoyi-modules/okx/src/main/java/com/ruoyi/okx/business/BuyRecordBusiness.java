@@ -190,21 +190,21 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
                 String str = HttpUtil.getOkx("/api/v5/trade/order?instId=" + buyRecord.getInstId() + "&ordId=" + buyRecord.getOkxOrderId(), null, map);
                 if (org.apache.commons.lang.StringUtils.isEmpty(str)) {
                     log.error("查询订单状态异常{}", str);
-                    return;
+                    continue;
                 }
                 JSONObject json = JSONObject.parseObject(str);
                 if (json == null || !json.getString("code").equals("0")) {
                     log.error("下单异常params:{} :{}", JSON.toJSONString(buyRecord), (json == null) ? "null" : json.toJSONString());
-                    return;
+                    continue;
                 }
                 JSONObject data = json.getJSONArray("data").getJSONObject(0);
                 buyRecord.setStatus((commonBusiness.getOrderStatus(data.getString("state")) == null) ? buyRecord.getStatus() : commonBusiness.getOrderStatus(data.getString("state")));
-                if (buyRecord.getStatus().equals(OrderStatusEnum.PENDING.getStatus()) && DateUtil.diffHours(buyRecord.getCreateTime(), now) >= 24) {
+                if (buyRecord.getStatus().equals(OrderStatusEnum.PENDING.getStatus()) && DateUtil.diffMins(buyRecord.getCreateTime(), now) >= 10) {
                     if (cancelOrder(buyRecord.getInstId(), buyRecord.getOkxOrderId(), map)) {
                         buyRecord.setStatus(OrderStatusEnum.CANCEL.getStatus());
                         updateById(buyRecord);
-                        log.info("订单买入超过1天自动撤销");
-                        return;
+                        log.info("订单买入超过10分钟自动撤销");
+                        continue;
                     }
                 }
                 if (buyRecord.getStatus().intValue() == OrderStatusEnum.SUCCESS.getStatus()) {

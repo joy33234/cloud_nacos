@@ -1,5 +1,6 @@
 package com.ruoyi.file.service;
 
+import org.apache.commons.compress.utils.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -7,6 +8,8 @@ import com.ruoyi.file.config.MinioConfig;
 import com.ruoyi.file.utils.FileUploadUtils;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+
+import java.util.List;
 
 /**
  * Minio 文件存储
@@ -42,4 +45,14 @@ public class MinioSysFileServiceImpl implements ISysFileService
         client.putObject(args);
         return minioConfig.getUrl() + "/" + minioConfig.getBucketName() + "/" + fileName;
     }
+
+
+    @Override
+    public List<String> getDownUrl(List<String> urls) throws Exception
+    {
+        return Lists.newArrayList();
+    }
+
+
+
 }

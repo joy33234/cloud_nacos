@@ -1,5 +1,6 @@
 package com.ruoyi.file.service;
 
+import org.apache.commons.compress.utils.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -7,6 +8,8 @@ import org.springframework.web.multipart.MultipartFile;
 import com.github.tobato.fastdfs.domain.fdfs.StorePath;
 import com.github.tobato.fastdfs.service.FastFileStorageClient;
 import com.ruoyi.common.core.utils.file.FileTypeUtils;
+
+import java.util.List;
 
 /**
  * FastDFS 文件存储
@@ -38,5 +41,11 @@ public class FastDfsSysFileServiceImpl implements ISysFileService
         StorePath storePath = storageClient.uploadFile(file.getInputStream(), file.getSize(),
                 FileTypeUtils.getExtension(file), null);
         return domain + "/" + storePath.getFullPath();
+    }
+
+    @Override
+    public List<String> getDownUrl(List<String> url) throws Exception
+    {
+        return Lists.newArrayList();
     }
 }

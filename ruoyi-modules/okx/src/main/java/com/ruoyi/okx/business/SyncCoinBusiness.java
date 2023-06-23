@@ -213,6 +213,7 @@ public class SyncCoinBusiness {
             if ((now.getTime() > (DateUtil.getMinTime(now).getTime() + 300000) && now.getTime() < (DateUtil.getMinTime(now).getTime() + 360000)) || newRedis) {
                 riseDto = new RiseDto();
                 riseDto.setModeType(modeType);
+                log.info("refreshRiseCount new Cache riseDto:{}",JSON.toJSONString(riseDto));
             } else {
                 return false;
             }

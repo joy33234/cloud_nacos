@@ -2,6 +2,8 @@ package com.ruoyi.file.service;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 /**
  * 文件上传接口
  * 
@@ -17,4 +19,7 @@ public interface ISysFileService
      * @throws Exception
      */
     public String uploadFile(MultipartFile file) throws Exception;
+
+
+    public List<String> getDownUrl(List<String> urls) throws Exception;
 }

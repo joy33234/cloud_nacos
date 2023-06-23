@@ -2,6 +2,9 @@ package com.ruoyi.pandora.controller;
 
 import com.ruoyi.common.core.domain.R;
 import com.ruoyi.common.core.utils.HttpUtil;
+import com.ruoyi.common.core.utils.StringUtils;
+import com.ruoyi.common.core.utils.file.FileTypeUtils;
+import com.ruoyi.common.core.utils.file.MimeTypeUtils;
 import com.ruoyi.common.core.web.controller.BaseController;
 import com.ruoyi.common.core.web.domain.AjaxResult;
 import com.ruoyi.common.log.annotation.Log;
@@ -11,13 +14,16 @@ import com.ruoyi.common.security.utils.SecurityUtils;
 import com.ruoyi.pandora.business.OpenAiBusiness;
 import com.ruoyi.pandora.domain.PandoraOpenaiUser;
 import com.ruoyi.pandora.params.Dto.ChatLog;
+import com.ruoyi.system.api.RemoteFileService;
+import com.ruoyi.system.api.domain.SysFile;
+import com.ruoyi.system.api.model.LoginUser;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import java.util.Arrays;
 import java.util.HashMap;
 
 /**
@@ -49,8 +55,6 @@ public class OpenAiController extends BaseController
     }
 
 
-
-
     /**
      * chatGpt 聊天
      */
@@ -60,12 +64,33 @@ public class OpenAiController extends BaseController
         return openAiBusiness.updateChat(chatLog);
     }
 
+
+    /**
+     * chatGpt 校正输入
+     */
+    @Log(title = "参数管理", businessType = BusinessType.INSERT)
+    @PostMapping(value = "/fix")
+    public R<?> fix(@Validated @RequestBody ChatLog chatLog) {
+        return openAiBusiness.fix(chatLog);
+    }
+
+
     /**
      * chatGpt 生成图片
      */
     @Log(title = "参数管理", businessType = BusinessType.INSERT)
     @PostMapping(value = "/images")
     public R<?> getImages(@Validated @RequestBody ChatLog chatLog) {
-        return openAiBusiness.updateChat(chatLog);
+        return openAiBusiness.images(chatLog);
+    }
+
+
+    /**
+     * 图片上传
+     */
+    @Log(title = "图片上传", businessType = BusinessType.UPDATE)
+    @PostMapping("/images/upload")
+    public R<?> upload(@RequestParam("file") MultipartFile file) {
+        return openAiBusiness.imagesUpload(file);
     }
 }
