@@ -102,7 +102,6 @@ public class OpenAiBusiness extends ServiceImpl<PandoraOpenaiUserMapper, Pandora
             urls = getImagesRes(chatLog.getChatLogContent());
         }
         ChatLog chatGptChat = new ChatLog(1L,-1L,chatLog.getSenderGuId(),null,"gpt", null, urls);
-        log.info("images - chatGptChat:{}",JSON.toJSONString(chatGptChat));
         return R.ok(Arrays.asList(chatLog,chatGptChat));
     }
 
@@ -223,7 +222,6 @@ public class OpenAiBusiness extends ServiceImpl<PandoraOpenaiUserMapper, Pandora
                 String gptImageUrl = jsonArray.getJSONObject(i).getString("url");
                 //下载到本地
                 List<String> downloadUrls = remoteFileService.getDownUrl(new DownLoad(Arrays.asList(gptImageUrl))).getData();
-                log.info("getImagesRes images:{}",JSON.toJSONString(downloadUrls));
                 urls.addAll(downloadUrls);
             }
         } catch (Exception e) {
@@ -252,7 +250,6 @@ public class OpenAiBusiness extends ServiceImpl<PandoraOpenaiUserMapper, Pandora
                 String gptImageUrl = jsonArray.getJSONObject(i).getString("url");
                 //下载到本地
                 List<String> downloadUrls = remoteFileService.getDownUrl(new DownLoad(Arrays.asList(gptImageUrl))).getData();
-                log.info("getImagesResWithOriginal images:{}",JSON.toJSONString(downloadUrls));
                 urls.addAll(downloadUrls);
             }
         } catch (Exception e) {

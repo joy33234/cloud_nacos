@@ -24,9 +24,11 @@ import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.apache.commons.collections4.CollectionUtils;
+import springfox.documentation.swagger.web.UiConfigurationBuilder;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
@@ -72,47 +74,49 @@ public class SyncCoinBusiness {
     public boolean newRedis;
 
     public void syncOkxBalance() {
+        accountBusiness.list().stream().filter(item -> item.getStatus().intValue() == Status.OK.getCode()).forEach(account -> {
+            syncAccountBalance(account);
+        });
+    }
+
+    @Async
+    public void syncAccountBalance(OkxAccount account) {
         try {
             Date now = new Date();
-            List<OkxAccount> accounts = accountBusiness.list().stream()
-                    .filter(item -> item.getStatus().intValue() == Status.OK.getCode()).collect(Collectors.toList());
-            for (OkxAccount account:accounts) {
-                List<OkxCoin> okxCoins = Lists.newArrayList();
-                List<OkxAccountBalance> balanceList = Lists.newArrayList();
-                Map<String, String> map = accountBusiness.getAccountMap(account);
-                int pages = 0;
+            List<OkxCoin> okxCoins = Lists.newArrayList();
+            List<OkxAccountBalance> balanceList = Lists.newArrayList();
+            Map<String, String> map = accountBusiness.getAccountMap(account);
+            int pages = 0;
 
-                List<OkxAccountBalance> DbBalanceList = balanceBusiness.list(new OkxAccountBalanceDO(null,null,null,account.getId(),null));
-                if (CollectionUtils.isEmpty(DbBalanceList)) {
-                    okxCoins = coinBusiness.selectCoinList(null);
-                    pages = getPages(okxCoins.size());
-                } else {
-                    pages = getPages(DbBalanceList.size());
-                }
-
-                String coins = "";
-                //帐户币种数量
-                for (int i = 0; i < pages; i++) {
-                    List<OkxAccountBalance> subBalanceList = Lists.newArrayList();
-                    if (CollectionUtils.isEmpty(DbBalanceList)) {
-                        List<OkxCoin> subCoinList = okxCoins.subList(i * 20, ((i + 1) * 20 <= okxCoins.size()) ? ((i + 1) * 20) : okxCoins.size());
-                        coins = StringUtils.join(subCoinList.stream().map(OkxCoin::getCoin).collect(Collectors.toList()), ",");
-                        for (OkxCoin coin:subCoinList) {
-                            subBalanceList.add(new OkxAccountBalance(null,account.getId(),account.getName(),coin.getCoin(),null));
-                        }
-                    } else {
-                        subBalanceList = DbBalanceList.subList(i * 20, ((i + 1) * 20 <= DbBalanceList.size()) ? ((i + 1) * 20) : DbBalanceList.size());
-                        coins = StringUtils.join(subBalanceList.stream().map(OkxAccountBalance::getCoin).collect(Collectors.toList()), ",");
-                    }
-                    balanceList.addAll(getBalance(coins, map, subBalanceList, now));
-                    Thread.sleep(500);
-                }
-                balanceBusiness.saveOrUpdateBatch(balanceList.stream().distinct().collect(Collectors.toList()));
+            List<OkxAccountBalance> DbBalanceList = balanceBusiness.list(new OkxAccountBalanceDO(null,null,null,account.getId(),null));
+            if (CollectionUtils.isEmpty(DbBalanceList)) {
+                okxCoins = coinBusiness.selectCoinList(null);
+                pages = getPages(okxCoins.size());
+            } else {
+                pages = getPages(DbBalanceList.size());
             }
+
+            String coins = "";
+            //帐户币种数量
+            for (int i = 0; i < pages; i++) {
+                List<OkxAccountBalance> subBalanceList = Lists.newArrayList();
+                if (CollectionUtils.isEmpty(DbBalanceList)) {
+                    List<OkxCoin> subCoinList = okxCoins.subList(i * 20, ((i + 1) * 20 <= okxCoins.size()) ? ((i + 1) * 20) : okxCoins.size());
+                    coins = StringUtils.join(subCoinList.stream().map(OkxCoin::getCoin).collect(Collectors.toList()), ",");
+                    for (OkxCoin coin:subCoinList) {
+                        subBalanceList.add(new OkxAccountBalance(null,account.getId(),account.getName(),coin.getCoin(),null));
+                    }
+                } else {
+                    subBalanceList = DbBalanceList.subList(i * 20, ((i + 1) * 20 <= DbBalanceList.size()) ? ((i + 1) * 20) : DbBalanceList.size());
+                    coins = StringUtils.join(subBalanceList.stream().map(OkxAccountBalance::getCoin).collect(Collectors.toList()), ",");
+                }
+                balanceList.addAll(getBalance(coins, map, subBalanceList, now));
+                Thread.sleep(500);
+            }
+            balanceBusiness.saveOrUpdateBatch(balanceList.stream().distinct().collect(Collectors.toList()));
         } catch (Exception e) {
             log.error("syncOkxBalance error:", e);
         }
-
     }
 
     private int getPages(int sum) {
@@ -132,12 +136,14 @@ public class SyncCoinBusiness {
         }
         JSONObject data = json.getJSONArray("data").getJSONObject(0);
         JSONArray detail = data.getJSONArray("details");
-        for (int j = 0; j < detail.size(); j++) {
-            JSONObject balance = detail.getJSONObject(j);
-            subList.stream().filter(item -> item.getCoin().equals(balance.getString("ccy"))).findFirst().ifPresent(obj -> {
-                obj.setBalance(balance.getBigDecimal("availBal"));
-                obj.setUpdateTime(now);
-            });
+        for (OkxAccountBalance okxAccountBalance:subList) {
+            for (int j = 0; j < detail.size(); j++) {
+                JSONObject balance = detail.getJSONObject(j);
+                if (okxAccountBalance.getCoin().equalsIgnoreCase(balance.getString("ccy"))) {
+                    okxAccountBalance.setBalance(balance.getBigDecimal("availBal"));
+                }
+                okxAccountBalance.setUpdateTime(now);
+            }
         }
         return subList;
     }
@@ -196,21 +202,22 @@ public class SyncCoinBusiness {
         if (!modeType.equals(ModeTypeEnum.MARKET.getValue())) {
             return true;
         }
-        Integer riseCount = okxCoins.stream().filter(item -> (item.isRise() == true)).collect(Collectors.toList()).size();
-        BigDecimal risePercent = new BigDecimal(riseCount).divide(new BigDecimal(okxCoins.size()), 4,BigDecimal.ROUND_DOWN);
-        BigDecimal lowPercent = BigDecimal.ONE.subtract(risePercent).setScale(4);
+
+        if ((now.getTime() - DateUtil.getMinTime(now).getTime() < 300000) || newRedis == true) {
+            redisService.setCacheObject(tradeBusiness.getCacheMarketKey(accountId), new RiseDto());
+            return false;
+        }
+
         String key = tradeBusiness.getCacheMarketKey(accountId);
         RiseDto riseDto = redisService.getCacheObject(key);
         if (riseDto == null) {//redis异常 TODO
-            //当天前5分钟禁止买卖
-            if ((now.getTime() > (DateUtil.getMinTime(now).getTime() + 300000) && now.getTime() < (DateUtil.getMinTime(now).getTime() + 360000)) || newRedis) {
-                riseDto = new RiseDto();
-                riseDto.setModeType(modeType);
-                log.info("refreshRiseCount new Cache riseDto:{}",JSON.toJSONString(riseDto));
-            } else {
-                return false;
-            }
+            return false;
         }
+
+        Integer riseCount = okxCoins.stream().filter(item -> (item.isRise() == true)).collect(Collectors.toList()).size();
+        BigDecimal risePercent = new BigDecimal(riseCount).divide(new BigDecimal(okxCoins.size()), 4,BigDecimal.ROUND_DOWN);
+        BigDecimal lowPercent = BigDecimal.ONE.subtract(risePercent).setScale(Constant.OKX_BIG_DECIMAL);
+
         riseDto.setRiseCount(riseCount);
         riseDto.setRisePercent(risePercent);
         if (risePercent.compareTo(riseDto.getHighest()) > 0) {
@@ -226,8 +233,7 @@ public class SyncCoinBusiness {
                 riseDto.setBTCIns(okxCoin.getBtcIns());
             }
         }
-        long diff = DateUtil.diffSecond(now, DateUtil.getMaxTime(now));
-        redisService.setCacheObject(tradeBusiness.getCacheMarketKey(accountId), riseDto, diff, TimeUnit.SECONDS);
+        redisService.setCacheObject(tradeBusiness.getCacheMarketKey(accountId), riseDto);
         return true;
     }
 

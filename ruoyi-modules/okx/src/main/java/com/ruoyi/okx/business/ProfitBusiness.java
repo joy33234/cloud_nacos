@@ -8,6 +8,7 @@ import com.ruoyi.okx.domain.*;
 import com.ruoyi.okx.mapper.OkxProfitMapper;
 import com.ruoyi.okx.params.DO.OkxCoinProfitDo;
 import com.ruoyi.okx.params.dto.AccountProfitDto;
+import com.ruoyi.okx.utils.Constant;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -53,7 +54,7 @@ public class ProfitBusiness extends ServiceImpl<OkxProfitMapper, OkxCoinProfit> 
         List<OkxCoinTicker> tickers = tickerBusiness.findTodayTicker();
         buyRecords.stream().forEach(item -> {
             tickers.stream().filter(obj -> obj.getCoin().equals(item.getCoin())).findFirst().ifPresent(ticker -> {
-                profitDto.setUnFinishProfit(profitDto.getUnFinishProfit().add(ticker.getLast().subtract(item.getPrice()).multiply(item.getQuantity()).setScale(8, RoundingMode.DOWN)));
+                profitDto.setUnFinishProfit(profitDto.getUnFinishProfit().add(ticker.getLast().subtract(item.getPrice()).multiply(item.getQuantity()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN)));
             });
         });
         profitDto.setProfit(finishProfit.add(profitDto.getUnFinishProfit()));

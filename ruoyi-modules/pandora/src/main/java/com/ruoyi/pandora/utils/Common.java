@@ -31,7 +31,6 @@ public class Common {
                 is = url.openStream();
 
                 String fileName = UUID.randomUUID() + ".jpg";
-                log.info("fileName:{}",fileName);
                 // 创建BufferedOutputStream对象
                 bos = new BufferedOutputStream(new FileOutputStream(savePath + fileName));
 
@@ -40,7 +39,6 @@ public class Common {
                 while ((count = is.read(buffer, 0, buffer.length)) != -1) { // 从网络流中读取数据
                     bos.write(buffer, 0, count); // 写入本地文件
                 }
-                log.info("url:{}",baseUrl + "/download/" + fileName);
                 list.add(baseUrl + "/download/" + fileName);
             }
             bos.close(); // 关闭输出流

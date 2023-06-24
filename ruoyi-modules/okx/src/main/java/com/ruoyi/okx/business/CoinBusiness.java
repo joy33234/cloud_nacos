@@ -1,6 +1,7 @@
 package com.ruoyi.okx.business;
 
 
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import java.math.BigDecimal;
@@ -13,6 +14,7 @@ import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.*;
 import com.ruoyi.okx.mapper.CoinMapper;
 import com.ruoyi.okx.params.DO.OkxAccountBalanceDO;
+import com.ruoyi.okx.utils.Constant;
 import jdk.nashorn.internal.ir.annotations.Reference;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
@@ -59,8 +61,10 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
     @Transactional(rollbackFor = Exception.class)
     public void syncCoin() {
         Collection<String> keys = redisService.keys(CacheConstants.OKX_COIN_KEY + "*");
+        Date now = new Date();
         for (String key:keys) {
             OkxCoin coin = redisService.getCacheObject(key);
+            coin.setUpdateTime(now);
             if (coin != null) {
                 coinMapper.updateById(coin);
             }
@@ -84,8 +88,8 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
         wrapper.eq(coin.getCoin() != null, OkxCoin::getCoin, coin.getCoin());
         List<OkxCoin> list =  coinMapper.selectList(wrapper);
         list.stream().forEach(item -> {
-            item.setTradeMinAmount(item.getStandard().multiply(item.getUnit()).setScale(6, RoundingMode.DOWN));
-            item.setVolUsdt24h(item.getVolUsdt24h().setScale(6,RoundingMode.DOWN));
+            item.setTradeMinAmount(item.getStandard().multiply(item.getUnit()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
+            item.setVolUsdt24h(item.getVolUsdt24h().setScale(Constant.OKX_BIG_DECIMAL,RoundingMode.DOWN));
         });
         return list;
     }

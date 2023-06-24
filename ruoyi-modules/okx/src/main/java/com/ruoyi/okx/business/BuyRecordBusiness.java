@@ -71,7 +71,7 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
             tickerList.stream().filter(item -> item.getCoin().equals(record.getCoin())).findFirst().ifPresent(obj -> {
                 if (record.getStatus().intValue() == OrderStatusEnum.SUCCESS.getStatus()) {
                     record.setLast(obj.getLast());
-                    record.setProfit(record.getLast().subtract(record.getPrice()).multiply(record.getQuantity()).setScale(4,RoundingMode.DOWN));
+                    record.setProfit(record.getLast().subtract(record.getPrice()).multiply(record.getQuantity()).setScale(Constant.OKX_BIG_DECIMAL,RoundingMode.DOWN));
                 }
             });
         }

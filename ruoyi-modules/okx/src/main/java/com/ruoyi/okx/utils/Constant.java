@@ -26,5 +26,5 @@ public class Constant {
 //
 //    public static int OKX_TRADE_STATUS = 0;
 
-    public static int OKX_BIG_DECIMAL = 12;
+    public static int OKX_BIG_DECIMAL = 8;
 }

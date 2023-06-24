@@ -173,9 +173,10 @@ public class TradeBusiness {
             }
             RiseDto riseDto = redisService.getCacheObject(this.getCacheMarketKey(accountId));
 
+            List<OkxCoin> accountCoins = coins;
             //coin set balance
             List<OkxAccountBalance> balances = balanceBusiness.list(new OkxAccountBalanceDO(null,null,null,accountId,null));
-            coins.stream().forEach(item -> {
+            accountCoins.stream().forEach(item -> {
                 balances.stream().filter(obj -> obj.getCoin().equals(item.getCoin())).findFirst().ifPresent( balance -> {
                     item.setCount(balance.getBalance());
                 });
@@ -187,7 +188,7 @@ public class TradeBusiness {
                     .collect(Collectors.toList()).stream().forEach(obj -> map.put(obj.getSettingKey(), obj.getSettingValue()));
             List<OkxBuyRecord> buyRecords = buyRecordBusiness.findSuccessRecord(null, accountId, null,null);
             for (OkxCoinTicker ticker : tickers) {
-                Optional<OkxCoin> OkxCoin = coins.stream().filter(obj -> obj.getCoin().equals(ticker.getCoin())).findFirst();
+                Optional<OkxCoin> OkxCoin = accountCoins.stream().filter(obj -> obj.getCoin().equals(ticker.getCoin())).findFirst();
                 if (!OkxCoin.isPresent() || OkxCoin.get().getStandard().compareTo(BigDecimal.ZERO) <= 0) {
                     continue;
                 }
@@ -234,9 +235,6 @@ public class TradeBusiness {
         BigDecimal buyUsdtAmout = new BigDecimal(okxSettings.stream().filter(item -> item.getSettingKey().equals(OkxConstants.BUY_USDT_AMOUNT)).findFirst().get().getSettingValue());
         BigDecimal buyPrice = ticker.getLast().add(ticker.getLast().multiply(new BigDecimal(9.0E-4D)));
         BigDecimal buySz = buyUsdtAmout.divide(buyPrice,Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN);
-        if (buySz.compareTo(BigDecimal.ONE) > 0) {
-            buySz.setScale(4,RoundingMode.DOWN);
-        }
 
         BigDecimal ins = ticker.getLast().subtract(coin.getStandard()).divide(coin.getStandard(), 8, RoundingMode.HALF_UP);
 
@@ -269,7 +267,7 @@ public class TradeBusiness {
             if ((new BigDecimal(-0.011D)).compareTo(ins) >= 0
                 && coin.getStatus() == CoinStatusEnum.OPEN.getStatus()) {
                 OkxBuyStrategy buyStrategy = buyStrategyBusiness.list().stream()
-                        .filter(strategy -> (strategy.getFallPercent().compareTo(ins.abs().setScale(2, RoundingMode.DOWN)) >= 0))
+                        .filter(strategy -> (strategy.getFallPercent().compareTo(ins.abs().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN)) >= 0))
                         .sorted(comparing(OkxBuyStrategy::getFallPercent)).findFirst().get();
                 tradeDto.setSz(buySz);
                 tradeDto.setTimes(buyStrategy.getTimes());
@@ -401,7 +399,7 @@ public class TradeBusiness {
 
     private TradeDto getSellDto (TradeDto tradeDto,OkxCoinTicker ticker,OkxCoin coin,OkxBuyRecord item) {
         TradeDto temp =  DtoUtils.transformBean(tradeDto, TradeDto.class);
-        temp.setSz(item.getQuantity().subtract(item.getFee().abs()).setScale(8, RoundingMode.HALF_UP));
+        temp.setSz(item.getQuantity().subtract(item.getFee().abs()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
         temp.setTimes(item.getTimes());
         temp.setBuyStrategyId(item.getStrategyId());
         temp.setSide(OkxSideEnum.SELL.getSide());

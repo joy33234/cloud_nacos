@@ -52,7 +52,6 @@ public class SysFileController
     @PostMapping("getDownUrl")
     public R<List<String>> getDownUrl(@RequestBody DownLoad downLoad) {
         try {
-            log.info("getDownUrl urls:{}", JSON.toJSONString(downLoad.getUrls()));
             return R.ok(sysFileService.getDownUrl(downLoad.getUrls()));
         } catch (Exception e) {
             log.error("上传文件失败", e);

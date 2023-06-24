@@ -112,7 +112,6 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
                     params.put("instId", sellRecord.getInstId());
                     params.put("ordId", sellRecord.getOkxOrderId());
                     String cancelStr = HttpUtil.postOkx("/api/v5/trade/cancel-order", params, map);
-                    log.info("{}", cancelStr);
                     JSONObject cancelJson = JSONObject.parseObject(cancelStr);
                     if (cancelJson == null || !cancelJson.getString("code").equals("0")) {
                         log.error("{}", JSON.toJSONString(params));
