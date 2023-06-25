@@ -1,6 +1,7 @@
 package com.ruoyi.okx.domain;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.ruoyi.common.core.web.domain.CommonEntity;
 import lombok.Data;
@@ -31,4 +32,10 @@ public class OkxCoinTicker extends CommonEntity {
     private BigDecimal ins;
 
     private BigDecimal monthIns;
+
+    @TableField(exist = false)
+    private BigDecimal vol24h;
+
+    @TableField(exist = false)
+    private BigDecimal volCcy24h;
 }

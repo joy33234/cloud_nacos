@@ -48,5 +48,14 @@ public class RiseDto {
 
     private BigDecimal sellPercent = BigDecimal.ZERO;
 
+    private Integer accountId;
+
+    private String accountName;
+    private String apikey;
+    private String password;
+    private String secretkey;
+
+    private String orderType;
+
 
 }

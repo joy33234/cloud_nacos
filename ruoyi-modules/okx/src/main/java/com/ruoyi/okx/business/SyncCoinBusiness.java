@@ -177,14 +177,57 @@ public class SyncCoinBusiness {
             //更新缓存
             coinBusiness.updateCache(okxCoins);
 
-            //更新涨跌数据
+            //更新行情涨跌数据
             accountBusiness.list().stream()
                     .filter(item -> item.getStatus().intValue() == Status.OK.getCode()).forEach(item -> {
                 List<OkxSetting> okxSettings =   accountBusiness.listByAccountId(item.getId());
+                //更新行情缓存
                 if (this.refreshRiseCount(okxCoins, now, item.getId(), okxSettings) == true) {
-                    tradeBusiness.trade( okxCoins, tickers, okxSettings,accountBusiness.getAccountMap(item));
+                    //coin set balance
+                    List<OkxAccountBalance> balances = balanceBusiness.list(new OkxAccountBalanceDO(null,null,null,item.getId(),null));
+                    List<OkxCoin> accountCoins =  okxCoins;
+                    accountCoins.stream().forEach(okxCoin -> {
+                        balances.stream().filter(obj -> obj.getCoin().equals(okxCoin.getCoin())).findFirst().ifPresent( balance -> {
+                            okxCoin.setCount(balance.getBalance());
+                        });
+                    });
+                    tradeBusiness.trade(accountCoins, tickers, okxSettings, accountBusiness.getAccountMap(item));
                 }
             });
+        } catch (Exception e) {
+            log.error("updateCoin error",e);
+            throw new Exception(e.getMessage());
+        }
+    }
+
+
+    public List<OkxCoin> updateCoinV2(List<OkxCoinTicker> tickers, Date now) throws Exception {
+        try {
+            BigDecimal usdt24h = new BigDecimal(settingService.selectSettingByKey(OkxConstants.USDT_24H));
+            List<OkxCoin> okxCoins = coinBusiness.list().stream().filter(item -> item.getUnit().compareTo(BigDecimal.ZERO) > 0).collect(Collectors.toList());
+            for (OkxCoinTicker ticker: tickers) {
+                okxCoins.stream().filter(item -> item.getCoin().equals(ticker.getCoin())).findFirst().ifPresent(obj -> {
+                    obj.setVolCcy24h(ticker.getVol24h().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
+                    obj.setVolUsdt24h(ticker.getVolCcy24h().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
+                    obj.setHightest(ticker.getHigh24h().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+                    obj.setLowest(ticker.getLow24h().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+                    obj.setRise((ticker.getIns().compareTo(BigDecimal.ZERO) >= 0));
+                    obj.setUpdateTime(now);
+                    //交易额低于配置值-关闭交易
+                    if (usdt24h.compareTo(obj.getVolUsdt24h()) > 0) {
+                        obj.setStatus(CoinStatusEnum.CLOSE.getStatus());
+                    } else {
+                        obj.setStatus(CoinStatusEnum.OPEN.getStatus());
+                    }
+                    if (obj.getCoin().equalsIgnoreCase("BTC")) {
+                        obj.setBtcIns(ticker.getIns());
+                    }
+                    obj.setStandard(coinBusiness.calculateStandard(ticker));
+                });
+            }
+            //更新缓存
+            coinBusiness.updateCache(okxCoins);
+            return okxCoins;
         } catch (Exception e) {
             log.error("updateCoin error",e);
             throw new Exception(e.getMessage());
@@ -235,6 +278,58 @@ public class SyncCoinBusiness {
         }
         redisService.setCacheObject(tradeBusiness.getCacheMarketKey(accountId), riseDto);
         return true;
+    }
+
+
+    /**
+     * 更新coin涨跌
+     * @param okxCoins
+     * @param now
+     */
+    public RiseDto refreshRiseCountV2(List<OkxCoin> okxCoins, Date now, OkxAccount okxAccount,List<OkxSetting> settingList){
+        String modeType = settingList.stream().filter(item -> item.getSettingKey().equals(OkxConstants.MODE_TYPE)).findFirst().get().getSettingValue();
+        if (!modeType.equals(ModeTypeEnum.MARKET.getValue())) {
+            return new RiseDto();
+        }
+        String key = tradeBusiness.getCacheMarketKey(okxAccount.getId());
+
+        if ((now.getTime() - DateUtil.getMinTime(now).getTime() < 300000) || newRedis == true) {
+            RiseDto riseDto = new RiseDto();
+            riseDto.setAccountId(okxAccount.getId());
+            riseDto.setAccountName(okxAccount.getName());
+            riseDto.setApikey(okxAccount.getApikey());
+            riseDto.setSecretkey(okxAccount.getSecretkey());
+            riseDto.setPassword(okxAccount.getPassword());
+            redisService.setCacheObject(key, riseDto);
+            return null;
+        }
+
+        RiseDto riseDto = redisService.getCacheObject(key);
+        if (riseDto == null) {//redis异常 TODO
+            return null;
+        }
+
+        Integer riseCount = okxCoins.stream().filter(item -> (item.isRise() == true)).collect(Collectors.toList()).size();
+        BigDecimal risePercent = new BigDecimal(riseCount).divide(new BigDecimal(okxCoins.size()), 4,BigDecimal.ROUND_DOWN);
+        BigDecimal lowPercent = BigDecimal.ONE.subtract(risePercent).setScale(Constant.OKX_BIG_DECIMAL);
+
+        riseDto.setRiseCount(riseCount);
+        riseDto.setRisePercent(risePercent);
+        if (risePercent.compareTo(riseDto.getHighest()) > 0) {
+            riseDto.setHighest(risePercent);
+        }
+        riseDto.setLowCount(okxCoins.size() - riseCount);
+        riseDto.setLowPercent(lowPercent);
+        if (lowPercent.compareTo(riseDto.getLowPercent()) > 0) {
+            riseDto.setLowest(lowPercent);
+        }
+        for (OkxCoin okxCoin:okxCoins) {
+            if (okxCoin.getCoin().equalsIgnoreCase("BTC")) {
+                riseDto.setBTCIns(okxCoin.getBtcIns());
+            }
+        }
+        redisService.setCacheObject(key, riseDto);
+        return riseDto;
     }
 
 }

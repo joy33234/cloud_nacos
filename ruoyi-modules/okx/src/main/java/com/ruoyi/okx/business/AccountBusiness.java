@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
@@ -60,7 +61,7 @@ public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
 
 
     public Map<String, String> getAccountMap(OkxAccount account) {
-        Map<String, String> accountMap = new HashMap<>(5);
+        Map<String, String> accountMap = new ConcurrentHashMap<>(5);
         accountMap.put("id", account.getId().toString());
         accountMap.put("accountName", account.getName());
         accountMap.put("apikey", account.getApikey());
@@ -70,7 +71,7 @@ public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
     }
 
     public Map<String, String> getAccountMap() {
-        Map<String, String> accountMap = new HashMap<>(5);
+        Map<String, String> accountMap = new ConcurrentHashMap<>(5);
         try {
             OkxAccount account = this.list().get(0);
             accountMap.put("id", account.getId().toString());

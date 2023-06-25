@@ -95,10 +95,10 @@ public class SettingController extends BaseController
     @PutMapping
     public AjaxResult edit(@Validated @RequestBody OkxSetting setting)
     {
-        if (UserConstants.NOT_UNIQUE.equals(settingService.checkSettingKeyUnique(setting)))
-        {
-            return error("修改参数'" + setting.getSettingName() + "'失败，参数键名已存在");
-        }
+//        if (UserConstants.NOT_UNIQUE.equals(settingService.checkSettingKeyUnique(setting)))
+//        {
+//            return error("修改参数'" + setting.getSettingName() + "'失败，参数键名已存在");
+//        }
         setting.setUpdateBy(SecurityUtils.getUsername());
         return toAjax(settingService.updateSetting(setting));
     }

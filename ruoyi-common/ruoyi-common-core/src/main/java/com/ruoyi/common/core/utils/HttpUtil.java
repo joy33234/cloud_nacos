@@ -223,6 +223,25 @@ public class HttpUtil {
         return head;
     }
 
+    public static String postOkxV2(String url, Map<String, String> params, String apikey, String password, String secretKey) {
+        Map<String, String> head = getOkxHeadV2("POST", url, JSON.toJSONString(params), apikey,password,secretKey);
+        url = "https://www.okx.com" + url;
+        List<NameValuePair> args = new ArrayList<>();
+        if (null != params && params.size() > 0)
+            for (Map.Entry<String, String> entry : params.entrySet())
+                args.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+        return postWithBody(url, head, JSON.toJSONString(params), "application/json");
+    }
+
+    public static Map<String, String> getOkxHeadV2(String method, String path, String body, String apikey, String password, String secretKey) {
+        Map<String, String> head = new HashMap<>();
+        head.put("OK-ACCESS-KEY", apikey);
+        head.put("OK-ACCESS-TIMESTAMP", DateUtil.formatBTITime(new Date()));
+        head.put("OK-ACCESS-PASSPHRASE", password);
+        head.put("OK-ACCESS-SIGN", SignUtils.getSign((String)head.get("OK-ACCESS-TIMESTAMP") + method + path + body, secretKey));
+        return head;
+    }
+
 
 
     public static String getOpenAi(String url, Map<String, String> params, String key) {
