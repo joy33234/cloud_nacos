@@ -78,9 +78,8 @@ public class StrategyBusiness  {
     }
 
     public boolean checkSell(OkxSellRecord sellRecord, OkxCoin coin, TradeDto tradeDto) {
-
         if (sellRecord.getQuantity().compareTo(coin.getCount()) > 0) {
-            log.warn("卖出失败-余额不足accountId:{}, coin:{}, sellQuantity:{},coinQuantity:{}", sellRecord.getAccountId(), coin.getCoin(), sellRecord.getQuantity(), coin.getCount() );
+            log.warn("卖出失败-余额不足 sellRecord:{}, coin:{}, sellQuantity:{},tradeDto:{}", JSON.toJSONString(sellRecord), JSON.toJSONString(coin),JSON.toJSONString(tradeDto) );
             if (coin.getCount().compareTo(coin.getUnit()) > 0) {
                 sellRecord.setQuantity(coin.getCount());
                 tradeDto.setSz(coin.getCount());

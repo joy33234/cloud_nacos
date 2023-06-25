@@ -35,6 +35,9 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
     @Autowired
     private RedisService redisService;
 
+    @Resource
+    TickerBusiness tickerBusiness;
+
 
 
 
@@ -87,9 +90,14 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
         LambdaQueryWrapper<OkxCoin> wrapper = new LambdaQueryWrapper();
         wrapper.eq(coin.getCoin() != null, OkxCoin::getCoin, coin.getCoin());
         List<OkxCoin> list =  coinMapper.selectList(wrapper);
+
+        List<OkxCoinTicker> tickerList = tickerBusiness.findTodayTicker();
         list.stream().forEach(item -> {
             item.setTradeMinAmount(item.getStandard().multiply(item.getUnit()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
             item.setVolUsdt24h(item.getVolUsdt24h().setScale(Constant.OKX_BIG_DECIMAL,RoundingMode.DOWN));
+            tickerList.stream().filter(ticker -> ticker.getCoin().equals(item.getCoin())).findFirst().ifPresent(obj -> {
+                item.setLast(obj.getLast());
+            });
         });
         return list;
     }

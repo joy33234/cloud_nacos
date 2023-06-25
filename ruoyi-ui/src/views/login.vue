@@ -76,7 +76,8 @@ export default {
         password: "admin123",
         rememberMe: false,
         code: "",
-        uuid: ""
+        uuid: "",
+        needcode: true
       },
       loginRules: {
         username: [

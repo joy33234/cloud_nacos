@@ -148,57 +148,57 @@ public class SyncCoinBusiness {
         return subList;
     }
 
-
-    public void updateCoin(List<JSONObject> items, List<OkxCoinTicker> tickers, Date now) throws Exception {
-        try {
-            BigDecimal usdt24h = new BigDecimal(settingService.selectSettingByKey(OkxConstants.USDT_24H));
-            List<OkxCoin> okxCoins = coinBusiness.list().stream().filter(item -> item.getUnit().compareTo(BigDecimal.ZERO) > 0).collect(Collectors.toList());
-            for (int i = 0; i < items.size(); i++) {
-                int finalI = i;
-                okxCoins.stream().filter(item -> item.getCoin().equals(tickers.get(finalI).getCoin())).findFirst().ifPresent(obj -> {
-                    obj.setVolCcy24h(items.get(finalI).getBigDecimal("vol24h").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
-                    obj.setVolUsdt24h(items.get(finalI).getBigDecimal("volCcy24h").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
-                    obj.setHightest(items.get(finalI).getBigDecimal("high24h").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
-                    obj.setLowest(items.get(finalI).getBigDecimal("low24h").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
-                    obj.setRise((tickers.get(finalI).getIns().compareTo(BigDecimal.ZERO) >= 0));
-                    obj.setUpdateTime(now);
-                    //交易额低于配置值-关闭交易
-                    if (usdt24h.compareTo(obj.getVolUsdt24h()) > 0) {
-                        obj.setStatus(CoinStatusEnum.CLOSE.getStatus());
-                    } else {
-                        obj.setStatus(CoinStatusEnum.OPEN.getStatus());
-                    }
-                    if (obj.getCoin().equalsIgnoreCase("BTC")) {
-                        obj.setBtcIns(tickers.get(finalI).getIns());
-                    }
-                    obj.setStandard(coinBusiness.calculateStandard(tickers.get(finalI)));
-                });
-            }
-            //更新缓存
-            coinBusiness.updateCache(okxCoins);
-
-            //更新行情涨跌数据
-            accountBusiness.list().stream()
-                    .filter(item -> item.getStatus().intValue() == Status.OK.getCode()).forEach(item -> {
-                List<OkxSetting> okxSettings =   accountBusiness.listByAccountId(item.getId());
-                //更新行情缓存
-                if (this.refreshRiseCount(okxCoins, now, item.getId(), okxSettings) == true) {
-                    //coin set balance
-                    List<OkxAccountBalance> balances = balanceBusiness.list(new OkxAccountBalanceDO(null,null,null,item.getId(),null));
-                    List<OkxCoin> accountCoins =  okxCoins;
-                    accountCoins.stream().forEach(okxCoin -> {
-                        balances.stream().filter(obj -> obj.getCoin().equals(okxCoin.getCoin())).findFirst().ifPresent( balance -> {
-                            okxCoin.setCount(balance.getBalance());
-                        });
-                    });
-                    tradeBusiness.trade(accountCoins, tickers, okxSettings, accountBusiness.getAccountMap(item));
-                }
-            });
-        } catch (Exception e) {
-            log.error("updateCoin error",e);
-            throw new Exception(e.getMessage());
-        }
-    }
+//
+//    public void updateCoin(List<JSONObject> items, List<OkxCoinTicker> tickers, Date now) throws Exception {
+//        try {
+//            BigDecimal usdt24h = new BigDecimal(settingService.selectSettingByKey(OkxConstants.USDT_24H));
+//            List<OkxCoin> okxCoins = coinBusiness.list().stream().filter(item -> item.getUnit().compareTo(BigDecimal.ZERO) > 0).collect(Collectors.toList());
+//            for (int i = 0; i < items.size(); i++) {
+//                int finalI = i;
+//                okxCoins.stream().filter(item -> item.getCoin().equals(tickers.get(finalI).getCoin())).findFirst().ifPresent(obj -> {
+//                    obj.setVolCcy24h(items.get(finalI).getBigDecimal("vol24h").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
+//                    obj.setVolUsdt24h(items.get(finalI).getBigDecimal("volCcy24h").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
+//                    obj.setHightest(items.get(finalI).getBigDecimal("high24h").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+//                    obj.setLowest(items.get(finalI).getBigDecimal("low24h").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+//                    obj.setRise((tickers.get(finalI).getIns().compareTo(BigDecimal.ZERO) >= 0));
+//                    obj.setUpdateTime(now);
+//                    //交易额低于配置值-关闭交易
+//                    if (usdt24h.compareTo(obj.getVolUsdt24h()) > 0) {
+//                        obj.setStatus(CoinStatusEnum.CLOSE.getStatus());
+//                    } else {
+//                        obj.setStatus(CoinStatusEnum.OPEN.getStatus());
+//                    }
+//                    if (obj.getCoin().equalsIgnoreCase("BTC")) {
+//                        obj.setBtcIns(tickers.get(finalI).getIns());
+//                    }
+//                    obj.setStandard(coinBusiness.calculateStandard(tickers.get(finalI)));
+//                });
+//            }
+//            //更新缓存
+//            coinBusiness.updateCache(okxCoins);
+//
+//            //更新行情涨跌数据
+//            accountBusiness.list().stream()
+//                    .filter(item -> item.getStatus().intValue() == Status.OK.getCode()).forEach(item -> {
+//                List<OkxSetting> okxSettings =   accountBusiness.listByAccountId(item.getId());
+//                //更新行情缓存
+//                if (this.refreshRiseCount(okxCoins, now, item.getId(), okxSettings) == true) {
+//                    //coin set balance
+//                    List<OkxAccountBalance> balances = balanceBusiness.list(new OkxAccountBalanceDO(null,null,null,item.getId(),null));
+//                    List<OkxCoin> accountCoins =  okxCoins;
+//                    accountCoins.stream().forEach(okxCoin -> {
+//                        balances.stream().filter(obj -> obj.getCoin().equals(okxCoin.getCoin())).findFirst().ifPresent( balance -> {
+//                            okxCoin.setCount(balance.getBalance());
+//                        });
+//                    });
+//                    tradeBusiness.trade(accountCoins, tickers, okxSettings, accountBusiness.getAccountMap(item));
+//                }
+//            });
+//        } catch (Exception e) {
+//            log.error("updateCoin error",e);
+//            throw new Exception(e.getMessage());
+//        }
+//    }
 
 
     public List<OkxCoin> updateCoinV2(List<OkxCoinTicker> tickers, Date now) throws Exception {

@@ -30,6 +30,16 @@
           end-placeholder="结束日期"
         ></el-date-picker>
       </el-form-item>
+      <el-form-item label="状态" prop="status">
+        <el-select v-model="queryParams.status" placeholder="状态" clearable>
+          <el-option
+            v-for="dict in dict.type.order_status"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
@@ -67,17 +77,26 @@
       <el-table-column label="帐号" align="center" prop="accountName" />
       <el-table-column label="币种" align="center" prop="coin" :show-overflow-tooltip="true" />
       <el-table-column label="订单号" align="center" prop="orderId" :show-overflow-tooltip="true" />
-      <el-table-column label="买入订单号" align="center" prop="buyRecordId" :show-overflow-tooltip="true" />
       <el-table-column label="价格" align="center" prop="price" />
-      <el-table-column label="数量" align="center" prop="quantity" />
-      <el-table-column label="金额（U）" align="center" prop="amount" />
-      <el-table-column label="手续费" align="center" prop="fee" />
+      <el-table-column label="当前价格" align="center" prop="last" />
+      <el-table-column label="数量" align="center" prop="quantity" width="150" />
+      <el-table-column label="金额（U）" align="center" prop="amount" width="100" />
+      <el-table-column label="手续费" align="center" prop="fee" width="150" />
+      <el-table-column label="利润" align="center" prop="profit" width="150" />
       <el-table-column label="类型" align="center" prop="modeType" />
-      <el-table-column label="状态" align="center" prop="status" />
-      <el-table-column label="倍数" align="center" prop="times" :show-overflow-tooltip="true" />
-      <el-table-column label="创建时间" align="center" prop="createTime" width="180">
+      <el-table-column label="状态" align="center" prop="status">
+        <template slot-scope="scope">
+          <dict-tag :options="dict.type.order_status" :value="scope.row.status"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="创建时间" align="center" prop="createTime" width="150">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.createTime) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="更新时间" align="center" prop="updateTime" width="150">
+        <template slot-scope="scope">
+          <span>{{ parseTime(scope.row.updateTime) }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
@@ -131,7 +150,7 @@ import { listBuy, getBuy, delBuy, addBuy, updateBuy, refreshCache } from "@/api/
 
 export default {
   name: "Buy",
-  dicts: ['sys_yes_no'],
+  dicts: ['order_status'],
   data() {
     return {
       // 遮罩层

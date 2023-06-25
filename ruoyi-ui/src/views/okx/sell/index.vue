@@ -19,6 +19,16 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
+      <el-form-item label="状态" prop="status">
+        <el-select v-model="queryParams.status" placeholder="状态" clearable>
+          <el-option
+            v-for="dict in dict.type.order_status"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item label="创建时间">
         <el-date-picker
           v-model="dateRange"
@@ -72,8 +82,12 @@
       <el-table-column label="数量" align="center" prop="quantity" />
       <el-table-column label="金额（U）" align="center" prop="amount" />
       <el-table-column label="手续费" align="center" prop="fee" />
-      <el-table-column label="状态" align="center" prop="status" />
-      <el-table-column label="倍数" align="center" prop="times" :show-overflow-tooltip="true" />
+      <el-table-column label="利润" align="center" prop="profit" />
+      <el-table-column label="状态" align="center" prop="status" width="100">
+        <template slot-scope="scope">
+          <dict-tag :options="dict.type.order_status" :value="scope.row.status"/>
+        </template>
+      </el-table-column>
       <el-table-column label="创建时间" align="center" prop="createTime" width="180">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.createTime) }}</span>
@@ -130,7 +144,7 @@ import { listSell, getSell, delSell, addSell, updateSell, refreshCache } from "@
 
 export default {
   name: "Sell",
-  dicts: ['sys_yes_no'],
+  dicts: ['order_status'],
   data() {
     return {
       // 遮罩层

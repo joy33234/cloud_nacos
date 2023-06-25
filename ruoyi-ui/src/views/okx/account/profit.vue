@@ -40,6 +40,8 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="coin" prop="coin" :show-overflow-tooltip="true" />
       <el-table-column label="利润" prop="profit" :show-overflow-tooltip="true" />
+      <el-table-column label="可用余额" prop="balance" :show-overflow-tooltip="true" />
+      <el-table-column label="最小单位" prop="unit" :show-overflow-tooltip="true" />
       <el-table-column label="备注" prop="remark" :show-overflow-tooltip="true" />
       <el-table-column label="更新时间" align="center" prop="updateTime" width="180">
         <template slot-scope="scope">
