@@ -1,7 +1,6 @@
 package com.ruoyi.okx.business;
 
 
-import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import java.math.BigDecimal;
@@ -13,11 +12,8 @@ import com.ruoyi.common.core.constant.CacheConstants;
 import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.*;
 import com.ruoyi.okx.mapper.CoinMapper;
-import com.ruoyi.okx.params.DO.OkxAccountBalanceDO;
 import com.ruoyi.okx.utils.Constant;
-import jdk.nashorn.internal.ir.annotations.Reference;
 import org.apache.commons.compress.utils.Lists;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,11 +30,6 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
 
     @Autowired
     private RedisService redisService;
-
-    @Resource
-    TickerBusiness tickerBusiness;
-
-
 
 
     public BigDecimal calculateStandard(OkxCoinTicker ticker) {
@@ -91,13 +82,9 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
         wrapper.eq(coin.getCoin() != null, OkxCoin::getCoin, coin.getCoin());
         List<OkxCoin> list =  coinMapper.selectList(wrapper);
 
-        List<OkxCoinTicker> tickerList = tickerBusiness.findTodayTicker();
         list.stream().forEach(item -> {
             item.setTradeMinAmount(item.getStandard().multiply(item.getUnit()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
             item.setVolUsdt24h(item.getVolUsdt24h().setScale(Constant.OKX_BIG_DECIMAL,RoundingMode.DOWN));
-            tickerList.stream().filter(ticker -> ticker.getCoin().equals(item.getCoin())).findFirst().ifPresent(obj -> {
-                item.setLast(obj.getLast());
-            });
         });
         return list;
     }

@@ -550,6 +550,9 @@ public class TradeBusiness {
         BigDecimal buyUsdtAmout = new BigDecimal(okxSettings.stream().filter(item -> item.getSettingKey().equals(OkxConstants.BUY_USDT_AMOUNT)).findFirst().get().getSettingValue());
         BigDecimal buyPrice = ticker.getLast().add(ticker.getLast().multiply(new BigDecimal(9.0E-4D)));
         BigDecimal buySz = buyUsdtAmout.divide(buyPrice,Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN);
+        if(buySz.compareTo(BigDecimal.ONE) > 0) {
+            buySz.setScale(4,RoundingMode.DOWN);
+        }
 
         BigDecimal ins = ticker.getLast().subtract(coin.getStandard()).divide(coin.getStandard(), 8, RoundingMode.HALF_UP);
 
