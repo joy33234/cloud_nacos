@@ -26,6 +26,8 @@ import com.ruoyi.okx.domain.*;
 import com.ruoyi.okx.mapper.CoinTickerMapper;
 import com.ruoyi.okx.params.DO.OkxAccountBalanceDO;
 import com.ruoyi.okx.params.dto.RiseDto;
+import com.ruoyi.okx.service.SettingService;
+import com.ruoyi.okx.utils.DtoUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.slf4j.Logger;
@@ -61,6 +63,9 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
 
     @Resource
     private AccountBalanceBusiness balanceBusiness;
+
+    @Resource
+    private SettingService settingService;
 
 
 //
@@ -188,7 +193,7 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
                 Cache<String,  List<OkxSetting>> settingCache = CacheUtil.newNoCache();
                 List<OkxSetting> okxSettings = settingCache.get(RedisConstants.SETTING_CACHE + "_" + item.getId());
                 if (CollectionUtils.isEmpty(okxSettings)) {
-                    okxSettings = accountBusiness.listByAccountId(item.getId());
+                    okxSettings = settingService.selectSettingByIds(DtoUtils.StringToLong(item.getSettingIds().split(",")));
                     settingCache.put(RedisConstants.SETTING_CACHE + "_" + item.getId(), okxSettings);
                 }
 

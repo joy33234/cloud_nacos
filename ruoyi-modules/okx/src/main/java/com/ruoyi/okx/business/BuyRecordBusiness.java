@@ -215,6 +215,9 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
                     }
                 }
                 if (buyRecord.getStatus().intValue() == OrderStatusEnum.SUCCESS.getStatus()) {
+                    buyRecord.setQuantity(data.getBigDecimal("fillSz").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+                    buyRecord.setPrice(data.getBigDecimal("avgPx").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+                    buyRecord.setAmount(buyRecord.getQuantity().multiply(buyRecord.getPrice()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                     //同步手续费
                     syncOrderFee(map, buyRecord);
                     accountBalanceBusiness.addCount(buyRecord.getCoin(), buyRecord.getAccountId(), buyRecord.getQuantity());

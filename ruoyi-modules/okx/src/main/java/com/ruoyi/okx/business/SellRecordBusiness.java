@@ -97,10 +97,14 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
             if (sellRecord.getStatus().equals(OrderStatusEnum.SUCCESS.getStatus())) {
                 OkxBuyRecord okxBuyRecord = buyRecordBusiness.findOne(sellRecord.getBuyRecordId());
                 sellRecord.setFee(data.getBigDecimal("fee").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP).abs());
+                sellRecord.setQuantity(data.getBigDecimal("fillSz").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+                sellRecord.setPrice(data.getBigDecimal("avgPx").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+                sellRecord.setAmount(sellRecord.getQuantity().multiply(sellRecord.getPrice()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                 sellRecord.setProfit(sellRecord.getAmount().subtract(sellRecord.getFee()).subtract(okxBuyRecord.getAmount()).subtract(okxBuyRecord.getFeeUsdt()));
+
                 boolean update = updateById(sellRecord);
                 if (update) {
-                    balanceBusiness.reduceCount(sellRecord.getCoin(), sellRecord.getAccountId(), sellRecord.getQuantity());
+                    //balanceBusiness.reduceCount(sellRecord.getCoin(), sellRecord.getAccountId(), sellRecord.getQuantity());
                     okxBuyRecord.setStatus(OrderStatusEnum.FINISH.getStatus());
                     buyRecordBusiness.update(okxBuyRecord);
                     coinProfitBusiness.calculateProfit(sellRecord);
