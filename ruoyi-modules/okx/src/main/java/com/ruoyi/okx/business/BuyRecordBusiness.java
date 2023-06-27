@@ -14,9 +14,11 @@ import java.util.stream.Collectors;
 import javax.annotation.Resource;
 
 import com.ruoyi.common.core.constant.CacheConstants;
+import com.ruoyi.common.core.constant.RedisConstants;
 import com.ruoyi.common.core.exception.ServiceException;
 import com.ruoyi.common.core.utils.DateUtil;
 import com.ruoyi.common.core.utils.HttpUtil;
+import com.ruoyi.common.redis.service.RedisLock;
 import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.OkxBuyRecord;
 import com.ruoyi.okx.domain.OkxCoinProfit;
@@ -30,6 +32,7 @@ import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -41,22 +44,19 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
 
     @Resource
     private BuyRecordMapper buyRecordMapper;
-
     @Resource
     private CoinBusiness coinBusiness;
-
     @Resource
     private CommonBusiness commonBusiness;
-
     @Resource
     private AccountBalanceBusiness accountBalanceBusiness;
-
     @Resource
     @Lazy
     private TickerBusiness tickerBusiness;
-
     @Resource
     private RedisService redisService;
+    @Autowired
+    private RedisLock redisLock;
 
     public List<OkxBuyRecord> selectList(BuyRecordDO buyRecordDO) {
         LambdaQueryWrapper<OkxBuyRecord> wrapper = new LambdaQueryWrapper();
@@ -186,7 +186,14 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
             list.addAll(pendings);
             list.addAll(pARTIALLYFILLED);
             Date now = new Date();
+            String lockKey = "";
             for (OkxBuyRecord buyRecord:list) {
+                lockKey = RedisConstants.OKX_SYNC_BUY_ORDER + buyRecord.getId();
+                boolean lock = redisLock.lock(lockKey,30,3,2000);
+                if (lock == false) {
+                    log.error("tradeV2获取锁失败，交易取消 lockKey:{}",lockKey);
+                    continue;
+                }
                 String str = HttpUtil.getOkx("/api/v5/trade/order?instId=" + buyRecord.getInstId() + "&ordId=" + buyRecord.getOkxOrderId(), null, map);
                 if (org.apache.commons.lang.StringUtils.isEmpty(str)) {
                     log.error("查询订单状态异常{}", str);
@@ -213,6 +220,7 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
                     accountBalanceBusiness.addCount(buyRecord.getCoin(), buyRecord.getAccountId(), buyRecord.getQuantity());
                 }
                 Thread.sleep(50);
+                redisLock.releaseLock(lockKey);
             }
         } catch (Exception e) {
             log.error("同步订单异常", e);

@@ -26,6 +26,7 @@ import com.ruoyi.okx.params.dto.RiseDto;
 import com.ruoyi.okx.params.dto.TradeDto;
 import com.ruoyi.okx.utils.Constant;
 import com.ruoyi.okx.utils.DtoUtils;
+import com.ruoyi.system.api.domain.SysDictData;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.slf4j.Logger;
@@ -135,7 +136,6 @@ public class TradeBusiness {
      * @throws Exception
      */
     @Transactional(rollbackFor = Exception.class)
-    @Async
     public void okxTradeV2(List<TradeDto> list, OkxCoin coin, List<OkxSetting> okxSettings, RiseDto riseDto,BigDecimal tickerIns, BigDecimal totalBuyAmount) throws ServiceException {
         try {
             Long start = System.currentTimeMillis();
@@ -303,15 +303,11 @@ public class TradeBusiness {
 //        }
 //    }
 
+    @Async
     public void tradeV2(List<OkxCoin> coins, List<OkxCoinTicker> tickers,List<OkxSetting> okxSettings,RiseDto riseDto) throws ServiceException {
         Integer accountId = riseDto.getAccountId();
-        String lockKey = RedisConstants.OKX_TICKER_TRADE + accountId;
+        String lockKey = "";
         try {
-            boolean lock = redisLock.lock(lockKey,30,3,5000);
-            if (lock == false) {
-                log.error("trade获取锁失败，交易取消");
-                return;
-            }
             //赋值用户订单类型和交易模式
             okxSettings.stream().forEach(obj -> {
                 if (obj.getSettingKey().equals(OkxConstants.ORD_TYPE)) {
@@ -323,27 +319,42 @@ public class TradeBusiness {
             });
             boolean riseBuy = false,fallbuy = false;
             List<OkxBuyRecord> buyRecords = buyRecordBusiness.findSuccessRecord(null, accountId, null,null);
+            tickers = tickers.stream().sorted(Comparator.comparing(OkxCoinTicker::getCoin)).collect(Collectors.toList());
             for (OkxCoinTicker ticker : tickers) {
-                Optional<OkxCoin> OkxCoin = coins.stream().filter(obj -> obj.getCoin().equals(ticker.getCoin())).findFirst();
-                if (!OkxCoin.isPresent() || OkxCoin.get().getStandard().compareTo(BigDecimal.ZERO) <= 0) {
-                    continue;
-                }
-                List<OkxBuyRecord> tempBuyRecords = buyRecords.stream().filter(item -> item.getCoin().equals(ticker.getCoin())).collect(Collectors.toList());
-                //获取交易参数
-                List<TradeDto> tradeDtoList = getTradeDtoV2( OkxCoin.get(), ticker,  riseDto, tempBuyRecords,okxSettings);
-                if (CollectionUtils.isEmpty(tradeDtoList)) {
-                    continue;
-                } else {
-                    if (fallbuy == false) {
-                        fallbuy = tradeDtoList.stream().anyMatch(item -> item.getSide().equals(OkxSideEnum.BUY.getSide()) && item.getMarketStatus().intValue() == MarketStatusEnum.FALL.getStatus() );
+                try {
+                    lockKey = RedisConstants.OKX_TICKER_TRADE + "_" + accountId + "_" + ticker.getCoin();
+                    boolean lock = redisLock.lock(lockKey,30,1,1000);
+                    if (lock == false) {
+                        log.error("tradeV2获取锁失败，交易取消 lockKey:{}",lockKey);
+                        continue;
                     }
-                    if (riseBuy == false) {
-                        riseBuy = tradeDtoList.stream().anyMatch(item -> item.getSide().equals(OkxSideEnum.BUY.getSide()) && item.getMarketStatus().intValue() == MarketStatusEnum.RISE.getStatus() );
+                    Optional<OkxCoin> OkxCoin = coins.stream().filter(obj -> obj.getCoin().equals(ticker.getCoin())).findFirst();
+                    if (!OkxCoin.isPresent() || OkxCoin.get().getStandard().compareTo(BigDecimal.ZERO) <= 0) {
+                        redisLock.releaseLock(lockKey);
+                        continue;
                     }
+                    List<OkxBuyRecord> tempBuyRecords = buyRecords.stream().filter(item -> item.getCoin().equals(ticker.getCoin())).collect(Collectors.toList());
+                    //获取交易参数
+                    List<TradeDto> tradeDtoList = getTradeDtoV2( OkxCoin.get(), ticker,  riseDto, tempBuyRecords,okxSettings);
+                    if (CollectionUtils.isEmpty(tradeDtoList)) {
+                        redisLock.releaseLock(lockKey);
+                        continue;
+                    } else {
+                        if (fallbuy == false) {
+                            fallbuy = tradeDtoList.stream().anyMatch(item -> item.getSide().equals(OkxSideEnum.BUY.getSide()) && item.getMarketStatus().intValue() == MarketStatusEnum.FALL.getStatus() );
+                        }
+                        if (riseBuy == false) {
+                            riseBuy = tradeDtoList.stream().anyMatch(item -> item.getSide().equals(OkxSideEnum.BUY.getSide()) && item.getMarketStatus().intValue() == MarketStatusEnum.RISE.getStatus() );
+                        }
+                    }
+                    BigDecimal totalBuyAmount = tempBuyRecords.stream().map(OkxBuyRecord::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+                    //交易
+                    okxTradeV2(tradeDtoList, OkxCoin.get(),  okxSettings, riseDto,ticker.getIns(),totalBuyAmount);
+                    redisLock.releaseLock(lockKey);
+                } catch (Exception e) {
+                    log.error("trade error",e);
+                    throw new ServiceException("交易异常", 500);
                 }
-                BigDecimal totalBuyAmount = tempBuyRecords.stream().map(OkxBuyRecord::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
-                //交易
-                okxTradeV2(tradeDtoList, OkxCoin.get(),  okxSettings, riseDto,ticker.getIns(),totalBuyAmount);
             }
             //大盘交易
             if (riseDto.getModeType().equals(ModeTypeEnum.MARKET.getValue())
@@ -360,9 +371,7 @@ public class TradeBusiness {
                 }
                 redisService.setCacheObject(this.getCacheMarketKey(accountId), riseDto);
             }
-            redisLock.releaseLock(lockKey);
         } catch (Exception e) {
-            redisLock.releaseLock(lockKey);
             log.error("trade error",e);
             throw new ServiceException("交易异常", 500);
         }

@@ -1,5 +1,9 @@
 package com.ruoyi.okx.business;
 
+import cn.hutool.cache.Cache;
+import cn.hutool.cache.CacheUtil;
+import cn.hutool.cache.impl.CacheObj;
+import cn.hutool.core.lang.func.Func0;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -18,10 +22,7 @@ import com.ruoyi.common.core.utils.DateUtil;
 import com.ruoyi.common.core.utils.HttpUtil;
 import com.ruoyi.common.redis.service.RedisLock;
 import com.ruoyi.common.redis.service.RedisService;
-import com.ruoyi.okx.domain.OkxAccountBalance;
-import com.ruoyi.okx.domain.OkxCoin;
-import com.ruoyi.okx.domain.OkxCoinTicker;
-import com.ruoyi.okx.domain.OkxSetting;
+import com.ruoyi.okx.domain.*;
 import com.ruoyi.okx.mapper.CoinTickerMapper;
 import com.ruoyi.okx.params.DO.OkxAccountBalanceDO;
 import com.ruoyi.okx.params.dto.RiseDto;
@@ -154,7 +155,16 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
     public boolean syncTicker() throws ServiceException{
         try {
             Date now = new Date();
-            Map<String, String> accountMap = accountBusiness.getAccountMap();
+
+            Cache<String, List<OkxAccount>> accountCache = CacheUtil.newNoCache();
+            List<OkxAccount> accountList = accountCache.get(RedisConstants.ACCOUNT_CACHE);
+            if (CollectionUtils.isEmpty(accountList)) {
+                accountList = accountBusiness.list();
+                accountCache.put(RedisConstants.ACCOUNT_CACHE, accountList);
+            }
+
+            Map<String, String> accountMap = accountBusiness.getAccountMap(accountList.get(0));
+
             boolean result = redisLock.lock(RedisConstants.OKX_TICKER,30,3,5000);
             if (result == false) {
                 log.error("syncTicker-syncTicker 获取锁异常");
@@ -174,46 +184,70 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
             List<OkxCoin> okxCoins = syncCoinBusiness.updateCoinV2(tickerList, now);
 
             //更新行情涨跌数据
-            accountBusiness.list().stream()
-                .filter(item -> item.getStatus().intValue() == Status.OK.getCode()).forEach(item -> {
-                    List<OkxSetting> okxSettings =   accountBusiness.listByAccountId(item.getId());
-                    //更新行情缓存
-                    RiseDto riseDto = syncCoinBusiness.refreshRiseCountV2(okxCoins, now, item, okxSettings);
-                    if (riseDto != null) {
-                        //coin set balance
-                        List<OkxAccountBalance> balances = balanceBusiness.list(new OkxAccountBalanceDO(null,null,null,item.getId(),null));
-                        List<OkxCoin> accountCoins =  Lists.newArrayList();
-                        okxCoins.stream().forEach(okxCoin -> {
-                            balances.stream().filter(obj -> obj.getCoin().equals(okxCoin.getCoin())).findFirst().ifPresent( balance -> {
-                                okxCoin.setCount(balance.getBalance());
-                                accountCoins.add(okxCoin);
-                            });
+            accountList.stream().filter(item -> item.getStatus().intValue() == Status.OK.getCode()).forEach(item -> {
+                Cache<String,  List<OkxSetting>> settingCache = CacheUtil.newNoCache();
+                List<OkxSetting> okxSettings = settingCache.get(RedisConstants.SETTING_CACHE + "_" + item.getId());
+                if (CollectionUtils.isEmpty(okxSettings)) {
+                    okxSettings = accountBusiness.listByAccountId(item.getId());
+                    settingCache.put(RedisConstants.SETTING_CACHE + "_" + item.getId(), okxSettings);
+                }
+
+                //更新行情缓存
+                RiseDto riseDto = syncCoinBusiness.refreshRiseCountV2(okxCoins, now, item, okxSettings);
+                if (riseDto != null) {
+                    //coin set balance
+                    List<OkxAccountBalance> balances = balanceBusiness.list(new OkxAccountBalanceDO(null,null,null,item.getId(),null));
+                    List<OkxCoin> accountCoins =  Lists.newArrayList();
+                    okxCoins.stream().forEach(okxCoin -> {
+                        balances.stream().filter(obj -> obj.getCoin().equals(okxCoin.getCoin())).findFirst().ifPresent( balance -> {
+                            okxCoin.setCount(balance.getBalance());
+                            accountCoins.add(okxCoin);
                         });
-                        //交易
-                        tradeBusiness.tradeV2(accountCoins, tickerList, okxSettings, riseDto);
-                    }
-                });
+                    });
+                    //交易
+                    tradeBusiness.tradeV2(accountCoins, tickerList, okxSettings, riseDto);
+                }
+            });
+
             redisLock.releaseLock(RedisConstants.OKX_TICKER);
         } catch (Exception e) {
             log.error("syncTicker error:", e);
-            redisLock.releaseLock(RedisConstants.OKX_TICKER);
             throw new ServiceException("syncTicker error");
         }
         return true;
+    }
+
+    public static void main(String[] args) {
+        List<OkxCoinTicker> dayTicers = Lists.newArrayList();
+        OkxCoinTicker ticker = new OkxCoinTicker();
+        ticker.setId(1);
+        dayTicers.add(ticker);
+
+        Cache<String, List<OkxCoinTicker>> monthTickers = CacheUtil.newLRUCache(30);
+        monthTickers.put("1", dayTicers);
+
+        System.out.println(JSON.toJSONString(monthTickers.get("1")));
+
     }
 
 
     public List<OkxCoinTicker> updateTicker(JSONObject json){
         //近期30天行情数据
         List<OkxCoinTicker> monthTickerList = Lists.newArrayList();
+        Cache<String, List<OkxCoinTicker>> monthTickers = CacheUtil.newLRUCache(30);
+
         Date now = new Date();
         for (int i = 0; i <= 29; i++) {
-            LambdaQueryWrapper<OkxCoinTicker> wrapper1 = new LambdaQueryWrapper();
-            Date day =  DateUtil.addDate(now, i-29);
-            wrapper1.ge(OkxCoinTicker::getCreateTime, DateUtil.getMinTime(day));
-            wrapper1.le(OkxCoinTicker::getCreateTime, DateUtil.getMaxTime(day));
-            List<OkxCoinTicker> tempList = this.tickerMapper.selectList(wrapper1);
-            monthTickerList.addAll(tempList);
+            Date day =  DateUtil.getMinTime(DateUtil.addDate(now, i-29));
+            List<OkxCoinTicker> dayTickers = monthTickers.get(day.toString());
+            if (CollectionUtils.isEmpty(dayTickers)) {
+                LambdaQueryWrapper<OkxCoinTicker> wrapper1 = new LambdaQueryWrapper();
+                wrapper1.ge(OkxCoinTicker::getCreateTime, DateUtil.getMinTime(day));
+                wrapper1.le(OkxCoinTicker::getCreateTime, DateUtil.getMaxTime(day));
+                dayTickers = this.tickerMapper.selectList(wrapper1);
+                monthTickers.put(day.toString(),dayTickers);
+            }
+            monthTickerList.addAll(dayTickers);
         }
 
         JSONArray jsonArray = json.getJSONArray("data");

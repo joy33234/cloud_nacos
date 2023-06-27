@@ -20,6 +20,15 @@ public class RedisConstants
 
     public static final String OKX_TICKER_TRADE = "okx_ticker_trade";
 
+    public static final String OKX_SYNC_BUY_ORDER = "okx_sync_buy_order";
+
+    public static final String OKX_SYNC_SELL_ORDER = "okx_sync_sell_order";
+
     public static final String CHAT_USER = "CHAT_USER:";
+
+
+    public static final String ACCOUNT_CACHE = "account_cache:";
+
+    public static final String SETTING_CACHE = "setting_cache:";
 
 }

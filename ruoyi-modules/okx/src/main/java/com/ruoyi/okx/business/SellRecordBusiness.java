@@ -12,8 +12,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 
+import com.ruoyi.common.core.constant.RedisConstants;
 import com.ruoyi.common.core.utils.DateUtil;
 import com.ruoyi.common.core.utils.HttpUtil;
+import com.ruoyi.common.redis.service.RedisLock;
 import com.ruoyi.okx.domain.OkxBuyRecord;
 import com.ruoyi.okx.domain.OkxSellRecord;
 import com.ruoyi.okx.enums.OrderStatusEnum;
@@ -22,6 +24,7 @@ import com.ruoyi.okx.params.DO.SellRecordDO;
 import com.ruoyi.okx.utils.Constant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +46,10 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
 
     @Resource
     private CoinProfitBusiness coinProfitBusiness;
+
+    @Autowired
+    private RedisLock redisLock;
+
 
     public List<OkxSellRecord> selectList(SellRecordDO sellRecordDO) {
         LambdaQueryWrapper<OkxSellRecord> wrapper = new LambdaQueryWrapper();
@@ -71,7 +78,14 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
     public void syncSellOrderStatus(Map<String, String> map) {
         List<OkxSellRecord> list = findPendings(Integer.valueOf(map.get("id")));
         Date now = new Date();
-        list.stream().forEach(sellRecord -> {
+        String lockKey = "";
+        for (OkxSellRecord sellRecord:list) {
+            lockKey = RedisConstants.OKX_SYNC_SELL_ORDER + sellRecord.getId();
+            boolean lock = redisLock.lock(lockKey,30,3,2000);
+            if (lock == false) {
+                log.error("tradeV2获取锁失败，交易取消 lockKey:{}",lockKey);
+                continue;
+            }
             String str = HttpUtil.getOkx("/api/v5/trade/order?instId=" + sellRecord.getInstId() + "&ordId=" + sellRecord.getOkxOrderId(), null, map);
             JSONObject json = JSONObject.parseObject(str);
             if (json == null || !json.getString("code").equals("0")) {
@@ -136,6 +150,10 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
                     log.info("订单买入超过1天自动撤销");
                 }
             }
+            redisLock.releaseLock(lockKey);
+        }
+        list.stream().forEach(sellRecord -> {
+
         });
     }
 }
