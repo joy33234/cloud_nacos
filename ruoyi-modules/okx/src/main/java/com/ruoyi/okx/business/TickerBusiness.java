@@ -188,31 +188,8 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
             //更新币种数据
             List<OkxCoin> okxCoins = syncCoinBusiness.updateCoinV2(tickerList, now);
 
-            //更新行情涨跌数据
-            accountList.stream().filter(item -> item.getStatus().intValue() == Status.OK.getCode()).forEach(item -> {
-                Cache<String,  List<OkxSetting>> settingCache = CacheUtil.newNoCache();
-                List<OkxSetting> okxSettings = settingCache.get(RedisConstants.SETTING_CACHE + "_" + item.getId());
-                if (CollectionUtils.isEmpty(okxSettings)) {
-                    okxSettings = settingService.selectSettingByIds(DtoUtils.StringToLong(item.getSettingIds().split(",")));
-                    settingCache.put(RedisConstants.SETTING_CACHE + "_" + item.getId(), okxSettings);
-                }
-
-                //更新行情缓存
-                RiseDto riseDto = syncCoinBusiness.refreshRiseCountV2(okxCoins, now, item, okxSettings);
-                if (riseDto != null) {
-                    //coin set balance
-                    List<OkxAccountBalance> balances = balanceBusiness.list(new OkxAccountBalanceDO(null,null,null,item.getId(),null));
-                    List<OkxCoin> accountCoins =  Lists.newArrayList();
-                    okxCoins.stream().forEach(okxCoin -> {
-                        balances.stream().filter(obj -> obj.getCoin().equals(okxCoin.getCoin())).findFirst().ifPresent( balance -> {
-                            okxCoin.setCount(balance.getBalance());
-                            accountCoins.add(okxCoin);
-                        });
-                    });
-                    //交易
-                    tradeBusiness.tradeV2(accountCoins, tickerList, okxSettings, riseDto);
-                }
-            });
+            //交易
+            tradeBusiness.tradeV2(accountList, okxCoins, tickerList, now);
 
             redisLock.releaseLock(RedisConstants.OKX_TICKER);
         } catch (Exception e) {

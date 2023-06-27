@@ -215,9 +215,6 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
                     }
                 }
                 if (buyRecord.getStatus().intValue() == OrderStatusEnum.SUCCESS.getStatus()) {
-                    buyRecord.setQuantity(data.getBigDecimal("fillSz").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
-                    buyRecord.setPrice(data.getBigDecimal("avgPx").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
-                    buyRecord.setAmount(buyRecord.getQuantity().multiply(buyRecord.getPrice()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
                     //同步手续费
                     syncOrderFee(map, buyRecord);
                     accountBalanceBusiness.addCount(buyRecord.getCoin(), buyRecord.getAccountId(), buyRecord.getQuantity());
@@ -247,15 +244,23 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
                 return false;
             }
             BigDecimal fee = BigDecimal.ZERO;
+            BigDecimal quantity = BigDecimal.ZERO;
+            BigDecimal amount = BigDecimal.ZERO;
             for (int i = 0; i < dataArray.size(); i++) {
                 JSONObject jsonObject = dataArray.getJSONObject(i);
                 fee = fee.add(jsonObject.getBigDecimal("fee").abs());
+                quantity = quantity.add(jsonObject.getBigDecimal("fillSz"));
+                amount = amount.add(jsonObject.getBigDecimal("fillSz").multiply(jsonObject.getBigDecimal("fillPx")).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
             }
+            BigDecimal price = amount.divide(quantity, Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP);
             if (buyRecord.getFee().compareTo(fee.abs()) != 0) {
-                log.info("同步订单手续费:{},buyRecord:{}",fee, buyRecord.getFee());
+                log.info("同步买入订单手续费:{},buyRecord:{}",fee, buyRecord.getFee());
             }
             buyRecord.setFee(fee.setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
             buyRecord.setFeeUsdt(buyRecord.getFee().multiply(buyRecord.getPrice()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+            buyRecord.setQuantity(quantity);
+            buyRecord.setPrice(price);
+            buyRecord.setAmount(amount);
             updateById(buyRecord);
         } catch (Exception e) {
             log.error("syncOrderFee error {}",e);

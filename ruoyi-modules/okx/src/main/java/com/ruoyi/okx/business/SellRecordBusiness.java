@@ -2,14 +2,15 @@ package com.ruoyi.okx.business;
 
 import cn.hutool.core.util.RandomUtil;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 
+import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
-import java.util.stream.Collectors;
 import javax.annotation.Resource;
 
 import com.ruoyi.common.core.constant.RedisConstants;
@@ -40,9 +41,6 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
 
     @Resource
     private CommonBusiness commonBusiness;
-
-    @Resource
-    private AccountBalanceBusiness balanceBusiness;
 
     @Resource
     private CoinProfitBusiness coinProfitBusiness;
@@ -96,10 +94,11 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
             sellRecord.setStatus((commonBusiness.getOrderStatus(data.getString("state")) == null) ? sellRecord.getStatus() : commonBusiness.getOrderStatus(data.getString("state")));
             if (sellRecord.getStatus().equals(OrderStatusEnum.SUCCESS.getStatus())) {
                 OkxBuyRecord okxBuyRecord = buyRecordBusiness.findOne(sellRecord.getBuyRecordId());
-                sellRecord.setFee(data.getBigDecimal("fee").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP).abs());
-                sellRecord.setQuantity(data.getBigDecimal("fillSz").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
-                sellRecord.setPrice(data.getBigDecimal("avgPx").setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
-                sellRecord.setAmount(sellRecord.getQuantity().multiply(sellRecord.getPrice()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+
+                if(syncOrderDetail(map, sellRecord) == false) {
+                    log.error("同步卖出订单详情异常");
+                    continue;
+                }
                 sellRecord.setProfit(sellRecord.getAmount().subtract(sellRecord.getFee()).subtract(okxBuyRecord.getAmount()).subtract(okxBuyRecord.getFeeUsdt()));
 
                 boolean update = updateById(sellRecord);
@@ -156,9 +155,43 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
             }
             redisLock.releaseLock(lockKey);
         }
-        list.stream().forEach(sellRecord -> {
+    }
 
-        });
+
+    public boolean syncOrderDetail(Map<String, String> map, OkxSellRecord sellRecord) {
+        try {
+            String str = HttpUtil.getOkx("/api/v5/trade/fills?instType=SPOT&ordId=" + sellRecord.getOkxOrderId(), null, map);
+            JSONObject json = JSONObject.parseObject(str);
+            if (json == null || !json.getString("code").equals("0")) {
+                log.error("查询订单状态异常:{}", (json == null) ? "null" : json.toJSONString());
+                return false;
+            }
+            JSONArray dataArray = json.getJSONArray("data");
+            if (dataArray.size() <= 0) {
+                log.error("查询订单返回数据异常params:{}, res:{}",sellRecord.getOkxOrderId(), str);
+                return false;
+            }
+            BigDecimal fee = BigDecimal.ZERO;
+            BigDecimal quantity = BigDecimal.ZERO;
+            BigDecimal amount = BigDecimal.ZERO;
+            for (int i = 0; i < dataArray.size(); i++) {
+                JSONObject jsonObject = dataArray.getJSONObject(i);
+                fee = fee.add(jsonObject.getBigDecimal("fee").abs());
+                quantity = quantity.add(jsonObject.getBigDecimal("fillSz"));
+                amount = amount.add(jsonObject.getBigDecimal("fillSz").multiply(jsonObject.getBigDecimal("fillPx")).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+            }
+            BigDecimal price = amount.divide(quantity, Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP);
+            if (sellRecord.getFee().compareTo(fee.abs()) != 0) {
+                log.info("同步卖出订单手续费:{},buyRecord:{}",fee, sellRecord.getFee());
+            }
+            sellRecord.setFee(fee.setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP).abs());
+            sellRecord.setQuantity(quantity);
+            sellRecord.setPrice(price);
+            sellRecord.setAmount(amount);
+        } catch (Exception e) {
+            log.error("syncOrderDetail error {}",e);
+        }
+        return true;
     }
 }
 

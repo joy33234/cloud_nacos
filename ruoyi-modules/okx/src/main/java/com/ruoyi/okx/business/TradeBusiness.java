@@ -1,6 +1,8 @@
 package com.ruoyi.okx.business;
 
 
+import cn.hutool.cache.Cache;
+import cn.hutool.cache.CacheUtil;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.ObjectUtil;
 import com.alibaba.fastjson.JSON;
@@ -24,6 +26,7 @@ import com.ruoyi.okx.enums.*;
 import com.ruoyi.okx.params.DO.OkxAccountBalanceDO;
 import com.ruoyi.okx.params.dto.RiseDto;
 import com.ruoyi.okx.params.dto.TradeDto;
+import com.ruoyi.okx.service.SettingService;
 import com.ruoyi.okx.utils.Constant;
 import com.ruoyi.okx.utils.DtoUtils;
 import com.ruoyi.system.api.domain.SysDictData;
@@ -32,6 +35,7 @@ import org.apache.commons.compress.utils.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,6 +70,11 @@ public class TradeBusiness {
     @Resource
     private AccountBalanceBusiness balanceBusiness;
 
+    @Resource
+    private SettingService settingService;
+
+    @Value("${okx.newRedis}")
+    public boolean newRedis;
 //    /**
 //     * 买卖交易
 //     * @param list
@@ -165,6 +174,9 @@ public class TradeBusiness {
                             tradeDto.getPx().multiply(tradeDto.getSz()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP), BigDecimal.ZERO, BigDecimal.ZERO, OrderStatusEnum.PENDING.getStatus(),
                             UUID.randomUUID().toString(), "", tradeDto.getSellStrategyId(), tradeDto.getBuyStrategyId(), tradeDto.getTimes(), accountId,accountName,null);
                     if (!strategyBusiness.checkSell(sellRecord, coin, tradeDto)) {
+                        return;
+                    }
+                    if (buyRecordBusiness.findOne(tradeDto.getBuyRecordId()).getStatus().intValue() != OrderStatusEnum.SUCCESS.getStatus()) {
                         return;
                     }
                     String okxOrderId = okxRequest(tradeDto, now, riseDto);
@@ -303,7 +315,35 @@ public class TradeBusiness {
 //        }
 //    }
 
+
     @Async
+    public void tradeV2(List<OkxAccount> accountList, List<OkxCoin> okxCoins, List<OkxCoinTicker> tickerList, Date now) {
+        accountList.stream().filter(item -> item.getStatus().intValue() == Status.OK.getCode()).forEach(item -> {
+            Cache<String,  List<OkxSetting>> settingCache = CacheUtil.newNoCache();
+            List<OkxSetting> okxSettings = settingCache.get(RedisConstants.SETTING_CACHE + "_" + item.getId());
+            if (CollectionUtils.isEmpty(okxSettings)) {
+                okxSettings = settingService.selectSettingByIds(DtoUtils.StringToLong(item.getSettingIds().split(",")));
+                settingCache.put(RedisConstants.SETTING_CACHE + "_" + item.getId(), okxSettings);
+            }
+
+            //更新行情缓存
+            RiseDto riseDto = refreshRiseCountV2(okxCoins, now, item, okxSettings);
+            if (riseDto != null) {
+                //coin set balance
+                List<OkxAccountBalance> balances = balanceBusiness.list(new OkxAccountBalanceDO(null,null,null,item.getId(),null));
+                List<OkxCoin> accountCoins =  Lists.newArrayList();
+                okxCoins.stream().forEach(okxCoin -> {
+                    balances.stream().filter(obj -> obj.getCoin().equals(okxCoin.getCoin())).findFirst().ifPresent( balance -> {
+                        okxCoin.setCount(balance.getBalance());
+                        accountCoins.add(okxCoin);
+                    });
+                });
+                //交易
+                tradeV2(accountCoins, tickerList, okxSettings, riseDto);
+            }
+        });
+    }
+
     public void tradeV2(List<OkxCoin> coins, List<OkxCoinTicker> tickers,List<OkxSetting> okxSettings,RiseDto riseDto) throws ServiceException {
         Integer accountId = riseDto.getAccountId();
         String lockKey = "";
@@ -375,6 +415,58 @@ public class TradeBusiness {
             log.error("trade error",e);
             throw new ServiceException("交易异常", 500);
         }
+    }
+
+
+    /**
+     * 更新coin涨跌
+     * @param okxCoins
+     * @param now
+     */
+    public RiseDto refreshRiseCountV2(List<OkxCoin> okxCoins, Date now, OkxAccount okxAccount,List<OkxSetting> settingList){
+        String modeType = settingList.stream().filter(item -> item.getSettingKey().equals(OkxConstants.MODE_TYPE)).findFirst().get().getSettingValue();
+        if (!modeType.equals(ModeTypeEnum.MARKET.getValue())) {
+            return new RiseDto();
+        }
+        String key = getCacheMarketKey(okxAccount.getId());
+
+        if ((now.getTime() - DateUtil.getMinTime(now).getTime() < 300000) || newRedis == true) {
+            RiseDto riseDto = new RiseDto();
+            riseDto.setAccountId(okxAccount.getId());
+            riseDto.setAccountName(okxAccount.getName());
+            riseDto.setApikey(okxAccount.getApikey());
+            riseDto.setSecretkey(okxAccount.getSecretkey());
+            riseDto.setPassword(okxAccount.getPassword());
+            redisService.setCacheObject(key, riseDto);
+            return null;
+        }
+
+        RiseDto riseDto = redisService.getCacheObject(key);
+        if (riseDto == null) {//redis异常 TODO
+            return null;
+        }
+
+        Integer riseCount = okxCoins.stream().filter(item -> (item.isRise() == true)).collect(Collectors.toList()).size();
+        BigDecimal risePercent = new BigDecimal(riseCount).divide(new BigDecimal(okxCoins.size()), 4,BigDecimal.ROUND_DOWN);
+        BigDecimal lowPercent = BigDecimal.ONE.subtract(risePercent).setScale(Constant.OKX_BIG_DECIMAL);
+
+        riseDto.setRiseCount(riseCount);
+        riseDto.setRisePercent(risePercent);
+        if (risePercent.compareTo(riseDto.getHighest()) > 0) {
+            riseDto.setHighest(risePercent);
+        }
+        riseDto.setLowCount(okxCoins.size() - riseCount);
+        riseDto.setLowPercent(lowPercent);
+        if (lowPercent.compareTo(riseDto.getLowPercent()) > 0) {
+            riseDto.setLowest(lowPercent);
+        }
+        for (OkxCoin okxCoin:okxCoins) {
+            if (okxCoin.getCoin().equalsIgnoreCase("BTC")) {
+                riseDto.setBTCIns(okxCoin.getBtcIns());
+            }
+        }
+        redisService.setCacheObject(key, riseDto);
+        return riseDto;
     }
 //
 //    private List<TradeDto> getTradeDto( OkxCoin coin, OkxCoinTicker ticker, Map<String, String> map,RiseDto riseDto,List<OkxBuyRecord> buyRecords,List<OkxSetting> okxSettings) {
