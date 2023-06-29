@@ -31,38 +31,43 @@ public class OkxTask
     }
 
     public void syncCoins(){
-        System.out.println(DateUtil.formatForTime(new Date()) + " syncCoins执行无参方法");
+        System.out.println(DateUtil.formatForTime(new Date()) + " - syncCoins执行无参方法");
         remoteOkxService.syncCoin(SecurityConstants.INNER);
     }
 
     public void syncCurrencies(){
-        System.out.println(DateUtil.formatForTime(new Date()) +  "syncCurrencies执行无参方法");
+        System.out.println(DateUtil.formatForTime(new Date()) +  " - syncCurrencies执行无参方法");
         remoteOkxService.syncCurrencies(SecurityConstants.INNER);
     }
 
     public void syncTicker(){
-        System.out.println(DateUtil.formatForTime(new Date()) +  "syncTicker执行无参方法");
+        System.out.println(DateUtil.formatForTime(new Date()) +  " - syncTicker执行无参方法");
         remoteOkxService.syncTicker(SecurityConstants.INNER);
+    }
+
+    public void syncTickerDb(){
+        System.out.println(DateUtil.formatForTime(new Date()) +  " - syncTickerDb执行无参方法");
+        remoteOkxService.syncTickerDb(SecurityConstants.INNER);
     }
 
 
     public void syncCount(){
-        System.out.println(DateUtil.formatForTime(new Date()) +  "syncCount执行无参方法");
+        System.out.println(DateUtil.formatForTime(new Date()) +  " - syncCount执行无参方法");
         remoteOkxService.syncCount(SecurityConstants.INNER);
     }
 
     public void syncOrderBuy(){
-        System.out.println(DateUtil.formatForTime(new Date()) +  "syncOrderBuy-执行无参方法");
+        System.out.println(DateUtil.formatForTime(new Date()) +  " - syncOrderBuy-执行无参方法");
         remoteOkxService.syncBuyOrder(SecurityConstants.INNER);
     }
 
     public void syncOrderBuyFee(){
-        System.out.println(DateUtil.formatForTime(new Date()) +  "syncOrderBuyFee-执行无参方法");
+        System.out.println(DateUtil.formatForTime(new Date()) +  " - syncOrderBuyFee-执行无参方法");
         remoteOkxService.syncBuyOrderFee(SecurityConstants.INNER);
     }
 
     public void syncOrderSell(){
-        System.out.println(DateUtil.formatForTime(new Date()) +  "syncOrderSell-执行无参方法");
+        System.out.println(DateUtil.formatForTime(new Date()) +  " - syncOrderSell-执行无参方法");
         remoteOkxService.syncSellOrder(SecurityConstants.INNER);
     }
 }

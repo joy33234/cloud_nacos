@@ -37,6 +37,12 @@ public class RemoteOkxFallbackFactory implements FallbackFactory<RemoteOkxServic
             }
 
             @Override
+            public R<Void> syncTickerDb(String source)
+            {
+                return R.fail("保存币种行情数据到Db失败:" + throwable.getMessage());
+            }
+
+            @Override
             public R<Void> syncCount(String source)
             {
                 return R.fail("同步帐户币种数量失败:" + throwable.getMessage());

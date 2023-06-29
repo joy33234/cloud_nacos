@@ -204,7 +204,10 @@ public class SyncCoinBusiness {
     public List<OkxCoin> updateCoinV2(List<OkxCoinTicker> tickers, Date now) throws Exception {
         try {
             BigDecimal usdt24h = new BigDecimal(settingService.selectSettingByKey(OkxConstants.USDT_24H));
-            List<OkxCoin> okxCoins = coinBusiness.list().stream().filter(item -> item.getUnit().compareTo(BigDecimal.ZERO) > 0).collect(Collectors.toList());
+
+            List<OkxCoin> okxCoins = coinBusiness.getCoinCache().stream().filter(item -> item.getUnit().compareTo(BigDecimal.ZERO) > 0).collect(Collectors.toList());
+            //coinBusiness.list().stream().filter(item -> item.getUnit().compareTo(BigDecimal.ZERO) > 0).collect(Collectors.toList());
+
             for (OkxCoinTicker ticker: tickers) {
                 okxCoins.stream().filter(item -> item.getCoin().equals(ticker.getCoin())).findFirst().ifPresent(obj -> {
                     obj.setVolCcy24h(ticker.getVol24h().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
@@ -225,6 +228,8 @@ public class SyncCoinBusiness {
                     obj.setStandard(coinBusiness.calculateStandard(ticker));
                 });
             }
+            okxCoins = okxCoins.stream()
+                    .filter(item -> item.getStandard().compareTo(BigDecimal.ZERO) > 0 ).collect(Collectors.toList());
             //更新缓存
             coinBusiness.updateCache(okxCoins);
             return okxCoins;

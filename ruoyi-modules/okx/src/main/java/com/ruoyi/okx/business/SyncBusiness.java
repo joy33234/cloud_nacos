@@ -69,8 +69,6 @@ public class SyncBusiness {
             }
             Date now = new Date();
             JSONArray jsonArray = json.getJSONArray("data");
-            List<OkxAccount> accounts = accountBusiness.list().stream()
-                    .filter(item -> item.getStatus().intValue() == Status.OK.getCode()).collect(Collectors.toList());
 
             for (int i = 0; i < jsonArray.size(); i++) {
                JSONObject item = jsonArray.getJSONObject(i);
@@ -86,7 +84,7 @@ public class SyncBusiness {
                     coin.setStatus(CoinStatusEnum.OPEN.getStatus());
                     coin.setVolCcy24h(BigDecimal.ZERO);
                     coin.setVolUsdt24h(BigDecimal.ZERO);
-                    coin.setCount(BigDecimal.ZERO);
+                    coin.setBalance(BigDecimal.ZERO);
                     coin.setCoin(item.getString("ccy"));
                     coin.setUpdateTime(now);
                     saveCoins.add(coin);
@@ -131,7 +129,7 @@ public class SyncBusiness {
 
     @Async
     public void syncCoin() {
-        coinBusiness.syncCoin();
+        coinBusiness.syncCoinDb();
     }
 
 
@@ -190,6 +188,12 @@ public class SyncBusiness {
         } catch (Exception e) {
             log.error("同步ticker异常", e);
         }
+    }
+
+
+    @Async
+    public void syncTickerDb() {
+        tickerBusiness.syncTickerDb();
     }
 
 

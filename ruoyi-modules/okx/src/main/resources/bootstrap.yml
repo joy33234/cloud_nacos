@@ -1,6 +1,8 @@
 # Tomcat
 server: 
   port: 9400
+  tomcat:
+    max-threads: 800
 
 # Spring
 spring: 

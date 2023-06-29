@@ -62,7 +62,18 @@ public class SyncController extends BaseController
         syncBusiness.syncTicker();
         return success();
     }
-    
+
+
+    /**
+     * 根据参数获取详细信息
+     */
+    @GetMapping(value = "/tickerDb")
+    public AjaxResult syncTickerDb(){
+        syncBusiness.syncTickerDb();
+        return success();
+    }
+
+
 
     /**
      * 根据参数获取详细信息

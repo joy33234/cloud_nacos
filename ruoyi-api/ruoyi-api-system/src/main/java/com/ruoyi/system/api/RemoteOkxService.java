@@ -35,6 +35,17 @@ public interface RemoteOkxService
 
 
     /**
+     * 同步所有币种
+     *
+     * @param source 请求来源
+     * @return 结果
+     */
+    @GetMapping("/sync/tickerDb")
+    public R<Void> syncTickerDb(@RequestHeader(SecurityConstants.FROM_SOURCE) String source);
+
+
+
+    /**
      * 同步帐户币种数量
      *
      * @param source 请求来源

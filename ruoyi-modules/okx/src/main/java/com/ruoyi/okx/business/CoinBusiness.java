@@ -1,6 +1,7 @@
 package com.ruoyi.okx.business;
 
 
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import java.math.BigDecimal;
@@ -9,11 +10,13 @@ import java.util.*;
 import javax.annotation.Resource;
 
 import com.ruoyi.common.core.constant.CacheConstants;
+import com.ruoyi.common.core.utils.StringUtils;
 import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.*;
 import com.ruoyi.okx.mapper.CoinMapper;
 import com.ruoyi.okx.utils.Constant;
 import org.apache.commons.compress.utils.Lists;
+import org.apache.commons.lang3.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +38,9 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
     public BigDecimal calculateStandard(OkxCoinTicker ticker) {
         BigDecimal standard = BigDecimal.ZERO;
         try {
+            if (ticker.getMonthAverage().compareTo(BigDecimal.ZERO) <= 0) {
+                return standard;
+            }
             standard = ticker.getLast().add(ticker.getAverage()).add(ticker.getMonthAverage()).divide(new BigDecimal(3), 8, RoundingMode.HALF_UP);
         } catch (Exception e) {
             log.error("计算标准价格异常");
@@ -53,7 +59,7 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
 
 
     @Transactional(rollbackFor = Exception.class)
-    public void syncCoin() {
+    public void syncCoinDb() {
         Collection<String> keys = redisService.keys(CacheConstants.OKX_COIN_KEY + "*");
         Date now = new Date();
         for (String key:keys) {
@@ -100,6 +106,11 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
         return okxCoin;
     }
 
+    public OkxCoin getCoinCache(String coin) {
+        return redisService.getCacheObject(CacheConstants.OKX_COIN_KEY + coin);
+    }
+
+
 
     @Async
     public void updateCache(List<OkxCoin> coins) {
@@ -107,6 +118,57 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
             redisService.setCacheObject(CacheConstants.OKX_COIN_KEY + coin.getCoin(), coin);
         }
     }
+
+    public void markBuy(String coin,Integer accountId) {
+        try {
+            OkxCoin okxCoin = getCoinCache(coin);
+            int times = 3;
+            while (okxCoin == null && times > 0) {
+                Thread.sleep(1500);
+                okxCoin = getCoinCache(coin);
+            }
+
+            String boughtAccountIds = StringUtils.isEmpty(okxCoin.getBoughtAccountIds()) ? accountId.toString() : okxCoin.getBoughtAccountIds() + "," + accountId;
+            okxCoin.setBoughtAccountIds(boughtAccountIds);
+            redisService.setCacheObject(CacheConstants.OKX_COIN_KEY + coin, okxCoin);
+            log.info("买入成功 更新 redis coin :{} accountId:{}",coin,accountId);
+        } catch (Exception e) {
+            log.error("tradeCoin 异常 ：{}" ,e.getMessage());
+        }
+    }
+
+
+    public void cancelBuy(String coin,Integer accountId) {
+        try {
+            OkxCoin okxCoin = getCoinCache(coin);
+            int times = 3;
+            while (okxCoin == null && times > 0) {
+                Thread.sleep(1500);
+                okxCoin = getCoinCache(coin);
+            }
+            String boughtAccountIds = okxCoin.getBoughtAccountIds().replace(accountId.toString(),"");
+            okxCoin.setBoughtAccountIds(boughtAccountIds);
+            redisService.setCacheObject(CacheConstants.OKX_COIN_KEY + coin, okxCoin);
+            log.info("买入成功 更新 redis coin :{} accountId:{}",coin,accountId);
+        } catch (Exception e) {
+            log.error("tradeCoin 异常 ：{}" ,e.getMessage());
+        }
+    }
+
+    /**
+     * 是否已买
+     * @param coin
+     * @param accountId
+     * @return
+     */
+    public boolean checkBoughtCoin(String coin,Integer accountId) {
+        OkxCoin okxCoin = getCoin(coin);
+        if (okxCoin == null || StringUtils.isEmpty(okxCoin.getBoughtAccountIds())) {
+            return false;
+        }
+        return okxCoin.getBoughtAccountIds().contains(accountId.toString());
+    }
+
 
     public void clearSettingCache()
     {

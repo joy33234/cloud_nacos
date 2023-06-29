@@ -30,7 +30,7 @@ public class OkxCoin extends CommonEntity {
     private BigDecimal volUsdt24h;
 
     @TableField(exist = false)
-    private BigDecimal count;
+    private BigDecimal balance;
 
     @TableField(exist = false)
     private BigDecimal btcIns;
@@ -40,4 +40,7 @@ public class OkxCoin extends CommonEntity {
 
     @TableField(exist = false)
     private BigDecimal last;
+
+    @TableField(exist = false)
+    private String boughtAccountIds;
 }

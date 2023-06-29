@@ -12,6 +12,8 @@ import java.util.Date;
 @AllArgsConstructor
 public class RiseDto {
 
+    private String dateTime;
+
     private String modeType;
 
     /**

@@ -66,14 +66,12 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
         wrapper.between((buyRecordDO.getParams().get("beginTime") != null), OkxBuyRecord::getCreateTime, buyRecordDO.getParams().get("beginTime"), buyRecordDO.getParams().get("endTime"));
         wrapper.orderByDesc(OkxBuyRecord::getUpdateTime);
         List<OkxBuyRecord> list =buyRecordMapper.selectList(wrapper);
-        List<OkxCoinTicker> tickerList = tickerBusiness.findTodayTicker();
         for (OkxBuyRecord record:list) {
-            tickerList.stream().filter(item -> item.getCoin().equals(record.getCoin())).findFirst().ifPresent(obj -> {
-                record.setLast(obj.getLast());
-                if (record.getStatus().intValue() == OrderStatusEnum.SUCCESS.getStatus()) {
-                    record.setProfit(record.getLast().subtract(record.getPrice()).multiply(record.getQuantity()).setScale(Constant.OKX_BIG_DECIMAL,RoundingMode.DOWN));
-                }
-            });
+            OkxCoinTicker okxCoinTicker = tickerBusiness.getTickerCache(record.getCoin());
+            record.setLast(okxCoinTicker.getLast());
+            if (record.getStatus().intValue() == OrderStatusEnum.SUCCESS.getStatus()) {
+                record.setProfit(record.getLast().subtract(record.getPrice()).multiply(record.getQuantity()).setScale(Constant.OKX_BIG_DECIMAL,RoundingMode.DOWN));
+            }
         }
         return list;
     }
@@ -211,6 +209,8 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
                         buyRecord.setStatus(OrderStatusEnum.CANCEL.getStatus());
                         updateById(buyRecord);
                         log.info("订单买入超过10分钟自动撤销");
+
+                        coinBusiness.cancelBuy(buyRecord.getCoin(), buyRecord.getAccountId());
                         continue;
                     }
                 }

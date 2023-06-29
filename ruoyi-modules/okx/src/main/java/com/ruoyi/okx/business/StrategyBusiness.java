@@ -36,7 +36,7 @@ public class StrategyBusiness  {
         if (coin.getStatus() != CoinStatusEnum.OPEN.getStatus()) {
             return false;
         }
-        if (coin.getUnit().compareTo(BigDecimal.ZERO) <= 0 || ObjectUtils.isEmpty(coin.getCount())) {
+        if (coin.getUnit().compareTo(BigDecimal.ZERO) <= 0 || ObjectUtils.isEmpty(coin.getStandard())) {
             log.warn("买入校验策略-单位为0 coin:{}", JSON.toJSONString(coin));
             return false;
         }
@@ -78,11 +78,11 @@ public class StrategyBusiness  {
     }
 
     public boolean checkSell(OkxSellRecord sellRecord, OkxCoin coin, TradeDto tradeDto) {
-        if (sellRecord.getQuantity().compareTo(coin.getCount()) > 0) {
+        if (sellRecord.getQuantity().compareTo(coin.getBalance()) > 0) {
             log.warn("卖出失败-余额不足 sellRecord:{}, coin:{}, sellQuantity:{},tradeDto:{}", JSON.toJSONString(sellRecord), JSON.toJSONString(coin),JSON.toJSONString(tradeDto) );
-            if (coin.getCount().compareTo(coin.getUnit()) > 0) {
-                sellRecord.setQuantity(coin.getCount());
-                tradeDto.setSz(coin.getCount());
+            if (coin.getBalance().compareTo(coin.getUnit()) > 0) {
+                sellRecord.setQuantity(coin.getBalance());
+                tradeDto.setSz(coin.getBalance());
                 log.warn("卖出失败-余额不足 修正卖出数量 accountId:{}, coin:{}, sellQuantity:{}", sellRecord.getAccountId(), coin.getCoin(), sellRecord.getQuantity());
             }
         }

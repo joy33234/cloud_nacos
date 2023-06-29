@@ -81,7 +81,7 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
             lockKey = RedisConstants.OKX_SYNC_SELL_ORDER + sellRecord.getId();
             boolean lock = redisLock.lock(lockKey,30,3,2000);
             if (lock == false) {
-                log.error("tradeV2获取锁失败，交易取消 lockKey:{}",lockKey);
+                log.error("syncSellOrderStatus获取锁失败，交易取消 lockKey:{}",lockKey);
                 continue;
             }
             String str = HttpUtil.getOkx("/api/v5/trade/order?instId=" + sellRecord.getInstId() + "&ordId=" + sellRecord.getOkxOrderId(), null, map);
