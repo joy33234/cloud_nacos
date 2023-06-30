@@ -318,8 +318,9 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
         for (OkxCoinTicker cacheTicker: todayCacheTickers) {
             todayDbTickers.stream().filter(item -> item.getCoin().equals(cacheTicker.getCoin())).findFirst().ifPresent(obj -> {
                 cacheTicker.setId(obj.getId());
+                cacheTicker.setUpdateTime(now);
             });
-            cacheTicker.setUpdateTime(now);
+            cacheTicker.setCreateTime(now);
         }
         saveOrUpdateBatch(todayCacheTickers);
     }

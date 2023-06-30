@@ -71,8 +71,8 @@ public class OkxTrandeBusiness {
     @Async
     public void okxTradeV2(List<OkxCoin> coins,  OkxCoinTicker ticker, List<OkxSetting> okxSettings, List<OkxBuyRecord> buyRecords, RiseDto riseDto, Date now) throws ServiceException {
         try {
-            if (ticker.getCoin().equalsIgnoreCase("shib")) {
-                log.info("ticker:{} riseDto:{},buyRecords",JSON.toJSONString(ticker), JSON.toJSONString(riseDto), JSON.toJSONString(buyRecords));
+            if (ticker.getCoin().equalsIgnoreCase("aave") || ticker.getCoin().equalsIgnoreCase("zyro")) {
+                log.info("coin:{} accountId:{},buyRecords size",ticker.getCoin(), riseDto.getAccountId(), buyRecords.size());
             }
             OkxCoin coin = null;
             Integer accountId = riseDto.getAccountId();
