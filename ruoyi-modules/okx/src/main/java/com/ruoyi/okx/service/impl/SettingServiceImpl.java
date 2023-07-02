@@ -13,6 +13,7 @@ import com.ruoyi.okx.domain.OkxSetting;
 import com.ruoyi.okx.mapper.SettingMapper;
 import com.ruoyi.okx.service.SettingService;
 import com.ruoyi.okx.utils.DtoUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.formula.functions.T;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Caching;
@@ -35,6 +36,7 @@ import static java.util.stream.Collectors.toCollection;
  * @author ruoyi
  */
 @Service
+@Slf4j
 public class SettingServiceImpl implements SettingService
 {
     @Autowired
@@ -225,14 +227,16 @@ public class SettingServiceImpl implements SettingService
         List<OkxSetting> uniqueSettings = settingMapper.selectSettingList(new OkxSetting()).stream().collect(
                 collectingAndThen(toCollection(() -> new TreeSet<>(comparing(OkxSetting::getSettingKey))), ArrayList::new));
         //部分配置未勾选
-        if (uniqueSettings.size() != settingIds.length) {
+        if (uniqueSettings.size() > settingIds.length) {
+            log.info("部分配置未勾选");
             return false;
         }
-        List<OkxSetting> settingList = settingMapper.selectSettingListByIds(settingIds).stream().filter(item -> item.getIsUnique() == 0).collect(Collectors.toList());
+        List<OkxSetting> settingList = settingMapper.selectSettingListByIds(settingIds).stream().filter(item -> item.getSettingUnique() == 0).collect(Collectors.toList());
         List<OkxSetting> uniqueSettingList = settingList.stream().collect(
                 collectingAndThen(toCollection(() -> new TreeSet<>(comparing(OkxSetting::getSettingKey))), ArrayList::new));
 
         if (settingList.size() != uniqueSettingList.size()) {
+            log.info("部分配置重 唯一性配置错误");
             return false;
         }
         return true;

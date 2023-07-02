@@ -5,12 +5,12 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.ruoyi.common.core.annotation.Excel;
 import com.ruoyi.common.core.annotation.Excel.ColumnType;
 import com.ruoyi.common.core.web.domain.CommonEntity;
-import io.swagger.models.auth.In;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.springframework.data.annotation.Transient;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
 /**
@@ -44,7 +44,7 @@ public class OkxSetting extends CommonEntity
      *
      * */
     @Excel(name = "参数名称")
-    private Integer isUnique;
+    private Integer settingUnique;
 
     @Transient
     private String desc;
@@ -92,16 +92,15 @@ public class OkxSetting extends CommonEntity
         return settingValue;
     }
 
-    public void setIsUnique(Integer isUnique)
+    public void setUnique(Integer settingUnique)
     {
-        this.isUnique = isUnique;
+        this.settingUnique = settingUnique;
     }
 
-    @NotBlank(message = "参数键值不能为空")
-    @Size(min = 0, max = 500, message = "参数键值长度不能超过500个字符")
-    public Integer getIsUnique()
+    @NotNull
+    public Integer getSettingUnique()
     {
-        return isUnique;
+        return settingUnique;
     }
 
     public void setSettingValue(String settingValue)

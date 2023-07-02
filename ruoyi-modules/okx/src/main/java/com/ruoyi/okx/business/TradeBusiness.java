@@ -317,7 +317,6 @@ public class TradeBusiness {
 
     //交易
     public void tradeV2(Integer riseCount, Integer fallCount, List<OkxAccount> accountList, OkxCoin okxCoin, OkxCoinTicker ticker, Date now,Map<String, List<OkxSetting>> accountSettingMap) {
-
         try {
             for (OkxAccount okxAccount: accountList) {
                 List<OkxSetting> okxSettings  = accountSettingMap.get(Constant.OKX_ACCOUNT_SETTING + okxAccount.getId());

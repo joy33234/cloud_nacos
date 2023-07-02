@@ -458,7 +458,7 @@ public class OkxTrandeBusiness {
         BigDecimal buyUsdtAmout = BigDecimal.ZERO;
         for (int i = 0; i < amountSettings.size(); i++) {
             if (ins.abs().compareTo(new BigDecimal(fallPercentSettings.get(i).getSettingValue())) >= 0) {
-                buyUsdtAmout = new BigDecimal(amountSettings.get(i).getSettingKey());
+                buyUsdtAmout = new BigDecimal(amountSettings.get(i).getSettingValue());
             }
         }
         if (buyUsdtAmout.compareTo(BigDecimal.ZERO) <= 0) {

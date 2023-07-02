@@ -231,7 +231,6 @@ public class SyncBusiness {
                 }
             }
 
-
             //近期29天行情数据
             List<OkxCoinTicker> monthTickerList = org.apache.commons.compress.utils.Lists.newArrayList();
             Cache<String, List<OkxCoinTicker>> monthTickersCache = CacheUtil.newLRUCache(30);
@@ -253,7 +252,6 @@ public class SyncBusiness {
                     monthTickerList.addAll(dayTickers);
                 }
             }
-
 
             //遍历每个币种
             for (int i = 0; i < jsonArray.size(); i++) {

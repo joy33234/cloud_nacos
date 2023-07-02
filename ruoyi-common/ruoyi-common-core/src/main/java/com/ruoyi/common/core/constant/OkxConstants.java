@@ -71,7 +71,7 @@ public class OkxConstants
 
 
     /**
-     * 买入每次交易额度
+     *
      */
     public static final String BUY_MARK_COIN_FALL_AMOUNT = "buy_mark_coin_fall_amount";
 

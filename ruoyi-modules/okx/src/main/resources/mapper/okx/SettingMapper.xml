@@ -9,6 +9,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="settingName"    column="setting_name"    />
         <result property="settingKey"     column="setting_key"     />
         <result property="settingValue"   column="setting_value"   />
+        <result property="settingUnique"   column="setting_unique"   />
         <result property="createBy"      column="create_by"      />
         <result property="createTime"    column="create_time"    />
         <result property="updateBy"      column="update_by"      />
@@ -16,7 +17,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectSettingVo">
-        select setting_id, setting_name, setting_key, setting_value,  create_by, create_time, update_by, update_time, remark
+        select setting_id, setting_name, setting_key, setting_value,setting_unique,  create_by, create_time, update_by, update_time, remark
 		from okx_setting
     </sql>
 
