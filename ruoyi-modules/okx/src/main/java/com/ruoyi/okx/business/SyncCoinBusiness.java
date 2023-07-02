@@ -33,10 +33,7 @@ import springfox.documentation.swagger.web.UiConfigurationBuilder;
 import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -199,6 +196,46 @@ public class SyncCoinBusiness {
 //            throw new Exception(e.getMessage());
 //        }
 //    }
+
+    public OkxCoin updateCoinV2(OkxCoinTicker ticker, Date now) throws Exception {
+        try {
+            BigDecimal usdt24h = new BigDecimal(settingService.selectSettingByKey(OkxConstants.USDT_24H));
+
+            OkxCoin obj = coinBusiness.getCoinCache(ticker.getCoin());
+            if (obj.getUnit().compareTo(BigDecimal.ZERO) <= 0) {
+                return null;
+            }
+
+            obj.setVolCcy24h(ticker.getVol24h().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
+            obj.setVolUsdt24h(ticker.getVolCcy24h().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
+            obj.setHightest(ticker.getHigh24h().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+            obj.setLowest(ticker.getLow24h().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+            obj.setRise((ticker.getIns().compareTo(BigDecimal.ZERO) >= 0));
+            obj.setUpdateTime(now);
+            //交易额低于配置值-关闭交易
+            if (usdt24h.compareTo(obj.getVolUsdt24h()) > 0) {
+                obj.setStatus(CoinStatusEnum.CLOSE.getStatus());
+            } else {
+                obj.setStatus(CoinStatusEnum.OPEN.getStatus());
+            }
+            if (obj.getCoin().equalsIgnoreCase("BTC")) {
+                obj.setBtcIns(ticker.getIns());
+            }
+            BigDecimal standard = coinBusiness.calculateStandard(ticker);
+            if (standard.compareTo(BigDecimal.ZERO) <= 0) {
+                return null;
+            }
+            obj.setStandard(standard);
+
+            //更新缓存
+            coinBusiness.updateCache(Arrays.asList(obj));
+            return obj;
+        } catch (Exception e) {
+            log.error("updateCoin error",e);
+            throw new Exception(e.getMessage());
+        }
+    }
+
 
 
     public List<OkxCoin> updateCoinV2(List<OkxCoinTicker> tickers, Date now) throws Exception {

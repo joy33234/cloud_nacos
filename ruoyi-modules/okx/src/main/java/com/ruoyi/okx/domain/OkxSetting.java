@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.ruoyi.common.core.annotation.Excel;
 import com.ruoyi.common.core.annotation.Excel.ColumnType;
 import com.ruoyi.common.core.web.domain.CommonEntity;
+import io.swagger.models.auth.In;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.springframework.data.annotation.Transient;
@@ -37,6 +38,13 @@ public class OkxSetting extends CommonEntity
     /** 参数键值 */
     @Excel(name = "参数键值")
     private String settingValue;
+
+    /**
+     * 参数名称  0:唯一  1：不唯一
+     *
+     * */
+    @Excel(name = "参数名称")
+    private Integer isUnique;
 
     @Transient
     private String desc;
@@ -82,6 +90,18 @@ public class OkxSetting extends CommonEntity
     public String getSettingValue()
     {
         return settingValue;
+    }
+
+    public void setIsUnique(Integer isUnique)
+    {
+        this.isUnique = isUnique;
+    }
+
+    @NotBlank(message = "参数键值不能为空")
+    @Size(min = 0, max = 500, message = "参数键值长度不能超过500个字符")
+    public Integer getIsUnique()
+    {
+        return isUnique;
     }
 
     public void setSettingValue(String settingValue)

@@ -315,6 +315,37 @@ public class TradeBusiness {
 //        }
 //    }
 
+    //交易
+    public void tradeV2(Integer riseCount, Integer fallCount, List<OkxAccount> accountList, OkxCoin okxCoin, OkxCoinTicker ticker, Date now,Map<String, List<OkxSetting>> accountSettingMap) {
+
+        try {
+            for (OkxAccount okxAccount: accountList) {
+                List<OkxSetting> okxSettings  = accountSettingMap.get(Constant.OKX_ACCOUNT_SETTING + okxAccount.getId());
+
+                //更新行情缓存
+                RiseDto riseDto = refreshRiseCountV2(riseCount, fallCount, now, okxAccount, okxSettings);
+                if (riseDto != null) {
+                    //赋值用户订单类型和交易模式
+                    okxSettings.stream().forEach(obj -> {
+                        if (obj.getSettingKey().equals(OkxConstants.ORD_TYPE)) {
+                            riseDto.setOrderType(obj.getSettingValue());
+                        }
+                        if (obj.getSettingKey().equals(OkxConstants.MODE_TYPE)) {
+                            riseDto.setModeType(obj.getSettingValue());
+                        }
+                    });
+                    List<OkxBuyRecord> accountBuyRecords = buyRecordBusiness.findSuccessRecord(okxCoin.getCoin(), okxAccount.getId(), null,null);
+                    //okx交易
+                    okxTrandeBusiness.okxTradeV2( okxCoin, ticker, okxSettings, accountBuyRecords, riseDto, now);
+                }
+            }
+        } catch (Exception e) {
+            log.error("trade error",e);
+            throw new ServiceException("交易异常", 500);
+        }
+    }
+
+
 
     public void tradeV2(List<OkxAccount> accountList, List<OkxCoin> okxCoins, List<OkxCoinTicker> tickerList, Date now) {
         Long tradeV2Start = System.currentTimeMillis();
@@ -398,6 +429,57 @@ public class TradeBusiness {
 //        log.info("tradeV2 time:{}",System.currentTimeMillis() - tradeV2Start);
 //    }
 
+
+    /**
+     * 更新coin涨跌
+     * @param now
+     */
+    public RiseDto refreshRiseCountV2(Integer riseCount, Integer fallCount, Date now, OkxAccount okxAccount,List<OkxSetting> settingList){
+        String modeType = settingList.stream().filter(item -> item.getSettingKey().equals(OkxConstants.MODE_TYPE)).findFirst().get().getSettingValue();
+        if (!modeType.equals(ModeTypeEnum.MARKET.getValue())) {
+            return new RiseDto();
+        }
+        String key = getCacheMarketKey(okxAccount.getId());
+
+        if ((now.getTime() - DateUtil.getMinTime(now).getTime() < 300000) || newRedis == true) {
+            RiseDto riseDto = new RiseDto();
+            riseDto.setAccountId(okxAccount.getId());
+            riseDto.setAccountName(okxAccount.getName());
+            riseDto.setApikey(okxAccount.getApikey());
+            riseDto.setSecretkey(okxAccount.getSecretkey());
+            riseDto.setPassword(okxAccount.getPassword());
+            redisService.setCacheObject(key, riseDto);
+            return null;
+        }
+
+        RiseDto riseDto = redisService.getCacheObject(key);
+        if (riseDto == null) {//redis异常 TODO
+            return null;
+        }
+        Integer sum = fallCount + riseCount;
+
+        BigDecimal risePercent = new BigDecimal(riseCount).divide(new BigDecimal(sum), 4,BigDecimal.ROUND_DOWN);
+        BigDecimal lowPercent = BigDecimal.ONE.subtract(risePercent).setScale(Constant.OKX_BIG_DECIMAL);
+
+        riseDto.setRiseCount(riseCount);
+        riseDto.setRisePercent(risePercent);
+        if (risePercent.compareTo(riseDto.getHighest()) > 0) {
+            riseDto.setHighest(risePercent);
+        }
+        riseDto.setLowCount(sum - riseCount);
+        riseDto.setLowPercent(lowPercent);
+        if (lowPercent.compareTo(riseDto.getLowest()) > 0) {
+            riseDto.setLowest(lowPercent);
+        }
+//        for (OkxCoin okxCoin:okxCoins) {
+//            if (okxCoin.getCoin().equalsIgnoreCase("BTC")) {
+//                riseDto.setBTCIns(okxCoin.getBtcIns());
+//            }
+//        }
+        riseDto.setDateTime(DateUtil.getFormateDate(now,DateUtil.YYYY_MM_DD_HH_MM_SS));
+        redisService.setCacheObject(key, riseDto);
+        return riseDto;
+    }
 
     /**
      * 更新coin涨跌

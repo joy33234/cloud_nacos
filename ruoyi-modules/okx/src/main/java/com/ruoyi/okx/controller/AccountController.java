@@ -1,6 +1,7 @@
 package com.ruoyi.okx.controller;
 
 import com.alibaba.fastjson.JSON;
+import com.ruoyi.common.core.constant.OkxConstants;
 import com.ruoyi.common.core.constant.UserConstants;
 import com.ruoyi.common.core.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.web.controller.BaseController;
@@ -126,7 +127,12 @@ public class AccountController extends BaseController
             return error("配置策略失败，参数键名不唯一");
         }
 
-
+        List<OkxSetting> okxSettingList = settingService.selectSettingByIds(accountDO.getSettingIds());
+        List<OkxSetting> percentSettingList = okxSettingList.stream().filter(item -> item.getSettingKey().equals(OkxConstants.BUY_MARK_COIN_FALL_PERCENT)).collect(Collectors.toList());
+        List<OkxSetting> amountSettingList = okxSettingList.stream().filter(item -> item.getSettingKey().equals(OkxConstants.BUY_MARK_COIN_FALL_AMOUNT)).collect(Collectors.toList());
+        if (percentSettingList.size() != amountSettingList.size()) {
+            return error("配置策略失败，参数键名不唯一");
+        }
         OkxAccount okxAccount = DtoUtils.transformBean(accountDO, OkxAccount.class);
         okxAccount.setSettingIds(StringUtils.join(accountDO.getSettingIds(),","));
         okxAccount.setCreateTime(new Date());
@@ -144,6 +150,13 @@ public class AccountController extends BaseController
     {
         if (!settingService.checkSettingKey(accountDO.getSettingIds())) {
             return error("配置策略失败，参数键名异常");
+        }
+
+        List<OkxSetting> okxSettingList = settingService.selectSettingByIds(accountDO.getSettingIds());
+        List<OkxSetting> percentSettingList = okxSettingList.stream().filter(item -> item.getSettingKey().equals(OkxConstants.BUY_MARK_COIN_FALL_PERCENT)).collect(Collectors.toList());
+        List<OkxSetting> amountSettingList = okxSettingList.stream().filter(item -> item.getSettingKey().equals(OkxConstants.BUY_MARK_COIN_FALL_AMOUNT)).collect(Collectors.toList());
+        if (percentSettingList.size() != amountSettingList.size()) {
+            return error("配置策略失败，参数键名不唯一");
         }
         System.out.println("accountDo:"  +  JSON.toJSONString(accountDO));
         OkxAccount okxAccount = DtoUtils.transformBean(accountDO, OkxAccount.class);

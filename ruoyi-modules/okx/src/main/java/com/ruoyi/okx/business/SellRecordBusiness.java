@@ -150,7 +150,7 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
                     updateById(sellRecord);
                     buyRecord.setStatus(OrderStatusEnum.SUCCESS.getStatus());
                     this.buyRecordBusiness.updateById(buyRecord);
-                    log.info("订单买入超过1天自动撤销");
+                    log.info("卖出订单超过1天自动撤销");
                 }
             }
             redisLock.releaseLock(lockKey);

@@ -4,6 +4,7 @@ import cn.hutool.setting.Setting;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.ruoyi.common.core.constant.CacheConstants;
+import com.ruoyi.common.core.constant.OkxConstants;
 import com.ruoyi.common.core.constant.UserConstants;
 import com.ruoyi.common.core.text.Convert;
 import com.ruoyi.common.core.utils.StringUtils;
@@ -14,6 +15,7 @@ import com.ruoyi.okx.service.SettingService;
 import com.ruoyi.okx.utils.DtoUtils;
 import org.apache.poi.ss.formula.functions.T;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -226,10 +228,11 @@ public class SettingServiceImpl implements SettingService
         if (uniqueSettings.size() != settingIds.length) {
             return false;
         }
-        List<OkxSetting> settingList = settingMapper.selectSettingListByIds(settingIds).stream().collect(
+        List<OkxSetting> settingList = settingMapper.selectSettingListByIds(settingIds).stream().filter(item -> item.getIsUnique() == 0).collect(Collectors.toList());
+        List<OkxSetting> uniqueSettingList = settingList.stream().collect(
                 collectingAndThen(toCollection(() -> new TreeSet<>(comparing(OkxSetting::getSettingKey))), ArrayList::new));
-        //勾选配置有重复
-        if (settingList.size() != settingIds.length) {
+
+        if (settingList.size() != uniqueSettingList.size()) {
             return false;
         }
         return true;
