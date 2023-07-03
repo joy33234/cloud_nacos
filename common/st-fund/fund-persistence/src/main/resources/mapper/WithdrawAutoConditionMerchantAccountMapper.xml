@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.seektop.fund.mapper.WithdrawAutoConditionMerchantAccountMapper">
+    <resultMap type="com.seektop.fund.model.WithdrawAutoConditionMerchantAccount"
+               id="WithdrawAutoConditionMerchantAccountMap">
+        <result property="id" column="id" jdbcType="INTEGER"/>
+        <result property="conditionId" column="condition_id" jdbcType="INTEGER"/>
+        <result property="merchantId" column="merchant_id" jdbcType="INTEGER"/>
+        <result property="limitAmount" column="limit_amount" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!--通过实体作为筛选条件查询-->
+    <select id="queryAll" resultMap="WithdrawAutoConditionMerchantAccountMap">
+        select
+        id, condition_id, merchant_id, limit_amount
+        from withdraw_auto_condition_merchant_account
+        <where>
+            <if test="id != null">
+                and id = #{id}
+            </if>
+            <if test="conditionId != null">
+                and condition_id = #{conditionId}
+            </if>
+            <if test="merchantId != null">
+                and merchant_id = #{merchantId}
+            </if>
+            <if test="limitAmount != null">
+                and limit_amount = #{limitAmount}
+            </if>
+        </where>
+    </select>
+</mapper>

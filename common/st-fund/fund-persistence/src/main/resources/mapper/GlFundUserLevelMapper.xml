@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.seektop.fund.mapper.GlFundUserlevelMapper">
+    <resultMap id="BaseResultMap" type="com.seektop.fund.model.GlFundUserlevel">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="level_id" jdbcType="INTEGER" property="levelId"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="reg_from_time" jdbcType="TIMESTAMP" property="regFromTime"/>
+        <result column="reg_end_time" jdbcType="TIMESTAMP" property="regEndTime"/>
+        <result column="recharge_times" jdbcType="INTEGER" property="rechargeTimes"/>
+        <result column="recharge_total" jdbcType="DECIMAL" property="rechargeTotal"/>
+        <result column="withdraw_times" jdbcType="INTEGER" property="withdrawTimes"/>
+        <result column="withdraw_total" jdbcType="DECIMAL" property="withdrawTotal"/>
+        <result column="bet_total" jdbcType="DECIMAL" property="betTotal"/>
+        <result column="vip" jdbcType="TINYINT" property="vip"/>
+        <result column="remark" jdbcType="VARCHAR" property="remark"/>
+        <result column="payment" jdbcType="VARCHAR" property="payment"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="creator_id" jdbcType="INTEGER" property="creatorId"/>
+        <result column="creator" jdbcType="VARCHAR" property="creator"/>
+        <result column="last_update" jdbcType="TIMESTAMP" property="lastUpdate"/>
+        <result column="last_operator_id" jdbcType="INTEGER" property="lastOperatorId"/>
+        <result column="last_operator" jdbcType="VARCHAR" property="lastOperator"/>
+        <result column="level_type" jdbcType="INTEGER" property="levelType"/>
+        <result column="withdraw_off" jdbcType="INTEGER" property="withdrawOff"/>
+    </resultMap>
+</mapper>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.seektop.fund.mapper.BindCardRecordMapper">
+
+    <resultMap type="com.seektop.fund.model.BindCardRecord" id="bindCardRecordMap">
+        <result property="id" column="id" jdbcType="INTEGER"/>
+        <result property="userId" column="user_id" jdbcType="INTEGER"/>
+        <result property="username" column="username" jdbcType="VARCHAR"/>
+        <result property="cardNo" column="card_no" jdbcType="VARCHAR"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="bankId" column="bank_id" jdbcType="INTEGER"/>
+        <result property="bankName" column="bank_name" jdbcType="VARCHAR"/>
+        <result property="createUserId" column="create_user_id" jdbcType="INTEGER"/>
+        <result property="createUsername" column="create_username" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!--通过实体作为筛选条件查询-->
+    <select id="queryAll" parameterType="com.seektop.fund.vo.BindCardRecordForm" resultMap="bindCardRecordMap">
+        select id, user_id, username, card_no, name, bank_id, bank_name, create_user_id, create_username, create_time
+        from gl_fund_bind_card_record
+        <where>
+            <if test="id != null">
+                and id = #{id}
+            </if>
+            <if test="userId != null and userId > 0">
+                and user_id = #{userId}
+            </if>
+            <if test="username != null and username != ''">
+                and username = #{username}
+            </if>
+            <if test="cardNo != null and cardNo != ''">
+                and card_no = #{cardNo}
+            </if>
+            <if test="bankId != null and bankId != ''">
+                and bank_id = #{bankId}
+            </if>
+            <if test="createUserId != null and createUserId != ''">
+                and create_user_id = #{createUserId}
+            </if>
+            <if test="createUsername != null and createUsername != ''">
+                and create_username = #{createUsername}
+            </if>
+            <if test="startTime != null">
+                and create_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null">
+                and create_time &lt;= #{endTime}
+            </if>
+            <if test="name != null and name != ''">
+                <bind name="bindName" value="'%' + name + '%'"/>
+                and name like #{bindName}
+            </if>
+            <if test="bankName != null and bankName != ''">
+                <bind name="bindBankName" value="'%' + bankName + '%'"/>
+                and bank_name like #{bindBankName}
+            </if>
+        </where>
+        order by id desc
+    </select>
+</mapper>

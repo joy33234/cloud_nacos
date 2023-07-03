@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.seektop.fund.mapper.GlRechargeSuccessApproveMapper">
+    <resultMap id="BaseResultMap" type="com.seektop.fund.model.GlRechargeSuccessApprove">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="order_id" jdbcType="VARCHAR" property="orderId"/>
+        <result column="user_id" jdbcType="INTEGER" property="userId"/>
+        <result column="username" jdbcType="VARCHAR" property="username"/>
+        <result column="remark" jdbcType="VARCHAR" property="remark"/>
+        <result column="status" jdbcType="INTEGER" property="status"/>
+        <result column="create_date" jdbcType="TIMESTAMP" property="createDate"/>
+    </resultMap>
+
+    <select id="getTotalAmount" parameterType="java.util.List" resultType="java.lang.String">
+        SELECT IFNULL(SUM(amount),0) total from gl_recharge_sucreq WHERE order_id in (
+        <foreach collection="ids" item="id" index="index" separator=",">
+            #{id}
+        </foreach>
+        )
+    </select>
+
+</mapper>

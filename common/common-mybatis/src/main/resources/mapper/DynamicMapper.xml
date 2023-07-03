@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.seektop.common.mybatis.common.DynamicMapper">
+
+    <select id="customQuery" parameterType="String" resultType="java.util.LinkedHashMap">
+        ${value}
+    </select>
+
+    <select id="customUpdate" parameterType="String" resultType="java.lang.Integer">
+        ${value}
+    </select>
+
+    <select id="customDelete" parameterType="String" resultType="java.lang.Integer">
+        ${value}
+    </select>
+
+    <select id="customInsert" parameterType="String" resultType="java.lang.Integer">
+        ${value}
+    </select>
+
+</mapper>

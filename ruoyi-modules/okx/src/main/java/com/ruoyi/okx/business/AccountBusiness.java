@@ -47,6 +47,7 @@ public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
         return accountMapper.insert(account) > 0 ? true : false;
     }
 
+
     public boolean update(OkxAccount account) {
         return accountMapper.updateById(account) > 0 ? true : false;
     }
