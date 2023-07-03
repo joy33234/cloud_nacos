@@ -68,6 +68,12 @@
           v-hasPermi="['okx:buy:export']"
         >导出</el-button>
       </el-col>
+       <el-col :span="1.5">
+        订单总额 ：{{ totalAmount }}
+      </el-col>
+      <el-col :span="1.5">
+        利润总额 ：{{ totalProfit }}
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
@@ -80,9 +86,9 @@
       <el-table-column label="价格" align="center" prop="price" />
       <el-table-column label="当前价格" align="center" prop="last" />
       <el-table-column label="数量" align="center" prop="quantity" width="150" />
-      <el-table-column label="金额（U）" align="center" prop="amount" width="100" />
-      <el-table-column label="手续费" align="center" prop="fee" width="150" />
-      <el-table-column label="利润" align="center" prop="profit" width="150" />
+      <el-table-column label="金额(U)" align="center" prop="amount" width="100" />
+      <el-table-column label="手续费(U)" align="center" prop="feeUsdt" width="150" />
+      <el-table-column label="利润" :style="profit > '0' ? 'color:#13ce66;' : 'color:#ff4949;'" align="center" prop="profit" width="150" />
       <el-table-column label="类型" align="center" prop="modeType" />
       <el-table-column label="状态" align="center" prop="status">
         <template slot-scope="scope">
@@ -189,7 +195,11 @@ export default {
         fee: [
           { required: true, message: "参数名称不能为空", trigger: "blur" }
         ]
-      }
+      },
+      // 利润汇总
+      totalProfit: 0,
+      // 订单总额
+      totalAmount: 0
     };
   },
   created() {
@@ -203,6 +213,12 @@ export default {
           this.buyList = response.rows;
           this.total = response.total;
           this.loading = false;
+          this.totalProfit = 0;
+          this.totalAmount = 0;
+          for (const item of response.rows) {
+            this.totalProfit += item.profit
+            this.totalAmount += item.amount
+          }
         }
       );
     },

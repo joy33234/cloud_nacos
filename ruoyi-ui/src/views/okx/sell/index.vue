@@ -49,17 +49,6 @@
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button
-          type="success"
-          plain
-          icon="el-icon-edit"
-          size="mini"
-          :disabled="single"
-          @click="handleUpdate"
-          v-hasPermi="['system:sell:edit']"
-        >修改</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
           type="warning"
           plain
           icon="el-icon-download"
@@ -67,6 +56,12 @@
           @click="handleExport"
           v-hasPermi="['system:sell:export']"
         >导出</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        订单总额 ：{{ totalAmount }}
+      </el-col>
+      <el-col :span="1.5">
+        利润总额 ：{{ totalProfit }}
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
@@ -91,24 +86,6 @@
       <el-table-column label="创建时间" align="center" prop="createTime" width="180">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.createTime) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
-        <template slot-scope="scope">
-          <el-button
-            size="mini"
-            type="text"
-            icon="el-icon-edit"
-            @click="handleUpdate(scope.row)"
-            v-hasPermi="['system:sell:edit']"
-          >修改</el-button>
-          <el-button
-            size="mini"
-            type="text"
-            icon="el-icon-delete"
-            @click="handleDelete(scope.row)"
-            v-hasPermi="['system:sell:remove']"
-          >删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -183,7 +160,11 @@ export default {
         fee: [
           { required: true, message: "参数名称不能为空", trigger: "blur" }
         ]
-      }
+      },
+      // 利润汇总
+      totalProfit: 0,
+      // 订单总额
+      totalAmount: 0
     };
   },
   created() {
@@ -197,6 +178,12 @@ export default {
           this.sellList = response.rows;
           this.total = response.total;
           this.loading = false;
+          this.totalProfit = 0;
+          this.totalAmount = 0;
+          for (const item of response.rows) {
+            this.totalProfit += item.profit
+            this.totalAmount += item.amount
+          }
         }
       );
     },

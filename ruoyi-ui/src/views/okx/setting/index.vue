@@ -98,6 +98,12 @@
       <el-table-column label="参数名称" align="center" prop="settingName" :show-overflow-tooltip="true" />
       <el-table-column label="参数键名" align="center" prop="settingKey" :show-overflow-tooltip="true" />
       <el-table-column label="参数键值" align="center" prop="settingValue" />
+      <el-table-column label="唯一性" align="center" prop="settingUnique" width="100">
+        <template slot-scope="scope">
+          <dict-tag :options="dict.type.okx_unique" :value="scope.row.settingUnique"/>
+        </template>
+      </el-table-column>
+
       <el-table-column label="备注" align="center" prop="remark" :show-overflow-tooltip="true" />
       <el-table-column label="创建时间" align="center" prop="createTime" width="180">
         <template slot-scope="scope">
@@ -144,10 +150,19 @@
         <el-form-item label="参数键值" prop="settingValue">
           <el-input v-model="form.settingValue" placeholder="请输入参数键值" />
         </el-form-item>
-        <el-form-item label="备注" prop="remark">
-          <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
-        </el-form-item>
-      </el-form>
+        <el-form-item label="唯一性"  prop="unique">
+        <el-radio-group v-model="form.settingUnique">
+          <el-radio
+            v-for="dict in dict.type.okx_unique"
+            :key="dict.value"
+            :label="dict.value"
+          >{{dict.label}}</el-radio>
+        </el-radio-group>
+      </el-form-item>
+      <el-form-item label="备注" prop="remark">
+        <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
+      </el-form-item>
+    </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
         <el-button @click="cancel">取 消</el-button>
@@ -161,7 +176,7 @@ import { listSetting, getSetting, delSetting, addSetting, updateSetting, refresh
 
 export default {
   name: "Setting",
-  dicts: ['sys_yes_no'],
+  dicts: ['sys_yes_no', 'okx_unique'],
   data() {
     return {
       // 遮罩层
@@ -203,6 +218,9 @@ export default {
           { required: true, message: "参数键名不能为空", trigger: "blur" }
         ],
         settingValue: [
+          { required: true, message: "参数键值不能为空", trigger: "blur" }
+        ],
+        settingUnique: [
           { required: true, message: "参数键值不能为空", trigger: "blur" }
         ]
       }
