@@ -107,7 +107,7 @@ public class SyncCoinBusiness {
                     subBalanceList = DbBalanceList.subList(i * 20, ((i + 1) * 20 <= DbBalanceList.size()) ? ((i + 1) * 20) : DbBalanceList.size());
                     coins = StringUtils.join(subBalanceList.stream().map(OkxAccountBalance::getCoin).collect(Collectors.toList()), ",");
                 }
-                balanceList.addAll(getBalance(coins, map, subBalanceList, now));
+                balanceList.addAll(balanceBusiness.getBalance(coins, map, subBalanceList, now));
                 Thread.sleep(500);
             }
             balanceBusiness.saveOrUpdateBatch(balanceList.stream().distinct().collect(Collectors.toList()));
@@ -124,26 +124,26 @@ public class SyncCoinBusiness {
         return pages;
     }
 
-    private List<OkxAccountBalance> getBalance(String coinsStr, Map<String, String> map,List<OkxAccountBalance> subList, Date now) {
-        String str = HttpUtil.getOkx("/api/v5/account/balance?ccy=" + coinsStr, null, map);
-        JSONObject json = JSONObject.parseObject(str);
-        if (json == null || !json.getString("code").equals("0")) {
-            log.error("str:{}", str);
-            throw new ServiceException(str);
-        }
-        JSONObject data = json.getJSONArray("data").getJSONObject(0);
-        JSONArray detail = data.getJSONArray("details");
-        for (OkxAccountBalance okxAccountBalance:subList) {
-            for (int j = 0; j < detail.size(); j++) {
-                JSONObject balance = detail.getJSONObject(j);
-                if (okxAccountBalance.getCoin().equalsIgnoreCase(balance.getString("ccy"))) {
-                    okxAccountBalance.setBalance(balance.getBigDecimal("availBal"));
-                }
-                okxAccountBalance.setUpdateTime(now);
-            }
-        }
-        return subList;
-    }
+//    private List<OkxAccountBalance> getBalance(String coinsStr, Map<String, String> map,List<OkxAccountBalance> subList, Date now) {
+//        String str = HttpUtil.getOkx("/api/v5/account/balance?ccy=" + coinsStr, null, map);
+//        JSONObject json = JSONObject.parseObject(str);
+//        if (json == null || !json.getString("code").equals("0")) {
+//            log.error("str:{}", str);
+//            throw new ServiceException(str);
+//        }
+//        JSONObject data = json.getJSONArray("data").getJSONObject(0);
+//        JSONArray detail = data.getJSONArray("details");
+//        for (OkxAccountBalance okxAccountBalance:subList) {
+//            for (int j = 0; j < detail.size(); j++) {
+//                JSONObject balance = detail.getJSONObject(j);
+//                if (okxAccountBalance.getCoin().equalsIgnoreCase(balance.getString("ccy"))) {
+//                    okxAccountBalance.setBalance(balance.getBigDecimal("availBal"));
+//                }
+//                okxAccountBalance.setUpdateTime(now);
+//            }
+//        }
+//        return subList;
+//    }
 
 //
 //    public void updateCoin(List<JSONObject> items, List<OkxCoinTicker> tickers, Date now) throws Exception {
@@ -227,8 +227,12 @@ public class SyncCoinBusiness {
             }
             obj.setStandard(standard);
 
-            //更新缓存
-            coinBusiness.updateCache(Arrays.asList(obj));
+            //更新缓存 update last five minute each day
+            if (now.getTime() > (DateUtil.getMaxTime(now).getTime() - 300000)) {
+                if (coinBusiness.getCoin(ticker.getCoin()).getUpdateTime().getTime() > DateUtil.getMinTime(now).getTime()){
+                    coinBusiness.updateCache(Arrays.asList(obj));
+                }
+            }
             return obj;
         } catch (Exception e) {
             log.error("updateCoin error",e);

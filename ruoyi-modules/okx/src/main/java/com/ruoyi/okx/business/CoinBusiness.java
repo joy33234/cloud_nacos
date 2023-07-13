@@ -10,9 +10,11 @@ import java.util.*;
 import javax.annotation.Resource;
 
 import com.ruoyi.common.core.constant.CacheConstants;
+import com.ruoyi.common.core.utils.DateUtil;
 import com.ruoyi.common.core.utils.StringUtils;
 import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.*;
+import com.ruoyi.okx.enums.OrderStatusEnum;
 import com.ruoyi.okx.mapper.CoinMapper;
 import com.ruoyi.okx.utils.Constant;
 import org.apache.commons.compress.utils.Lists;
@@ -161,10 +163,18 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
      * @param accountId
      * @return
      */
-    public boolean checkBoughtCoin(String coin,Integer accountId) {
-        OkxCoin okxCoin = getCoin(coin);
-        if (okxCoin == null || StringUtils.isEmpty(okxCoin.getBoughtAccountIds())) {
+    public boolean checkBoughtCoin(String coin,Integer accountId,List<OkxBuyRecord> buyRecords, Date now) {
+        OkxCoin okxCoin = getCoinCache(coin);
+        //get from redis error
+        if (ObjectUtils.isEmpty(okxCoin)) {
+            return true;
+        }
+        if (StringUtils.isEmpty(okxCoin.getBoughtAccountIds())) {
             return false;
+        }
+        if (buyRecords.stream().anyMatch(item -> item.getCreateTime().getTime() > DateUtil.getMinTime(now).getTime()
+                && item.getStatus().intValue() == OrderStatusEnum.SUCCESS.getStatus())) {
+            return true;
         }
         return okxCoin.getBoughtAccountIds().contains(accountId.toString());
     }

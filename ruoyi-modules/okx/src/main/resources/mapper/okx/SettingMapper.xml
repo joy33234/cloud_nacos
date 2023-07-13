@@ -17,7 +17,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectSettingVo">
-        select setting_id, setting_name, setting_key, setting_value,setting_unique,  create_by, create_time, update_by, update_time, remark
+        select setting_id, setting_name, setting_key, setting_value, setting_unique,  create_by, create_time, update_by, update_time, remark
 		from okx_setting
     </sql>
 

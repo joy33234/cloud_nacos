@@ -48,6 +48,9 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
     @Autowired
     private RedisLock redisLock;
 
+    @Resource
+    private AccountBalanceBusiness balanceBusiness;
+
 
     public List<OkxSellRecord> selectList(SellRecordDO sellRecordDO) {
         LambdaQueryWrapper<OkxSellRecord> wrapper = new LambdaQueryWrapper();
@@ -104,6 +107,8 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
                 boolean update = updateById(sellRecord);
                 if (update) {
                     //balanceBusiness.reduceCount(sellRecord.getCoin(), sellRecord.getAccountId(), sellRecord.getQuantity());
+                    balanceBusiness.syncAccountBalance(map, sellRecord.getCoin(), now);
+
                     okxBuyRecord.setStatus(OrderStatusEnum.FINISH.getStatus());
                     buyRecordBusiness.update(okxBuyRecord);
                     coinProfitBusiness.calculateProfit(sellRecord);

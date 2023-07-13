@@ -231,7 +231,8 @@ public class SettingServiceImpl implements SettingService
             log.info("部分配置未勾选");
             return false;
         }
-        List<OkxSetting> settingList = settingMapper.selectSettingListByIds(settingIds).stream().filter(item -> item.getSettingUnique() == 0).collect(Collectors.toList());
+        List<OkxSetting> settingList = settingMapper.selectSettingListByIds(settingIds);
+        settingList = settingList.stream().filter(item -> item.getSettingUnique() == 0).collect(Collectors.toList());
         List<OkxSetting> uniqueSettingList = settingList.stream().collect(
                 collectingAndThen(toCollection(() -> new TreeSet<>(comparing(OkxSetting::getSettingKey))), ArrayList::new));
 

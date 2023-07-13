@@ -13,6 +13,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.ruoyi.common.core.constant.CacheConstants;
 import com.ruoyi.common.core.constant.RedisConstants;
 import com.ruoyi.common.core.exception.ServiceException;
@@ -27,6 +29,7 @@ import com.ruoyi.okx.enums.OrderStatusEnum;
 import com.ruoyi.okx.mapper.BuyRecordMapper;
 import com.ruoyi.okx.params.DO.BuyRecordDO;
 import com.ruoyi.okx.utils.Constant;
+import io.swagger.models.auth.In;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang.StringUtils;
@@ -76,13 +79,9 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
         return list;
     }
 
-    public List<OkxBuyRecord> findSuccessRecord(String coin, Integer accountId, String modeType, Integer marketStatus) {
+    public List<OkxBuyRecord> findSuccessRecord() {
         LambdaQueryWrapper<OkxBuyRecord> wrapper = new LambdaQueryWrapper();
-        wrapper.in(OkxBuyRecord::getStatus, Arrays.asList(new Integer[] { OrderStatusEnum.SUCCESS.getStatus(), OrderStatusEnum.PARTIALLYFILLED.getStatus() }));
-        wrapper.eq((StringUtils.isNotEmpty(coin)), OkxBuyRecord::getCoin, coin);
-        wrapper.eq((accountId != null), OkxBuyRecord::getAccountId, accountId);
-        wrapper.eq((StringUtils.isNotEmpty(modeType)), OkxBuyRecord::getModeType, modeType);
-        wrapper.eq((marketStatus != null), OkxBuyRecord::getMarketStatus, marketStatus);
+        wrapper.eq(OkxBuyRecord::getStatus, OrderStatusEnum.SUCCESS.getStatus());
         return buyRecordMapper.selectList(wrapper);
     }
 
@@ -122,6 +121,15 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
     public List<OkxBuyRecord> findPARTIALLYFILLED(Integer accountId) {
         LambdaQueryWrapper<OkxBuyRecord> wrapper = new LambdaQueryWrapper();
         wrapper.eq(OkxBuyRecord::getStatus, OrderStatusEnum.PARTIALLYFILLED.getStatus());
+        if (accountId != null && accountId > 0) {
+            wrapper.eq(OkxBuyRecord::getAccountId, accountId);
+        }
+        return buyRecordMapper.selectList(wrapper);
+    }
+
+    public List<OkxBuyRecord> findSyncList(Integer accountId) {
+        LambdaQueryWrapper<OkxBuyRecord> wrapper = new LambdaQueryWrapper();
+        wrapper.in(OkxBuyRecord::getStatus, OrderStatusEnum.PARTIALLYFILLED.getStatus(), OrderStatusEnum.PENDING.getStatus());
         if (accountId != null && accountId > 0) {
             wrapper.eq(OkxBuyRecord::getAccountId, accountId);
         }
@@ -178,11 +186,9 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
     public void syncOrderStatus(Map<String, String> map) throws ServiceException {
         try {
             //未完成订单
-            List<OkxBuyRecord> pendings = findPendings(Integer.valueOf(map.get("id")));
-            List<OkxBuyRecord> pARTIALLYFILLED = findPARTIALLYFILLED(Integer.valueOf(map.get("id")));
-            List<OkxBuyRecord> list = Lists.newArrayList();
-            list.addAll(pendings);
-            list.addAll(pARTIALLYFILLED);
+            List<OkxBuyRecord> list = getPageDate(Integer.valueOf(map.get("id")));
+            log.info("syncOrderStatus_list_size:{}",list.size());
+
             Date now = new Date();
             String lockKey = "";
             for (OkxBuyRecord buyRecord:list) {
@@ -217,7 +223,9 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
                 if (buyRecord.getStatus().intValue() == OrderStatusEnum.SUCCESS.getStatus()) {
                     //同步手续费
                     syncOrderFee(map, buyRecord);
-                    accountBalanceBusiness.addCount(buyRecord.getCoin(), buyRecord.getAccountId(), buyRecord.getQuantity());
+//                    accountBalanceBusiness.addCount(buyRecord.getCoin(), buyRecord.getAccountId(), buyRecord.getQuantity());
+//                    accountBusiness.getAccountMap(accountName);
+                    accountBalanceBusiness.syncAccountBalance(map, buyRecord.getCoin(),  now);
                 }
                 Thread.sleep(50);
                 redisLock.releaseLock(lockKey);
@@ -226,6 +234,24 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
             log.error("同步订单异常", e);
             throw new ServiceException("同步订单异常");
         }
+    }
+
+    private List<OkxBuyRecord> getPageDate(Integer accountId) {
+        List<OkxBuyRecord> buyRecords = com.google.common.collect.Lists.newArrayList();
+
+        int page = 1;
+        PageHelper.startPage(page, 30, "create_time");
+
+        List<OkxBuyRecord> accountBuyRecords = findSyncList(accountId);
+        buyRecords.addAll(accountBuyRecords);
+        Integer pages = new PageInfo(accountBuyRecords).getPages();
+        while (pages > page) {
+            page++;
+            PageHelper.startPage(page, 30, "create_time");
+            accountBuyRecords = findSyncList(accountId);
+            buyRecords.addAll(accountBuyRecords);
+        }
+        return buyRecords;
     }
 
     public boolean syncOrderFee(Map<String, String> map,OkxBuyRecord buyRecord) {

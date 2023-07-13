@@ -92,7 +92,7 @@ public class OkxSetting extends CommonEntity
         return settingValue;
     }
 
-    public void setUnique(Integer settingUnique)
+    public void setSettingUnique(Integer settingUnique)
     {
         this.settingUnique = settingUnique;
     }

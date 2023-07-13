@@ -6,6 +6,8 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.google.common.collect.Lists;
 import com.ruoyi.common.core.constant.CacheConstants;
 import com.ruoyi.common.core.enums.Status;
@@ -29,12 +31,16 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Component
 public class SyncBusiness {
 
     private static final Logger log = LoggerFactory.getLogger(SyncBusiness.class);
+
+    private Cache<String, List<OkxCoinTicker>> monthTickersCache = CacheUtil.newLRUCache(30);
+
 
     @Resource
     private AccountBusiness accountBusiness;
@@ -233,7 +239,6 @@ public class SyncBusiness {
 
             //近期29天行情数据
             List<OkxCoinTicker> monthTickerList = org.apache.commons.compress.utils.Lists.newArrayList();
-            Cache<String, List<OkxCoinTicker>> monthTickersCache = CacheUtil.newLRUCache(30);
 
             Date now = new Date();
             for (int i = 0; i < 29; i++) {
@@ -253,6 +258,9 @@ public class SyncBusiness {
                 }
             }
 
+            List<OkxBuyRecord> successBuyRecords = getPageDate();
+            log.info("ticker_list_size:{},monthTickerList_size:{}",successBuyRecords.size(),monthTickerList.size());
+
             //遍历每个币种
             for (int i = 0; i < jsonArray.size(); i++) {
                 JSONObject item = jsonArray.getJSONObject(i);
@@ -260,8 +268,10 @@ public class SyncBusiness {
                 if (!arr[1].equals("USDT")) {
                     continue;
                 }
+                String coin = arr[0];
+                List<OkxBuyRecord> coinBuyRecords = successBuyRecords.stream().filter(record -> record.getCoin().equals(coin)).collect(Collectors.toList());
                 List<OkxCoinTicker> coinTickerList = monthTickerList.stream().filter(okxCoinTicker -> okxCoinTicker.getCoin().equals(arr[0])).collect(Collectors.toList());
-                tickerBusiness.syncTicker(item,coinTickerList,  riseCount, fallCount, accountList, accountSettingMap);
+                tickerBusiness.syncTicker(item,coinTickerList,  riseCount, fallCount, accountList, accountSettingMap, coinBuyRecords);
             }
             log.info("syncTicker_time :{}", System.currentTimeMillis() - start);
         } catch (Exception e) {
@@ -276,5 +286,21 @@ public class SyncBusiness {
         tickerBusiness.syncTickerDb();
     }
 
+    private List<OkxBuyRecord> getPageDate() {
+        List<OkxBuyRecord> buyRecords = Lists.newArrayList();
 
+        int page = 1;
+        PageHelper.startPage(page, 30, "create_time");
+
+        List<OkxBuyRecord> accountBuyRecords = buyRecordBusiness.findSuccessRecord();
+        buyRecords.addAll(accountBuyRecords);
+        Integer pages = new PageInfo(accountBuyRecords).getPages();
+        while (pages > page) {
+            page++;
+            PageHelper.startPage(page, 30, "create_time");
+            List<OkxBuyRecord> tempRecords = buyRecordBusiness.findSuccessRecord();
+            buyRecords.addAll(tempRecords);
+        }
+        return buyRecords;
+    }
 }

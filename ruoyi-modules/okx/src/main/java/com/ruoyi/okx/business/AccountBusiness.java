@@ -33,9 +33,12 @@ public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
     @Resource
     private SettingService settingService;
 
+    @Resource
+    private AccountBalanceBusiness balanceBusiness;
+
 
     public List<OkxAccount> list(OkxAccountDO account) {
-        LambdaQueryWrapper<OkxAccount> wrapper = new LambdaQueryWrapper();
+        LambdaQueryWrapper<OkxAccount> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq((null != account.getApikey()), OkxAccount::getApikey, account.getApikey());
         wrapper.eq((null != account.getSecretkey()), OkxAccount::getSecretkey, account.getSecretkey());
         wrapper.eq((null != account.getPassword()), OkxAccount::getPassword, account.getPassword());
@@ -44,7 +47,11 @@ public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
     }
 
     public boolean save(OkxAccount account) {
-        return accountMapper.insert(account) > 0 ? true : false;
+        boolean result =  accountMapper.insert(account) > 0 ? true : false;
+        if (result) {
+            balanceBusiness.initBalance(account.getName());
+        }
+        return result;
     }
 
     public boolean update(OkxAccount account) {
@@ -57,6 +64,12 @@ public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
 
     public OkxAccount findOne(Integer accountId) {
         return accountMapper.selectById(accountId);
+    }
+
+    public OkxAccount findByName(String name) {
+        LambdaQueryWrapper<OkxAccount> wrapper = new LambdaQueryWrapper();
+        wrapper.eq((StringUtils.isNotEmpty(name)), OkxAccount::getName, name);
+        return accountMapper.selectOne(wrapper);
     }
 
 
@@ -85,6 +98,11 @@ public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
         return accountMap;
     }
 
+
+    public Map<String, String> getAccountMap(String name) {
+        OkxAccount account = findByName(name);
+        return getAccountMap(account);
+    }
 
 
     public String checkKeyUnique(OkxAccountDO accountDO)

@@ -70,20 +70,11 @@ public class OkxTrandeBusiness {
     @Transactional(rollbackFor = Exception.class)
     public void okxTradeV2(OkxCoin coin,  OkxCoinTicker ticker, List<OkxSetting> okxSettings, List<OkxBuyRecord> buyRecords, RiseDto riseDto, Date now) throws ServiceException {
         try {
-            if (ticker.getCoin().equalsIgnoreCase("aave") || ticker.getCoin().equalsIgnoreCase("zyro")) {
-                log.info("coin:{} accountId:{},buyRecordsSize:{}",ticker.getCoin(), riseDto.getAccountId(), buyRecords.size());
-            }
             Integer accountId = riseDto.getAccountId();
             String accountName = riseDto.getAccountName();
-            String lockKey  = RedisConstants.OKX_TICKER_TRADE + "_" + accountId + "_" + ticker.getCoin();
-            boolean lock = redisLock.lock(lockKey,30,1,1000);
-            if (lock == false) {
-                log.error("tradeV2获取锁失败，交易取消 lockKey:{}",lockKey);
-                return;
-            }
 
             //获取交易参数
-            List<TradeDto> tradeDtoList = getTradeDtoV2(coin, ticker,  riseDto, buyRecords, okxSettings);
+            List<TradeDto> tradeDtoList = getTradeDtoV2(coin, ticker,  riseDto, buyRecords, okxSettings, now);
             if (CollectionUtils.isNotEmpty(tradeDtoList)) {
                 OkxAccountBalance accountBalance = balanceBusiness.getAccountBalance(coin.getCoin(), accountId);
                 if (ObjectUtils.isNotEmpty(accountBalance)) {
@@ -136,7 +127,6 @@ public class OkxTrandeBusiness {
                     }
                 }
             }
-            redisLock.releaseLock(lockKey);
         } catch (Exception e) {
             log.error("trade error",e);
             throw new ServiceException("交易异常", 500);
@@ -145,98 +135,98 @@ public class OkxTrandeBusiness {
 
 
 
-    /**
-     * 买卖交易
-     * @throws Exception
-     */
-    @Transactional(rollbackFor = Exception.class)
-    @Async
-    public void okxTradeV2(List<OkxCoin> coins,  OkxCoinTicker ticker, List<OkxSetting> okxSettings, List<OkxBuyRecord> buyRecords, RiseDto riseDto, Date now) throws ServiceException {
-        try {
-            if (ticker.getCoin().equalsIgnoreCase("aave") || ticker.getCoin().equalsIgnoreCase("zyro")) {
-                log.info("coin:{} accountId:{},buyRecords size:{}",ticker.getCoin(), riseDto.getAccountId(), buyRecords.size());
-            }
-            OkxCoin coin = null;
-            Integer accountId = riseDto.getAccountId();
-            String accountName = riseDto.getAccountName();
-            String lockKey  = RedisConstants.OKX_TICKER_TRADE + "_" + accountId + "_" + ticker.getCoin();
-            boolean lock = redisLock.lock(lockKey,30,1,1000);
-            if (lock == false) {
-                log.error("tradeV2获取锁失败，交易取消 lockKey:{}",lockKey);
-                return;
-            }
-
-            Optional<OkxCoin> OkxCoin = coins.stream().filter(obj -> obj.getCoin().equals(ticker.getCoin())).findFirst();
-            if (OkxCoin.isPresent() == false) {
-                redisLock.releaseLock(lockKey);
-                return;
-            } else {
-                coin = OkxCoin.get();
-            }
-
-            List<OkxBuyRecord> coinBuyRecords = buyRecords.stream().filter(item -> item.getCoin().equals(ticker.getCoin())).collect(Collectors.toList());
-            //获取交易参数
-            Long start = System.currentTimeMillis();
-            List<TradeDto> tradeDtoList = getTradeDtoV2( OkxCoin.get(), ticker,  riseDto, coinBuyRecords,okxSettings);
-
-            if (CollectionUtils.isNotEmpty(tradeDtoList)) {
-                OkxAccountBalance accountBalance = balanceBusiness.getAccountBalance(coin.getCoin(), accountId);
-                if (ObjectUtils.isNotEmpty(accountBalance)) {
-                    coin.setBalance(accountBalance.getBalance());
-                }
-
-                BigDecimal coinTotalBuyAmount = coinBuyRecords.stream().map(OkxBuyRecord::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
-                for (TradeDto tradeDto:tradeDtoList) {
-                    if (tradeDto.getSide().equals(OkxSideEnum.BUY.getSide())) {
-                        OkxBuyRecord buyRecord =
-                                new OkxBuyRecord(null, tradeDto.getCoin(), tradeDto.getInstId(), tradeDto.getPx(), tradeDto.getSz(),
-                                        tradeDto.getPx().multiply(tradeDto.getSz()), BigDecimal.ZERO, BigDecimal.ZERO,
-                                        OrderStatusEnum.PENDING.getStatus(), UUID.randomUUID().toString(), "", tradeDto.getBuyStrategyId(), tradeDto.getTimes(), accountId,accountName,tradeDto.getMarketStatus(),tradeDto.getModeType(),null,null);
-                        if (!strategyBusiness.checkBuy(buyRecord, coin, okxSettings, coinTotalBuyAmount)){
-                            continue;
-                        }
-                        String okxOrderId = okxRequest(tradeDto, now, riseDto);
-                        if (okxOrderId == null) {
-                            continue;
-                        }
-                        buyRecord.setRemark(riseDto == null ? "" : riseDto.getRisePercent() + "||" + ticker.getIns());
-                        buyRecord.setOkxOrderId(okxOrderId);
-                        buyRecord.setCreateTime(now);
-                        buyRecord.setUpdateTime(now);
-                        buyRecordBusiness.save(buyRecord);
-                        coinBusiness.markBuy(coin.getCoin(), accountId);
-                    } else {
-                        OkxSellRecord sellRecord = new OkxSellRecord(null, tradeDto.getBuyRecordId(), tradeDto.getCoin(), tradeDto.getInstId(), tradeDto.getPx(), tradeDto.getSz(),
-                                tradeDto.getPx().multiply(tradeDto.getSz()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP), BigDecimal.ZERO, BigDecimal.ZERO, OrderStatusEnum.PENDING.getStatus(),
-                                UUID.randomUUID().toString(), "", tradeDto.getSellStrategyId(), tradeDto.getBuyStrategyId(), tradeDto.getTimes(), accountId,accountName,null);
-                        if (!strategyBusiness.checkSell(sellRecord, coin, tradeDto)) {
-                            continue;
-                        }
-                        if (buyRecordBusiness.findOne(tradeDto.getBuyRecordId()).getStatus().intValue() != OrderStatusEnum.SUCCESS.getStatus()) {
-                            continue;
-                        }
-                        String okxOrderId = okxRequest(tradeDto, now, riseDto);
-                        if (okxOrderId == null) {
-                            log.info("tradeDto：{}, okxOrderId：{}", JSON.toJSONString(tradeDto), okxOrderId);
-                            continue;
-                        }
-                        sellRecord.setRemark(riseDto == null ? "" : riseDto.getRisePercent() + "||" + ticker.getIns());
-                        sellRecord.setOkxOrderId(okxOrderId);
-                        sellRecord.setCreateTime(now);
-                        sellRecord.setUpdateTime(now);
-                        sellRecord.setStatus(OrderStatusEnum.PENDING.getStatus());
-                        if (sellRecordBusiness.save(sellRecord)) {
-                            buyRecordBusiness.updateBySell(sellRecord.getBuyRecordId(), OrderStatusEnum.SELLING.getStatus());
-                        }
-                    }
-                }
-            }
-            redisLock.releaseLock(lockKey);
-        } catch (Exception e) {
-            log.error("trade error",e);
-            throw new ServiceException("交易异常", 500);
-        }
-    }
+//    /**
+//     * 买卖交易
+//     * @throws Exception
+//     */
+//    @Transactional(rollbackFor = Exception.class)
+//    @Async
+//    public void okxTradeV2(List<OkxCoin> coins,  OkxCoinTicker ticker, List<OkxSetting> okxSettings, List<OkxBuyRecord> buyRecords, RiseDto riseDto, Date now) throws ServiceException {
+//        try {
+//            if (ticker.getCoin().equalsIgnoreCase("aave") || ticker.getCoin().equalsIgnoreCase("zyro")) {
+//                log.info("coin:{} accountId:{},buyRecords size:{}",ticker.getCoin(), riseDto.getAccountId(), buyRecords.size());
+//            }
+//            OkxCoin coin = null;
+//            Integer accountId = riseDto.getAccountId();
+//            String accountName = riseDto.getAccountName();
+//            String lockKey  = RedisConstants.OKX_TICKER_TRADE + "_" + accountId + "_" + ticker.getCoin();
+//            boolean lock = redisLock.lock(lockKey,30,1,1000);
+//            if (lock == false) {
+//                log.error("tradeV2获取锁失败，交易取消 lockKey:{}",lockKey);
+//                return;
+//            }
+//
+//            Optional<OkxCoin> OkxCoin = coins.stream().filter(obj -> obj.getCoin().equals(ticker.getCoin())).findFirst();
+//            if (OkxCoin.isPresent() == false) {
+//                redisLock.releaseLock(lockKey);
+//                return;
+//            } else {
+//                coin = OkxCoin.get();
+//            }
+//
+//            List<OkxBuyRecord> coinBuyRecords = buyRecords.stream().filter(item -> item.getCoin().equals(ticker.getCoin())).collect(Collectors.toList());
+//            //获取交易参数
+//            Long start = System.currentTimeMillis();
+//            List<TradeDto> tradeDtoList = getTradeDtoV2( OkxCoin.get(), ticker,  riseDto, coinBuyRecords,okxSettings);
+//
+//            if (CollectionUtils.isNotEmpty(tradeDtoList)) {
+//                OkxAccountBalance accountBalance = balanceBusiness.getAccountBalance(coin.getCoin(), accountId);
+//                if (ObjectUtils.isNotEmpty(accountBalance)) {
+//                    coin.setBalance(accountBalance.getBalance());
+//                }
+//
+//                BigDecimal coinTotalBuyAmount = coinBuyRecords.stream().map(OkxBuyRecord::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+//                for (TradeDto tradeDto:tradeDtoList) {
+//                    if (tradeDto.getSide().equals(OkxSideEnum.BUY.getSide())) {
+//                        OkxBuyRecord buyRecord =
+//                                new OkxBuyRecord(null, tradeDto.getCoin(), tradeDto.getInstId(), tradeDto.getPx(), tradeDto.getSz(),
+//                                        tradeDto.getPx().multiply(tradeDto.getSz()), BigDecimal.ZERO, BigDecimal.ZERO,
+//                                        OrderStatusEnum.PENDING.getStatus(), UUID.randomUUID().toString(), "", tradeDto.getBuyStrategyId(), tradeDto.getTimes(), accountId,accountName,tradeDto.getMarketStatus(),tradeDto.getModeType(),null,null);
+//                        if (!strategyBusiness.checkBuy(buyRecord, coin, okxSettings, coinTotalBuyAmount)){
+//                            continue;
+//                        }
+//                        String okxOrderId = okxRequest(tradeDto, now, riseDto);
+//                        if (okxOrderId == null) {
+//                            continue;
+//                        }
+//                        buyRecord.setRemark(riseDto == null ? "" : riseDto.getRisePercent() + "||" + ticker.getIns());
+//                        buyRecord.setOkxOrderId(okxOrderId);
+//                        buyRecord.setCreateTime(now);
+//                        buyRecord.setUpdateTime(now);
+//                        buyRecordBusiness.save(buyRecord);
+//                        coinBusiness.markBuy(coin.getCoin(), accountId);
+//                    } else {
+//                        OkxSellRecord sellRecord = new OkxSellRecord(null, tradeDto.getBuyRecordId(), tradeDto.getCoin(), tradeDto.getInstId(), tradeDto.getPx(), tradeDto.getSz(),
+//                                tradeDto.getPx().multiply(tradeDto.getSz()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP), BigDecimal.ZERO, BigDecimal.ZERO, OrderStatusEnum.PENDING.getStatus(),
+//                                UUID.randomUUID().toString(), "", tradeDto.getSellStrategyId(), tradeDto.getBuyStrategyId(), tradeDto.getTimes(), accountId,accountName,null);
+//                        if (!strategyBusiness.checkSell(sellRecord, coin, tradeDto)) {
+//                            continue;
+//                        }
+//                        if (buyRecordBusiness.findOne(tradeDto.getBuyRecordId()).getStatus().intValue() != OrderStatusEnum.SUCCESS.getStatus()) {
+//                            continue;
+//                        }
+//                        String okxOrderId = okxRequest(tradeDto, now, riseDto);
+//                        if (okxOrderId == null) {
+//                            log.info("tradeDto：{}, okxOrderId：{}", JSON.toJSONString(tradeDto), okxOrderId);
+//                            continue;
+//                        }
+//                        sellRecord.setRemark(riseDto == null ? "" : riseDto.getRisePercent() + "||" + ticker.getIns());
+//                        sellRecord.setOkxOrderId(okxOrderId);
+//                        sellRecord.setCreateTime(now);
+//                        sellRecord.setUpdateTime(now);
+//                        sellRecord.setStatus(OrderStatusEnum.PENDING.getStatus());
+//                        if (sellRecordBusiness.save(sellRecord)) {
+//                            buyRecordBusiness.updateBySell(sellRecord.getBuyRecordId(), OrderStatusEnum.SELLING.getStatus());
+//                        }
+//                    }
+//                }
+//            }
+//            redisLock.releaseLock(lockKey);
+//        } catch (Exception e) {
+//            log.error("trade error",e);
+//            throw new ServiceException("交易异常", 500);
+//        }
+//    }
 
 
     public String okxRequest(TradeDto tradeDto, Date now, RiseDto riseDto) {
@@ -270,7 +260,7 @@ public class OkxTrandeBusiness {
 
 
 
-    public List<TradeDto> getTradeDtoV2( OkxCoin coin, OkxCoinTicker ticker, RiseDto riseDto,List<OkxBuyRecord> buyRecords,List<OkxSetting> okxSettings) {
+    public List<TradeDto> getTradeDtoV2( OkxCoin coin, OkxCoinTicker ticker, RiseDto riseDto,List<OkxBuyRecord> buyRecords,List<OkxSetting> okxSettings, Date now) {
         List<TradeDto> list = Lists.newArrayList();
         TradeDto tradeDto =  DtoUtils.transformBean(ticker, TradeDto.class);
         tradeDto.setUnit(coin.getUnit());
@@ -390,7 +380,7 @@ public class OkxTrandeBusiness {
             }
 
             //当前帐号该币种已买
-            if (coinBusiness.checkBoughtCoin(coin.getCoin(), riseDto.getAccountId()) == true) {
+            if (coinBusiness.checkBoughtCoin(coin.getCoin(), riseDto.getAccountId(), buyRecords, now)) {
                 return list;
             }
 

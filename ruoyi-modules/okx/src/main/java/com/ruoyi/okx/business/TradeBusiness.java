@@ -316,9 +316,16 @@ public class TradeBusiness {
 //    }
 
     //交易
-    public void tradeV2(Integer riseCount, Integer fallCount, List<OkxAccount> accountList, OkxCoin okxCoin, OkxCoinTicker ticker, Date now,Map<String, List<OkxSetting>> accountSettingMap) {
-        try {
-            for (OkxAccount okxAccount: accountList) {
+    public void tradeV2(Integer riseCount, Integer fallCount, List<OkxAccount> accountList, OkxCoin okxCoin, OkxCoinTicker ticker, Date now,Map<String, List<OkxSetting>> accountSettingMap,List<OkxBuyRecord> coinBuyRecords) {
+        String lockKey = "";
+        for (OkxAccount okxAccount: accountList) {
+            try {
+                lockKey  = RedisConstants.OKX_TICKER_TRADE + "_" + okxAccount.getId() + "_" + ticker.getCoin();
+                boolean lock = redisLock.lock(lockKey,30,1,1000);
+                if (lock == false) {
+                    log.error("tradeV2获取锁失败，交易取消 lockKey:{}",lockKey);
+                    return;
+                }
                 List<OkxSetting> okxSettings  = accountSettingMap.get(Constant.OKX_ACCOUNT_SETTING + okxAccount.getId());
 
                 //更新行情缓存
@@ -333,56 +340,58 @@ public class TradeBusiness {
                             riseDto.setModeType(obj.getSettingValue());
                         }
                     });
-                    List<OkxBuyRecord> accountBuyRecords = buyRecordBusiness.findSuccessRecord(okxCoin.getCoin(), okxAccount.getId(), null,null);
+                    List<OkxBuyRecord> accountBuyRecords = coinBuyRecords.stream().filter(item -> item.getAccountId().intValue() == okxAccount.getId()).collect(Collectors.toList());
                     //okx交易
                     okxTrandeBusiness.okxTradeV2( okxCoin, ticker, okxSettings, accountBuyRecords, riseDto, now);
                 }
+            } catch (Exception e) {
+                log.error("trade error",e);
+                throw new ServiceException("交易异常", 500);
+            } finally {
+                redisLock.releaseLock(lockKey);
             }
-        } catch (Exception e) {
-            log.error("trade error",e);
-            throw new ServiceException("交易异常", 500);
         }
     }
 
 
 
-    public void tradeV2(List<OkxAccount> accountList, List<OkxCoin> okxCoins, List<OkxCoinTicker> tickerList, Date now) {
-        Long tradeV2Start = System.currentTimeMillis();
-        //交易
-        try {
-            for (OkxAccount okxAccount: accountList) {
-                if (okxAccount.getStatus().intValue() != Status.OK.getCode()) {
-                    continue;
-                }
-                List<OkxSetting> okxSettings  = settingService.selectSettingByIds(DtoUtils.StringToLong(okxAccount.getSettingIds().split(",")));
-
-                //更新行情缓存
-                RiseDto riseDto = refreshRiseCountV2(okxCoins, now, okxAccount, okxSettings);
-                if (riseDto != null) {
-                    //赋值用户订单类型和交易模式
-                    okxSettings.stream().forEach(obj -> {
-                        if (obj.getSettingKey().equals(OkxConstants.ORD_TYPE)) {
-                            riseDto.setOrderType(obj.getSettingValue());
-                        }
-                        if (obj.getSettingKey().equals(OkxConstants.MODE_TYPE)) {
-                            riseDto.setModeType(obj.getSettingValue());
-                        }
-                    });
-
-                    List<OkxBuyRecord> accountBuyRecords = buyRecordBusiness.findSuccessRecord(null, okxAccount.getId(), null,null);
-                    //按coin排序
-                    tickerList = tickerList.stream().sorted(Comparator.comparing(OkxCoinTicker::getCoin)).collect(Collectors.toList());
-                    for (OkxCoinTicker ticker : tickerList) {
-                        okxTrandeBusiness.okxTradeV2( okxCoins,  ticker, okxSettings,  accountBuyRecords, riseDto, now);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.error("trade error",e);
-            throw new ServiceException("交易异常", 500);
-        }
-        log.info("tradeV2 time:{}",System.currentTimeMillis() - tradeV2Start);
-    }
+//    public void tradeV2(List<OkxAccount> accountList, List<OkxCoin> okxCoins, List<OkxCoinTicker> tickerList, Date now) {
+//        Long tradeV2Start = System.currentTimeMillis();
+//        //交易
+//        try {
+//            for (OkxAccount okxAccount: accountList) {
+//                if (okxAccount.getStatus().intValue() != Status.OK.getCode()) {
+//                    continue;
+//                }
+//                List<OkxSetting> okxSettings  = settingService.selectSettingByIds(DtoUtils.StringToLong(okxAccount.getSettingIds().split(",")));
+//
+//                //更新行情缓存
+//                RiseDto riseDto = refreshRiseCountV2(okxCoins, now, okxAccount, okxSettings);
+//                if (riseDto != null) {
+//                    //赋值用户订单类型和交易模式
+//                    okxSettings.stream().forEach(obj -> {
+//                        if (obj.getSettingKey().equals(OkxConstants.ORD_TYPE)) {
+//                            riseDto.setOrderType(obj.getSettingValue());
+//                        }
+//                        if (obj.getSettingKey().equals(OkxConstants.MODE_TYPE)) {
+//                            riseDto.setModeType(obj.getSettingValue());
+//                        }
+//                    });
+//
+//                    List<OkxBuyRecord> accountBuyRecords = buyRecordBusiness.findSuccessRecord(null, okxAccount.getId(), null,null);
+//                    //按coin排序
+//                    tickerList = tickerList.stream().sorted(Comparator.comparing(OkxCoinTicker::getCoin)).collect(Collectors.toList());
+//                    for (OkxCoinTicker ticker : tickerList) {
+//                        okxTrandeBusiness.okxTradeV2( okxCoins,  ticker, okxSettings,  accountBuyRecords, riseDto, now);
+//                    }
+//                }
+//            }
+//        } catch (Exception e) {
+//            log.error("trade error",e);
+//            throw new ServiceException("交易异常", 500);
+//        }
+//        log.info("tradeV2 time:{}",System.currentTimeMillis() - tradeV2Start);
+//    }
 //
 //    public void tradeV2(List<OkxCoin> coins, List<OkxCoinTicker> tickers,List<OkxSetting> okxSettings,RiseDto riseDto) throws ServiceException {
 //        Long tradeV2Start = System.currentTimeMillis();
