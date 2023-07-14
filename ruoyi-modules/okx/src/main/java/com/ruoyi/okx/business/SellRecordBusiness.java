@@ -91,7 +91,7 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
             JSONObject json = JSONObject.parseObject(str);
             if (json == null || !json.getString("code").equals("0")) {
                 log.error("获取卖出订单信息异常：{}", (json == null) ? "null" : json.toJSONString());
-                return;
+                continue;
             }
             JSONObject data = json.getJSONArray("data").getJSONObject(0);
             sellRecord.setStatus((commonBusiness.getOrderStatus(data.getString("state")) == null) ? sellRecord.getStatus() : commonBusiness.getOrderStatus(data.getString("state")));
@@ -106,13 +106,13 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
 
                 boolean update = updateById(sellRecord);
                 if (update) {
-                    //balanceBusiness.reduceCount(sellRecord.getCoin(), sellRecord.getAccountId(), sellRecord.getQuantity());
                     balanceBusiness.syncAccountBalance(map, sellRecord.getCoin(), now);
 
                     okxBuyRecord.setStatus(OrderStatusEnum.FINISH.getStatus());
                     buyRecordBusiness.update(okxBuyRecord);
+                    buyRecordBusiness.updateCoinTurnOver(okxBuyRecord.getCoin());
                     coinProfitBusiness.calculateProfit(sellRecord);
-                    return;
+                    continue;
                 }
             }
             if (sellRecord.getStatus().equals(OrderStatusEnum.FAIL.getStatus())) {
@@ -123,7 +123,7 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
                     OkxBuyRecord buyRecord = this.buyRecordBusiness.getById(sellRecord.getBuyRecordId());
                     if (buyRecord == null) {
                         log.error("syncSellOrderStatus 对应买入订单不存在:{}", sellRecord.getBuyRecordId());
-                        return;
+                        continue;
                     }
                 }
             }
@@ -137,17 +137,17 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
                     JSONObject cancelJson = JSONObject.parseObject(cancelStr);
                     if (cancelJson == null || !cancelJson.getString("code").equals("0")) {
                         log.error("{}", JSON.toJSONString(params));
-                        return;
+                        continue;
                     }
                     JSONObject dataJSON = cancelJson.getJSONArray("data").getJSONObject(0);
                     if (dataJSON == null || !dataJSON.getString("sCode").equals("0")) {
                         log.error("{}", JSON.toJSONString(params));
-                        return;
+                        continue;
                     }
                     OkxBuyRecord buyRecord = this.buyRecordBusiness.getById(sellRecord.getBuyRecordId());
                     if (buyRecord == null) {
                         log.error("查询买入订单异常:{}", sellRecord.getBuyRecordId());
-                        return;
+                        continue;
                     }
                     sellRecord.setStatus(OrderStatusEnum.CANCEL.getStatus());
                     Integer canBuuRecordId = Integer.valueOf(RandomUtil.randomInt(1000000000));

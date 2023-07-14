@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
+import java.util.stream.Collectors;
 import javax.annotation.Resource;
 
 import com.ruoyi.common.core.constant.CacheConstants;
@@ -17,11 +18,14 @@ import com.ruoyi.okx.domain.*;
 import com.ruoyi.okx.enums.OrderStatusEnum;
 import com.ruoyi.okx.mapper.CoinMapper;
 import com.ruoyi.okx.utils.Constant;
+import io.swagger.models.auth.In;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +39,10 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
 
     @Autowired
     private RedisService redisService;
+
+    @Resource
+    @Lazy
+    private BuyRecordBusiness buyRecordBusiness;
 
 
     public BigDecimal calculateStandard(OkxCoinTicker ticker) {
@@ -53,7 +61,7 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
 
 
 
-    private OkxCoin findOne(String coin) {
+    public OkxCoin findOne(String coin) {
         LambdaQueryWrapper<OkxCoin> wrapper = new LambdaQueryWrapper();
         wrapper.eq(OkxCoin::getCoin, coin);
         return this.coinMapper.selectOne(wrapper);
@@ -185,5 +193,29 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
         Collection<String> keys = redisService.keys(CacheConstants.OKX_COIN_KEY + "*");
         redisService.deleteObject(keys);
     }
+
+
+    @Transactional(rollbackFor = Exception.class)
+    public void initTurnOver() {
+        try {
+            List<OkxCoin> okxCoins = coinMapper.selectList(new LambdaQueryWrapper());
+            for (OkxCoin coin:okxCoins) {
+                List<OkxBuyRecord> buyRecords = buyRecordBusiness.findByAccountAndCoin(null, coin.getCoin()).stream()
+                        .filter(item -> item.getStatus().intValue() != OrderStatusEnum.CANCEL.getStatus())
+                        .filter(item -> item.getStatus().intValue() != OrderStatusEnum.FAIL.getStatus())
+                        .collect(Collectors.toList());
+                if (CollectionUtils.isEmpty(buyRecords)) {
+                    continue;
+                }
+                Integer finishCount = buyRecords.stream().filter(item -> item.getStatus().intValue() == OrderStatusEnum.FINISH.getStatus()).collect(Collectors.toList()).size();
+                coin.setTurnOver(new BigDecimal(finishCount).divide(new BigDecimal(buyRecords.size()), 4, RoundingMode.DOWN));
+            }
+            updateCache(okxCoins);
+            saveOrUpdateBatch(okxCoins);
+        } catch (Exception e) {
+            log.error("initTurnOver error:{}", e.getMessage());
+        }
+    }
+
 
 }

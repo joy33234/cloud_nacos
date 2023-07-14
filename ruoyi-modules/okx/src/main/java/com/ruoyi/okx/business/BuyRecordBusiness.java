@@ -23,6 +23,7 @@ import com.ruoyi.common.core.utils.HttpUtil;
 import com.ruoyi.common.redis.service.RedisLock;
 import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.OkxBuyRecord;
+import com.ruoyi.okx.domain.OkxCoin;
 import com.ruoyi.okx.domain.OkxCoinProfit;
 import com.ruoyi.okx.domain.OkxCoinTicker;
 import com.ruoyi.okx.enums.OrderStatusEnum;
@@ -109,12 +110,10 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
         return count.intValue();
     }
 
-    public List<OkxBuyRecord> findPendings(Integer accountId) {
+    public List<OkxBuyRecord> findByAccountAndCoin(Integer accountId,String coin) {
         LambdaQueryWrapper<OkxBuyRecord> wrapper = new LambdaQueryWrapper();
-        wrapper.eq(OkxBuyRecord::getStatus, OrderStatusEnum.PENDING.getStatus());
-        if (accountId != null && accountId > 0) {
-            wrapper.eq(OkxBuyRecord::getAccountId, accountId);
-        }
+        wrapper.eq(accountId != null, OkxBuyRecord::getAccountId, accountId);
+        wrapper.eq(StringUtils.isNotEmpty(coin), OkxBuyRecord::getCoin, coin);
         return buyRecordMapper.selectList(wrapper);
     }
 
@@ -345,5 +344,26 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
             return false;
         }
         return true;
+    }
+
+    @Async
+    public void updateCoinTurnOver (String coin) {
+        try {
+            Thread.sleep(3000);
+            OkxCoin okxCoin = coinBusiness.findOne(coin);
+            List<OkxBuyRecord> buyRecords = findByAccountAndCoin(null, coin).stream()
+                    .filter(item -> item.getStatus().intValue() != OrderStatusEnum.CANCEL.getStatus())
+                    .filter(item -> item.getStatus().intValue() != OrderStatusEnum.FAIL.getStatus())
+                    .collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(buyRecords)) {
+                return;
+            }
+            Integer finishCount = (int) buyRecords.stream().filter(item -> item.getStatus().intValue() == OrderStatusEnum.FINISH.getStatus()).count();
+            okxCoin.setTurnOver(new BigDecimal(finishCount).divide(new BigDecimal(buyRecords.size()), 4, RoundingMode.DOWN));
+            coinBusiness.updateById(okxCoin);
+            coinBusiness.updateCache(Collections.singletonList(okxCoin));
+        } catch (Exception e) {
+            log.error("updateCoinTurnOver error:{}", e.getMessage());
+        }
     }
 }

@@ -21,6 +21,7 @@ import com.ruoyi.okx.service.SettingService;
 import com.ruoyi.okx.utils.Constant;
 import com.ruoyi.okx.utils.DtoUtils;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.http.client.utils.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
@@ -78,6 +79,8 @@ public class SyncBusiness {
     @Async
     public void syncCurrencies() {
         List<OkxCoin> saveCoins = Lists.newArrayList();
+        log.info("syncCurrencies-start");
+
         try {
             OkxAccount account = accountBusiness.list().get(0);
             Map<String, String> map = accountBusiness.getAccountMap(account);
@@ -110,10 +113,11 @@ public class SyncBusiness {
                     saveCoins.add(coin);
                 }
             }
-
+            log.info("saveCoins：{}",JSON.toJSONString(saveCoins));
             if (CollectionUtils.isNotEmpty(saveCoins)){
                 //set unit
                 JSONArray unitArray = getUnit(map);
+                log.info("unitArray：{}",JSON.toJSONString(unitArray));
                 for (OkxCoin okxCoin:saveCoins) {
                     for (int i = 0; i < unitArray.size(); i++) {
                         JSONObject item = unitArray.getJSONObject(i);
@@ -152,7 +156,10 @@ public class SyncBusiness {
         coinBusiness.syncCoinDb();
     }
 
-
+    @Async
+    public void initCoinTurnOver() {
+        coinBusiness.initTurnOver();
+    }
 
     @Async
     public void syncBuyOrder() throws ServiceException {
@@ -241,11 +248,12 @@ public class SyncBusiness {
             List<OkxCoinTicker> monthTickerList = org.apache.commons.compress.utils.Lists.newArrayList();
 
             Date now = new Date();
-            for (int i = 0; i < 29; i++) {
-                Date day =  DateUtil.getMinTime(DateUtil.addDate(now, i-29));
+            for (int i = 0; i < 30; i++) {
+                Date day =  DateUtil.getMinTime(DateUtil.addDate(now, i-30));
+
                 List<OkxCoinTicker> dayTickers = monthTickersCache.get(day.toString());
                 if (CollectionUtils.isEmpty(dayTickers)) {
-                    LambdaQueryWrapper<OkxCoinTicker> wrapper1 = new LambdaQueryWrapper();
+                    LambdaQueryWrapper<OkxCoinTicker> wrapper1 = new LambdaQueryWrapper<>();
                     wrapper1.ge(OkxCoinTicker::getCreateTime, DateUtil.getMinTime(day));
                     wrapper1.le(OkxCoinTicker::getCreateTime, DateUtil.getMaxTime(day));
                     dayTickers = tickerBusiness.list(wrapper1);
@@ -257,9 +265,9 @@ public class SyncBusiness {
                     monthTickerList.addAll(dayTickers);
                 }
             }
+            log.info("monthTickerList_size:{}" , monthTickerList.size());
 
             List<OkxBuyRecord> successBuyRecords = getPageDate();
-            log.info("ticker_list_size:{},monthTickerList_size:{}",successBuyRecords.size(),monthTickerList.size());
 
             //遍历每个币种
             for (int i = 0; i < jsonArray.size(); i++) {
@@ -278,6 +286,35 @@ public class SyncBusiness {
             log.error("syncTicker error:", e);
             throw new ServiceException("syncTicker error");
         }
+    }
+
+    public static void main(String[] args) {
+         Cache<String, List<OkxCoinTicker>> monthTickersCache = CacheUtil.newLRUCache(30);
+        List<OkxCoinTicker> monthTickerList = org.apache.commons.compress.utils.Lists.newArrayList();
+
+        Date now = new Date();
+        for (int i = 0; i < 29; i++) {
+            Date currentDay = DateUtil.addDate(now, i-29);
+            Date day =  DateUtil.getMinTime(currentDay);
+            log.info(DateUtil.getFormateDate(day,DateUtil.YYYY_MM_DD_HH_MM_SS));
+            List<OkxCoinTicker> dayTickers = monthTickersCache.get(day.toString());
+            if (CollectionUtils.isEmpty(dayTickers)) {
+                LambdaQueryWrapper<OkxCoinTicker> wrapper1 = new LambdaQueryWrapper<>();
+                wrapper1.ge(OkxCoinTicker::getCreateTime, DateUtil.getMinTime(day));
+                wrapper1.le(OkxCoinTicker::getCreateTime, DateUtil.getMaxTime(day));
+                OkxCoinTicker okxCoinTicker  =  new OkxCoinTicker();
+                okxCoinTicker.setId(i);
+                dayTickers = Arrays.asList(okxCoinTicker);
+                if (CollectionUtils.isNotEmpty(dayTickers)) {
+                    monthTickersCache.put(day.toString(),dayTickers);
+                }
+            }
+            if (CollectionUtils.isNotEmpty(dayTickers)) {
+                monthTickerList.addAll(dayTickers);
+            }
+            log.info("i:{}, monthTickerList_size:{}",i , monthTickerList.size());
+        }
+
     }
 
 

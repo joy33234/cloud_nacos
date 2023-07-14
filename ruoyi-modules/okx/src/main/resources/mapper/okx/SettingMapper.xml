@@ -79,6 +79,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 			<if test="settingName != null and settingName != '' ">setting_name,</if>
 			<if test="settingKey != null and settingKey != '' ">setting_key,</if>
 			<if test="settingValue != null and settingValue != '' ">setting_value,</if>
+            <if test="settingUnique != null and settingUnique != ''">setting_unique,</if>
 			<if test="createBy != null and createBy != ''">create_by,</if>
 			<if test="remark != null and remark != ''">remark,</if>
  			create_time
@@ -86,6 +87,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 			<if test="settingName != null and settingName != ''">#{settingName},</if>
 			<if test="settingKey != null and settingKey != ''">#{settingKey},</if>
 			<if test="settingValue != null and settingValue != ''">#{settingValue},</if>
+			<if test="settingUnique != null and settingUnique != ''">#{settingUnique},</if>
 			<if test="createBy != null and createBy != ''">#{createBy},</if>
 			<if test="remark != null and remark != ''">#{remark},</if>
  			sysdate()
@@ -98,6 +100,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="settingName != null and settingName != ''">setting_name = #{settingName},</if>
             <if test="settingKey != null and settingKey != ''">setting_key = #{settingKey},</if>
             <if test="settingValue != null and settingValue != ''">setting_value = #{settingValue},</if>
+            <if test="settingUnique != null and settingUnique != ''">setting_unique = #{settingUnique},</if>
             <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
             <if test="remark != null">remark = #{remark},</if>
  			update_time = sysdate()

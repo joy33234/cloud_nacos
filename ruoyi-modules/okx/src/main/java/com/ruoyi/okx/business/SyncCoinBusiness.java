@@ -230,7 +230,7 @@ public class SyncCoinBusiness {
             //更新缓存 update last five minute each day
             if (now.getTime() > (DateUtil.getMaxTime(now).getTime() - 300000)) {
                 if (coinBusiness.getCoin(ticker.getCoin()).getUpdateTime().getTime() > DateUtil.getMinTime(now).getTime()){
-                    coinBusiness.updateCache(Arrays.asList(obj));
+                    coinBusiness.updateCache(Collections.singletonList(obj));
                 }
             }
             return obj;
@@ -241,44 +241,44 @@ public class SyncCoinBusiness {
     }
 
 
-
-    public List<OkxCoin> updateCoinV2(List<OkxCoinTicker> tickers, Date now) throws Exception {
-        try {
-            BigDecimal usdt24h = new BigDecimal(settingService.selectSettingByKey(OkxConstants.USDT_24H));
-
-            List<OkxCoin> okxCoins = coinBusiness.getCoinCache().stream().filter(item -> item.getUnit().compareTo(BigDecimal.ZERO) > 0).collect(Collectors.toList());
-            //coinBusiness.list().stream().filter(item -> item.getUnit().compareTo(BigDecimal.ZERO) > 0).collect(Collectors.toList());
-
-            for (OkxCoinTicker ticker: tickers) {
-                okxCoins.stream().filter(item -> item.getCoin().equals(ticker.getCoin())).findFirst().ifPresent(obj -> {
-                    obj.setVolCcy24h(ticker.getVol24h().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
-                    obj.setVolUsdt24h(ticker.getVolCcy24h().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
-                    obj.setHightest(ticker.getHigh24h().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
-                    obj.setLowest(ticker.getLow24h().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
-                    obj.setRise((ticker.getIns().compareTo(BigDecimal.ZERO) >= 0));
-                    obj.setUpdateTime(now);
-                    //交易额低于配置值-关闭交易
-                    if (usdt24h.compareTo(obj.getVolUsdt24h()) > 0) {
-                        obj.setStatus(CoinStatusEnum.CLOSE.getStatus());
-                    } else {
-                        obj.setStatus(CoinStatusEnum.OPEN.getStatus());
-                    }
-                    if (obj.getCoin().equalsIgnoreCase("BTC")) {
-                        obj.setBtcIns(ticker.getIns());
-                    }
-                    obj.setStandard(coinBusiness.calculateStandard(ticker));
-                });
-            }
-            okxCoins = okxCoins.stream()
-                    .filter(item -> item.getStandard().compareTo(BigDecimal.ZERO) > 0 ).collect(Collectors.toList());
-            //更新缓存
-            coinBusiness.updateCache(okxCoins);
-            return okxCoins;
-        } catch (Exception e) {
-            log.error("updateCoin error",e);
-            throw new Exception(e.getMessage());
-        }
-    }
+//
+//    public List<OkxCoin> updateCoinV2(List<OkxCoinTicker> tickers, Date now) throws Exception {
+//        try {
+//            BigDecimal usdt24h = new BigDecimal(settingService.selectSettingByKey(OkxConstants.USDT_24H));
+//
+//            List<OkxCoin> okxCoins = coinBusiness.getCoinCache().stream().filter(item -> item.getUnit().compareTo(BigDecimal.ZERO) > 0).collect(Collectors.toList());
+//            //coinBusiness.list().stream().filter(item -> item.getUnit().compareTo(BigDecimal.ZERO) > 0).collect(Collectors.toList());
+//
+//            for (OkxCoinTicker ticker: tickers) {
+//                okxCoins.stream().filter(item -> item.getCoin().equals(ticker.getCoin())).findFirst().ifPresent(obj -> {
+//                    obj.setVolCcy24h(ticker.getVol24h().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
+//                    obj.setVolUsdt24h(ticker.getVolCcy24h().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
+//                    obj.setHightest(ticker.getHigh24h().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+//                    obj.setLowest(ticker.getLow24h().setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.HALF_UP));
+//                    obj.setRise((ticker.getIns().compareTo(BigDecimal.ZERO) >= 0));
+//                    obj.setUpdateTime(now);
+//                    //交易额低于配置值-关闭交易
+//                    if (usdt24h.compareTo(obj.getVolUsdt24h()) > 0) {
+//                        obj.setStatus(CoinStatusEnum.CLOSE.getStatus());
+//                    } else {
+//                        obj.setStatus(CoinStatusEnum.OPEN.getStatus());
+//                    }
+//                    if (obj.getCoin().equalsIgnoreCase("BTC")) {
+//                        obj.setBtcIns(ticker.getIns());
+//                    }
+//                    obj.setStandard(coinBusiness.calculateStandard(ticker));
+//                });
+//            }
+//            okxCoins = okxCoins.stream()
+//                    .filter(item -> item.getStandard().compareTo(BigDecimal.ZERO) > 0 ).collect(Collectors.toList());
+//            //更新缓存
+//            coinBusiness.updateCache(okxCoins);
+//            return okxCoins;
+//        } catch (Exception e) {
+//            log.error("updateCoin error",e);
+//            throw new Exception(e.getMessage());
+//        }
+//    }
 
 
     /**
