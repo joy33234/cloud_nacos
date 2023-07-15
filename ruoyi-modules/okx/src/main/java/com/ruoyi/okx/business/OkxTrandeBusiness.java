@@ -268,7 +268,6 @@ public class OkxTrandeBusiness {
         String modeType = riseDto.getModeType();
 
 
-
         //当前价格与标准值涨跌比
         BigDecimal ins = ticker.getLast().subtract(coin.getStandard()).divide(coin.getStandard(), 8, RoundingMode.HALF_UP);
 

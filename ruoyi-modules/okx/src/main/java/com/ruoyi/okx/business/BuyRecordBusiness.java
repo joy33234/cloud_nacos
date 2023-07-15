@@ -222,8 +222,6 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
                 if (buyRecord.getStatus().intValue() == OrderStatusEnum.SUCCESS.getStatus()) {
                     //同步手续费
                     syncOrderFee(map, buyRecord);
-//                    accountBalanceBusiness.addCount(buyRecord.getCoin(), buyRecord.getAccountId(), buyRecord.getQuantity());
-//                    accountBusiness.getAccountMap(accountName);
                     accountBalanceBusiness.syncAccountBalance(map, buyRecord.getCoin(),  now);
                 }
                 Thread.sleep(50);

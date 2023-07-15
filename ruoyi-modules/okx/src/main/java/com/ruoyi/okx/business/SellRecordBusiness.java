@@ -51,6 +51,9 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
     @Resource
     private AccountBalanceBusiness balanceBusiness;
 
+    @Resource
+    private CoinBusiness coinBusiness;
+
 
     public List<OkxSellRecord> selectList(SellRecordDO sellRecordDO) {
         LambdaQueryWrapper<OkxSellRecord> wrapper = new LambdaQueryWrapper();
@@ -104,14 +107,18 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
                 }
                 sellRecord.setProfit(sellRecord.getAmount().subtract(sellRecord.getFee()).subtract(okxBuyRecord.getAmount()).subtract(okxBuyRecord.getFeeUsdt()));
 
-                boolean update = updateById(sellRecord);
-                if (update) {
+                if (updateById(sellRecord) == true) {
                     balanceBusiness.syncAccountBalance(map, sellRecord.getCoin(), now);
 
                     okxBuyRecord.setStatus(OrderStatusEnum.FINISH.getStatus());
                     buyRecordBusiness.update(okxBuyRecord);
                     buyRecordBusiness.updateCoinTurnOver(okxBuyRecord.getCoin());
                     coinProfitBusiness.calculateProfit(sellRecord);
+
+                    //去掉已买标记
+                    if (now.getTime() > DateUtil.getMinTime(now).getTime() && now.getTime() < DateUtil.getMaxTime(now).getTime()) {
+                        coinBusiness.cancelBuy(sellRecord.getCoin(), sellRecord.getAccountId());
+                    }
                     continue;
                 }
             }
