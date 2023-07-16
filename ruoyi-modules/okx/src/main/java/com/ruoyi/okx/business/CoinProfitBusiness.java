@@ -8,15 +8,10 @@ import com.ruoyi.okx.domain.*;
 import com.ruoyi.okx.mapper.CoinProfitMapper;
 import com.ruoyi.okx.params.DO.OkxAccountBalanceDO;
 import com.ruoyi.okx.params.DO.OkxCoinProfitDo;
-import com.ruoyi.okx.params.dto.AccountProfitDto;
-import jdk.nashorn.internal.ir.annotations.Reference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
-import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -24,7 +19,6 @@ import java.util.stream.Collectors;
 
 @Component
 public class CoinProfitBusiness extends ServiceImpl<CoinProfitMapper, OkxCoinProfit> {
-    private static final Logger log = LoggerFactory.getLogger(CoinProfitBusiness.class);
 
     @Resource
     private CoinProfitMapper mapper;

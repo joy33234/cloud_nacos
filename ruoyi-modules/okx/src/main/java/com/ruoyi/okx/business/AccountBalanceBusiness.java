@@ -8,7 +8,6 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.core.exception.ServiceException;
 import com.ruoyi.common.core.utils.HttpUtil;
 import com.ruoyi.common.core.utils.StringUtils;
-import com.ruoyi.okx.domain.OkxAccount;
 import com.ruoyi.okx.domain.OkxAccountBalance;
 import com.ruoyi.okx.domain.OkxCoin;
 import com.ruoyi.okx.mapper.OkxAccountBalanceMapper;
@@ -63,23 +62,6 @@ public class AccountBalanceBusiness extends ServiceImpl<OkxAccountBalanceMapper,
 
     public boolean delete(OkxAccountBalance account) {
         return accountBalanceMapper.deleteById(account) > 0 ? true : false;
-    }
-
-    public boolean reduceCount(String coinStr, Integer accountId, BigDecimal count) {
-        OkxAccountBalance balance = getAccountBalance(coinStr, accountId);
-        BigDecimal remainCount = balance.getBalance().subtract(count);
-        if (remainCount.compareTo(BigDecimal.ZERO) >= 0) {
-            balance.setBalance(remainCount);
-            return updateById(balance);
-        }
-        log.info("account:{},{}卖出数量:{}异常", new Object[] { accountId, coinStr, count });
-        return false;
-    }
-
-    public boolean addCount(String coinStr, Integer accountId, BigDecimal count) {
-        OkxAccountBalance balance = getAccountBalance(coinStr, accountId);
-        balance.setBalance(balance.getBalance().add(count));
-        return updateById(balance);
     }
 
     public OkxAccountBalance getAccountBalance (String coin, Integer accountId) {
@@ -163,7 +145,6 @@ public class AccountBalanceBusiness extends ServiceImpl<OkxAccountBalanceMapper,
         }
     }
 
-
     private int getPages(int sum) {
         int pages = sum / 20;
         if (sum % 20 != 0) {
@@ -171,6 +152,5 @@ public class AccountBalanceBusiness extends ServiceImpl<OkxAccountBalanceMapper,
         }
         return pages;
     }
-
 
 }

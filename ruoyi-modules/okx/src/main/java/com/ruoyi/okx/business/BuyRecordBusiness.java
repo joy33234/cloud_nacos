@@ -80,19 +80,11 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
         return list;
     }
 
-//    public List<OkxBuyRecord> findSuccessRecord() {
-//        LambdaQueryWrapper<OkxBuyRecord> wrapper = new LambdaQueryWrapper();
-//        wrapper.eq(OkxBuyRecord::getStatus, OrderStatusEnum.SUCCESS.getStatus());
-//        return buyRecordMapper.selectList(wrapper);
-//    }
-
     public List<OkxBuyRecord> findPendAndSucRecord() {
         LambdaQueryWrapper<OkxBuyRecord> wrapper = new LambdaQueryWrapper();
         wrapper.in(OkxBuyRecord::getStatus, OrderStatusEnum.SUCCESS.getStatus(), OrderStatusEnum.PENDING.getStatus());
         return buyRecordMapper.selectList(wrapper);
     }
-
-
 
     public boolean hasBuy(Integer accountId, Integer strategyId, String coin,String modeType) {
         LambdaQueryWrapper<OkxBuyRecord> wrapper = new LambdaQueryWrapper();
@@ -163,13 +155,6 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
         return buyRecordMapper.selectList(wrapper);
     }
 
-//    public List<OkbBuyRecord> findByStatus(Integer accountId, List<Integer> status) {
-//        LambdaQueryWrapper<OkbBuyRecord> wrapper = new LambdaQueryWrapper();
-//        wrapper.in(OkbBuyRecord::getStatus, status);
-//        wrapper.eq(OkbBuyRecord::getAccountId, accountId);
-//        return this.buyRecordMapper.selectList((Wrapper)wrapper);
-//    }
-
     public boolean update(OkxBuyRecord record) {
         return buyRecordMapper.updateById(record) > 0 ? true : false;
     }
@@ -189,6 +174,7 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
     public void syncBuyOrder(Map<String, String> map) {
         this.syncOrderStatus(map);
     }
+
     @Transactional(rollbackFor = {Exception.class})
     public void syncOrderStatus(Map<String, String> map) throws ServiceException {
         try {
@@ -314,7 +300,6 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
         }
     }
 
-
     @Async
     public void syncOrderFeeAgain( Map<String, String> map) {
         try {
@@ -370,6 +355,10 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
             Integer finishCount = (int) buyRecords.stream().filter(item -> item.getStatus().intValue() == OrderStatusEnum.FINISH.getStatus()).count();
             okxCoin.setTurnOver(new BigDecimal(finishCount).divide(new BigDecimal(buyRecords.size()), 4, RoundingMode.DOWN));
             coinBusiness.updateById(okxCoin);
+
+            OkxCoin cache = coinBusiness.getCoinCache(coin);
+            cache.setTurnOver(okxCoin.getTurnOver());
+            coinBusiness.updateCache(Collections.singletonList(cache));
         } catch (Exception e) {
             log.error("updateCoinTurnOver error:{}", e.getMessage());
         }

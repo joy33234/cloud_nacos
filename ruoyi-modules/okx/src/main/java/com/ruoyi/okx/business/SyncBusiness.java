@@ -42,12 +42,8 @@ public class SyncBusiness {
 
     private Cache<String, List<OkxCoinTicker>> monthTickersCache = CacheUtil.newLRUCache(30);
 
-
     @Resource
     private AccountBusiness accountBusiness;
-
-    @Resource
-    private AccountBalanceBusiness balanceBusiness;
 
     @Resource
     private CoinBusiness coinBusiness;
@@ -59,22 +55,13 @@ public class SyncBusiness {
     private SellRecordBusiness sellRecordBusiness;
 
     @Resource
-    private CommonBusiness commonBusiness;
-
-    @Resource
     private SyncCoinBusiness syncCoinCountBusiness;
 
     @Resource
     private TickerBusiness tickerBusiness;
 
     @Resource
-    private RedisService redisService;
-
-    @Resource
     private SettingService settingService;
-
-
-
 
     @Async
     public void syncCurrencies() {

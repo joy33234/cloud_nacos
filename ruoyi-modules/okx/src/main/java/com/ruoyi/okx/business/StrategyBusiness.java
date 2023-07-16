@@ -20,16 +20,8 @@ import java.util.List;
 @Component
 public class StrategyBusiness  {
     private static final Logger log = LoggerFactory.getLogger(StrategyBusiness.class);
-
-    @Resource
-    private SettingService settingService;
-
     @Resource
     private BuyRecordBusiness buyRecordBusiness;
-
-    @Resource
-    private CoinBusiness coinBusiness;
-
 
     public boolean checkBuy(OkxBuyRecord buyRecord, OkxCoin coin, List<OkxSetting> settingList,BigDecimal totalBuyAmount) {
 

@@ -25,7 +25,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
-    private static final Logger log = LoggerFactory.getLogger(AccountBusiness.class);
 
     @Resource
     private OkxAccountMapper accountMapper;
@@ -82,22 +81,6 @@ public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
         accountMap.put("secretkey", account.getSecretkey());
         return accountMap;
     }
-
-    public Map<String, String> getAccountMap() {
-        Map<String, String> accountMap = new ConcurrentHashMap<>(5);
-        try {
-            OkxAccount account = this.list().get(0);
-            accountMap.put("id", account.getId().toString());
-            accountMap.put("accountName", account.getName());
-            accountMap.put("apikey", account.getApikey());
-            accountMap.put("password", account.getPassword());
-            accountMap.put("secretkey", account.getSecretkey());
-        } catch (Exception e) {
-            throw new ServiceException("查询帐户异常");
-        }
-        return accountMap;
-    }
-
 
     public Map<String, String> getAccountMap(String name) {
         OkxAccount account = findByName(name);

@@ -44,7 +44,6 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
     @Lazy
     private BuyRecordBusiness buyRecordBusiness;
 
-
     public BigDecimal calculateStandard(OkxCoinTicker ticker) {
         BigDecimal standard = BigDecimal.ZERO;
         try {
@@ -58,8 +57,6 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
         }
         return standard;
     }
-
-
 
     public OkxCoin findOne(String coin) {
         LambdaQueryWrapper<OkxCoin> wrapper = new LambdaQueryWrapper();
@@ -80,15 +77,6 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
             }
         }
     }
-
-//    public List<OkxCoin> getCoinCache() {
-//        List<OkxCoin> list = Lists.newArrayList();
-//        Collection<String> keys = redisService.keys(CacheConstants.OKX_COIN_KEY + "*");
-//        for (String key:keys) {
-//            list.add(redisService.getCacheObject(key));
-//        }
-//        return list;
-//    }
 
     public List<OkxCoin> selectCoinList(OkxCoin coin){
         if (coin == null) {
@@ -120,8 +108,6 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
         return okxCoin;
     }
 
-
-
     @Async
     public void updateCache(List<OkxCoin> coins) {
         for (OkxCoin coin : coins) {
@@ -147,7 +133,6 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
             log.error("tradeCoin 异常 ：{}" ,e.getMessage());
         }
     }
-
 
     public void cancelBuy(String coin,Integer accountId) {
         try {
@@ -213,12 +198,15 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
                 }
                 Integer finishCount = buyRecords.stream().filter(item -> item.getStatus().intValue() == OrderStatusEnum.FINISH.getStatus()).collect(Collectors.toList()).size();
                 coin.setTurnOver(new BigDecimal(finishCount).divide(new BigDecimal(buyRecords.size()), 4, RoundingMode.DOWN));
+
+                OkxCoin cache = getCoinCache(coin.getCoin());
+                cache.setTurnOver(coin.getTurnOver());
+                updateCache(Collections.singletonList(cache));
             }
             saveOrUpdateBatch(okxCoins);
         } catch (Exception e) {
             log.error("initTurnOver error:{}", e.getMessage());
         }
     }
-
 
 }
