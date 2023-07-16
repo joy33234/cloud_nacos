@@ -18,6 +18,7 @@ import com.ruoyi.common.core.utils.DateUtil;
 import com.ruoyi.common.core.utils.HttpUtil;
 import com.ruoyi.common.redis.service.RedisLock;
 import com.ruoyi.okx.domain.OkxBuyRecord;
+import com.ruoyi.okx.domain.OkxCoinProfit;
 import com.ruoyi.okx.domain.OkxSellRecord;
 import com.ruoyi.okx.enums.OrderStatusEnum;
 import com.ruoyi.okx.mapper.SellRecordMapper;
@@ -54,6 +55,9 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
     @Resource
     private CoinBusiness coinBusiness;
 
+    @Resource
+    private AccountBusiness accountBusiness;
+
 
     public List<OkxSellRecord> selectList(SellRecordDO sellRecordDO) {
         LambdaQueryWrapper<OkxSellRecord> wrapper = new LambdaQueryWrapper();
@@ -76,6 +80,39 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
     public boolean update(OkxSellRecord record) {
         return sellRecordMapper.updateById(record) > 0 ? true : false;
     }
+
+
+
+    @Transactional(rollbackFor = Exception.class)
+    public boolean syncSellOrder(Long id) {
+        try {
+            OkxSellRecord sellRecord = sellRecordMapper.selectById(id);
+            BigDecimal orginalProfit = sellRecord.getProfit();
+            OkxBuyRecord buyRecord = buyRecordBusiness.findOne(sellRecord.getBuyRecordId());
+
+            Map<String, String> map = accountBusiness.getAccountMap(sellRecord.getAccountName());
+            sellRecord = syncOrderDetail(map, sellRecord);
+            sellRecord.setProfit(sellRecord.getAmount().subtract(sellRecord.getFee()).subtract(buyRecord.getAmount()).subtract(buyRecord.getFeeUsdt()));
+            log.info("syncSellOrder_sellRecord:{}",JSON.toJSONString(sellRecord));
+            sellRecordMapper.updateById(sellRecord);
+            OkxCoinProfit okxCoinProfit = coinProfitBusiness.findOne(sellRecord.getAccountId(), sellRecord.getCoin());
+
+            BigDecimal profit = BigDecimal.ZERO;
+            if (orginalProfit.compareTo(BigDecimal.ZERO) >= 0) {
+                profit = sellRecord.getProfit().subtract(orginalProfit);
+            } else {
+                profit = sellRecord.getProfit().add(orginalProfit.abs());
+            }
+            okxCoinProfit.setProfit(okxCoinProfit.getProfit().add(profit));
+            log.info("syncSellOrder_okxCoinProfit:{}",JSON.toJSONString(okxCoinProfit));
+            coinProfitBusiness.updateById(okxCoinProfit);
+        } catch (Exception  e) {
+            log.error("syncSellOrder_error: {}",e);
+            return false;
+        }
+        return true;
+    }
+
 
 
     @Transactional(rollbackFor = {Exception.class})
@@ -101,7 +138,7 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
             if (sellRecord.getStatus().equals(OrderStatusEnum.SUCCESS.getStatus())) {
                 OkxBuyRecord okxBuyRecord = buyRecordBusiness.findOne(sellRecord.getBuyRecordId());
 
-                if(syncOrderDetail(map, sellRecord) == false) {
+                if(syncOrderDetail(map, sellRecord) == null) {
                     log.error("同步卖出订单详情异常");
                     continue;
                 }
@@ -116,7 +153,7 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
                     coinProfitBusiness.calculateProfit(sellRecord);
 
                     //去掉已买标记
-                    if (now.getTime() > DateUtil.getMinTime(now).getTime() && now.getTime() < DateUtil.getMaxTime(now).getTime()) {
+                    if (sellRecord.getUpdateTime().getTime() > DateUtil.getMinTime(now).getTime() && sellRecord.getUpdateTime().getTime() < DateUtil.getMaxTime(now).getTime()) {
                         coinBusiness.cancelBuy(sellRecord.getCoin(), sellRecord.getAccountId());
                     }
                     continue;
@@ -170,18 +207,18 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
     }
 
 
-    public boolean syncOrderDetail(Map<String, String> map, OkxSellRecord sellRecord) {
+    public OkxSellRecord syncOrderDetail(Map<String, String> map, OkxSellRecord sellRecord) {
         try {
             String str = HttpUtil.getOkx("/api/v5/trade/fills?instType=SPOT&ordId=" + sellRecord.getOkxOrderId(), null, map);
             JSONObject json = JSONObject.parseObject(str);
             if (json == null || !json.getString("code").equals("0")) {
                 log.error("查询订单状态异常:{}", (json == null) ? "null" : json.toJSONString());
-                return false;
+                return null;
             }
             JSONArray dataArray = json.getJSONArray("data");
             if (dataArray.size() <= 0) {
                 log.error("查询订单返回数据异常params:{}, res:{}",sellRecord.getOkxOrderId(), str);
-                return false;
+                return null;
             }
             BigDecimal fee = BigDecimal.ZERO;
             BigDecimal quantity = BigDecimal.ZERO;
@@ -203,7 +240,7 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
         } catch (Exception e) {
             log.error("syncOrderDetail error {}",e);
         }
-        return true;
+        return sellRecord;
     }
 }
 

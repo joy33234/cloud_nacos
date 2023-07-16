@@ -81,14 +81,14 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
         }
     }
 
-    public List<OkxCoin> getCoinCache() {
-        List<OkxCoin> list = Lists.newArrayList();
-        Collection<String> keys = redisService.keys(CacheConstants.OKX_COIN_KEY + "*");
-        for (String key:keys) {
-            list.add(redisService.getCacheObject(key));
-        }
-        return list;
-    }
+//    public List<OkxCoin> getCoinCache() {
+//        List<OkxCoin> list = Lists.newArrayList();
+//        Collection<String> keys = redisService.keys(CacheConstants.OKX_COIN_KEY + "*");
+//        for (String key:keys) {
+//            list.add(redisService.getCacheObject(key));
+//        }
+//        return list;
+//    }
 
     public List<OkxCoin> selectCoinList(OkxCoin coin){
         if (coin == null) {
@@ -105,19 +105,19 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
         return list;
     }
 
-    public OkxCoin getCoin(String coin) {
+    public OkxCoin getCoinCache(String coin) {
         OkxCoin okxCoin = redisService.getCacheObject(CacheConstants.OKX_COIN_KEY + coin);
-        if (okxCoin == null) {
-            okxCoin = this.findOne(coin);
-            if (okxCoin != null) {
-                redisService.setCacheObject(CacheConstants.OKX_COIN_KEY + coin, okxCoin);
+        try {
+            int times = 3;
+            while (okxCoin == null && times > 0) {
+                Thread.sleep(1500);
+                okxCoin = redisService.getCacheObject(CacheConstants.OKX_COIN_KEY + coin);
+                times--;
             }
+        } catch (Exception e) {
+            log.error("获取coin缓存异常:{}" , e);
         }
         return okxCoin;
-    }
-
-    public OkxCoin getCoinCache(String coin) {
-        return redisService.getCacheObject(CacheConstants.OKX_COIN_KEY + coin);
     }
 
 
@@ -136,12 +136,13 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
             while (okxCoin == null && times > 0) {
                 Thread.sleep(1500);
                 okxCoin = getCoinCache(coin);
+                times--;
             }
 
             String boughtAccountIds = StringUtils.isEmpty(okxCoin.getBoughtAccountIds()) ? accountId.toString() : okxCoin.getBoughtAccountIds() + "," + accountId;
             okxCoin.setBoughtAccountIds(boughtAccountIds);
             redisService.setCacheObject(CacheConstants.OKX_COIN_KEY + coin, okxCoin);
-            log.info("买入成功 更新 redis coin :{} accountId:{}",coin,accountId);
+            log.info("markBuy成功更新redis_coin :{} accountId:{}",coin,accountId);
         } catch (Exception e) {
             log.error("tradeCoin 异常 ：{}" ,e.getMessage());
         }
@@ -159,7 +160,7 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
             String boughtAccountIds = okxCoin.getBoughtAccountIds().replace(accountId.toString(),"");
             okxCoin.setBoughtAccountIds(boughtAccountIds);
             redisService.setCacheObject(CacheConstants.OKX_COIN_KEY + coin, okxCoin);
-            log.info("买入成功 更新 redis coin :{} accountId:{}",coin,accountId);
+            log.info("cancelBuy成功更新redis_coin :{} accountId:{}",coin,accountId);
         } catch (Exception e) {
             log.error("tradeCoin 异常 ：{}" ,e.getMessage());
         }
@@ -172,6 +173,12 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
      * @return
      */
     public boolean checkBoughtCoin(String coin,Integer accountId,List<OkxBuyRecord> buyRecords, Date now) {
+        if (buyRecords.stream().anyMatch(item -> item.getCreateTime().getTime() > DateUtil.getMinTime(now).getTime()
+                && (item.getStatus().intValue() == OrderStatusEnum.SUCCESS.getStatus()
+                || item.getStatus().intValue() == OrderStatusEnum.PENDING.getStatus()))) {
+            return true;
+        }
+
         OkxCoin okxCoin = getCoinCache(coin);
         //get from redis error
         if (ObjectUtils.isEmpty(okxCoin)) {
@@ -180,10 +187,7 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
         if (StringUtils.isEmpty(okxCoin.getBoughtAccountIds())) {
             return false;
         }
-        if (buyRecords.stream().anyMatch(item -> item.getCreateTime().getTime() > DateUtil.getMinTime(now).getTime()
-                && item.getStatus().intValue() == OrderStatusEnum.SUCCESS.getStatus())) {
-            return true;
-        }
+
         return okxCoin.getBoughtAccountIds().contains(accountId.toString());
     }
 
@@ -210,7 +214,6 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
                 Integer finishCount = buyRecords.stream().filter(item -> item.getStatus().intValue() == OrderStatusEnum.FINISH.getStatus()).collect(Collectors.toList()).size();
                 coin.setTurnOver(new BigDecimal(finishCount).divide(new BigDecimal(buyRecords.size()), 4, RoundingMode.DOWN));
             }
-            updateCache(okxCoins);
             saveOrUpdateBatch(okxCoins);
         } catch (Exception e) {
             log.error("initTurnOver error:{}", e.getMessage());

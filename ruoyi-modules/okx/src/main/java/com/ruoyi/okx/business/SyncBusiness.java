@@ -95,7 +95,7 @@ public class SyncBusiness {
 
             for (int i = 0; i < jsonArray.size(); i++) {
                JSONObject item = jsonArray.getJSONObject(i);
-                OkxCoin coin = coinBusiness.getCoin(item.getString("ccy"));
+                OkxCoin coin = coinBusiness.findOne(item.getString("ccy"));
                 if (coin == null) {
                     coin = new OkxCoin();
                     coin.setCreateTime(now);
@@ -212,9 +212,9 @@ public class SyncBusiness {
     public void syncTicker() {
         try {
             Long start = System.currentTimeMillis();
-
-            Map<String, List<OkxSetting>> accountSettingMap = new ConcurrentHashMap<>(2);
             List<OkxAccount> accountList = accountBusiness.list().stream().filter(item -> item.getStatus().intValue() == Status.OK.getCode()).collect(Collectors.toList());
+
+            Map<String, List<OkxSetting>> accountSettingMap = new ConcurrentHashMap<>(accountList.size());
             for (OkxAccount account: accountList) {
                 accountSettingMap.put(Constant.OKX_ACCOUNT_SETTING+account.getId(), settingService.selectSettingByIds(DtoUtils.StringToLong(account.getSettingIds().split(","))));
             }
@@ -269,6 +269,9 @@ public class SyncBusiness {
 
             List<OkxBuyRecord> successBuyRecords = getPageDate();
 
+            OkxCoin okxCoin = coinBusiness.findOne("BTC");
+            Integer diffMin = DateUtil.diffMins(okxCoin.getUpdateTime(), now);
+
             //遍历每个币种
             for (int i = 0; i < jsonArray.size(); i++) {
                 JSONObject item = jsonArray.getJSONObject(i);
@@ -279,7 +282,7 @@ public class SyncBusiness {
                 String coin = arr[0];
                 List<OkxBuyRecord> coinBuyRecords = successBuyRecords.stream().filter(record -> record.getCoin().equals(coin)).collect(Collectors.toList());
                 List<OkxCoinTicker> coinTickerList = monthTickerList.stream().filter(okxCoinTicker -> okxCoinTicker.getCoin().equals(arr[0])).collect(Collectors.toList());
-                tickerBusiness.syncTicker(item,coinTickerList,  riseCount, fallCount, accountList, accountSettingMap, coinBuyRecords);
+                tickerBusiness.syncTicker(item,coinTickerList,  riseCount, fallCount, accountList, accountSettingMap, coinBuyRecords,diffMin >= 3);
             }
             log.info("syncTicker_time :{}", System.currentTimeMillis() - start);
         } catch (Exception e) {
@@ -329,13 +332,13 @@ public class SyncBusiness {
         int page = 1;
         PageHelper.startPage(page, 30, "create_time");
 
-        List<OkxBuyRecord> accountBuyRecords = buyRecordBusiness.findSuccessRecord();
+        List<OkxBuyRecord> accountBuyRecords = buyRecordBusiness.findPendAndSucRecord();
         buyRecords.addAll(accountBuyRecords);
         Integer pages = new PageInfo(accountBuyRecords).getPages();
         while (pages > page) {
             page++;
             PageHelper.startPage(page, 30, "create_time");
-            List<OkxBuyRecord> tempRecords = buyRecordBusiness.findSuccessRecord();
+            List<OkxBuyRecord> tempRecords = buyRecordBusiness.findPendAndSucRecord();
             buyRecords.addAll(tempRecords);
         }
         return buyRecords;

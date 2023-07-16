@@ -80,11 +80,19 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
         return list;
     }
 
-    public List<OkxBuyRecord> findSuccessRecord() {
+//    public List<OkxBuyRecord> findSuccessRecord() {
+//        LambdaQueryWrapper<OkxBuyRecord> wrapper = new LambdaQueryWrapper();
+//        wrapper.eq(OkxBuyRecord::getStatus, OrderStatusEnum.SUCCESS.getStatus());
+//        return buyRecordMapper.selectList(wrapper);
+//    }
+
+    public List<OkxBuyRecord> findPendAndSucRecord() {
         LambdaQueryWrapper<OkxBuyRecord> wrapper = new LambdaQueryWrapper();
-        wrapper.eq(OkxBuyRecord::getStatus, OrderStatusEnum.SUCCESS.getStatus());
+        wrapper.in(OkxBuyRecord::getStatus, OrderStatusEnum.SUCCESS.getStatus(), OrderStatusEnum.PENDING.getStatus());
         return buyRecordMapper.selectList(wrapper);
     }
+
+
 
     public boolean hasBuy(Integer accountId, Integer strategyId, String coin,String modeType) {
         LambdaQueryWrapper<OkxBuyRecord> wrapper = new LambdaQueryWrapper();
@@ -222,7 +230,10 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
                 if (buyRecord.getStatus().intValue() == OrderStatusEnum.SUCCESS.getStatus()) {
                     //同步手续费
                     syncOrderFee(map, buyRecord);
+                    //同步余额
                     accountBalanceBusiness.syncAccountBalance(map, buyRecord.getCoin(),  now);
+                    //计算换手率
+                    updateCoinTurnOver(buyRecord.getCoin());
                 }
                 Thread.sleep(50);
                 redisLock.releaseLock(lockKey);
@@ -359,7 +370,6 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
             Integer finishCount = (int) buyRecords.stream().filter(item -> item.getStatus().intValue() == OrderStatusEnum.FINISH.getStatus()).count();
             okxCoin.setTurnOver(new BigDecimal(finishCount).divide(new BigDecimal(buyRecords.size()), 4, RoundingMode.DOWN));
             coinBusiness.updateById(okxCoin);
-            coinBusiness.updateCache(Collections.singletonList(okxCoin));
         } catch (Exception e) {
             log.error("updateCoinTurnOver error:{}", e.getMessage());
         }

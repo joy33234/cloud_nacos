@@ -412,7 +412,7 @@ public class OkxTrandeBusiness {
                     && riseDto.getLowPercent().compareTo(new BigDecimal(okxSettings.stream().filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_LOW_BUY_PERCENT)).findFirst().get().getSettingValue())) > 0
                     && new BigDecimal(okxSettings.stream().filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_BTC_FALL_INS)).findFirst().get().getSettingValue()).compareTo(riseDto.getBTCIns()) > 0 ) {
                 //买入数量
-                BigDecimal buySz = getBuySz(okxSettings, ticker, ins);
+                BigDecimal buySz = getBuySz(okxSettings, ticker, ins, riseDto.getAccountId());
                 if (buySz.compareTo(BigDecimal.ZERO) <= 0) {
                     return list;
                 }
@@ -440,9 +440,9 @@ public class OkxTrandeBusiness {
      * @param ticker
      * @return
      */
-    public BigDecimal getBuySz(List<OkxSetting> okxSettings, OkxCoinTicker ticker, BigDecimal ins) {
-        List<OkxSetting> amountSettings = okxSettings.stream().filter(item -> item.getSettingKey().equals(OkxConstants.BUY_MARK_COIN_FALL_AMOUNT)).sorted(Comparator.comparing(OkxSetting::getSettingValue)).collect(Collectors.toList());
-        List<OkxSetting> fallPercentSettings = okxSettings.stream().filter(item -> item.getSettingKey().equals(OkxConstants.BUY_MARK_COIN_FALL_PERCENT)).sorted(Comparator.comparing(OkxSetting::getSettingValue)).collect(Collectors.toList());
+    public BigDecimal getBuySz(List<OkxSetting> okxSettings, OkxCoinTicker ticker, BigDecimal ins, Integer accountId) {
+        List<OkxSetting> amountSettings = okxSettings.stream().filter(item -> item.getSettingKey().equals(OkxConstants.BUY_MARK_COIN_FALL_AMOUNT)).sorted(Comparator.comparing(s-> new BigDecimal(s.getSettingValue()))).collect(Collectors.toList());
+        List<OkxSetting> fallPercentSettings = okxSettings.stream().filter(item -> item.getSettingKey().equals(OkxConstants.BUY_MARK_COIN_FALL_PERCENT)).sorted(Comparator.comparing(s-> new BigDecimal(s.getSettingValue()))).collect(Collectors.toList());
 
         BigDecimal buyUsdtAmout = BigDecimal.ZERO;
         for (int i = 0; i < amountSettings.size(); i++) {
@@ -457,9 +457,9 @@ public class OkxTrandeBusiness {
         BigDecimal buySz = buyUsdtAmout.divide(ticker.getLast(), Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN);
         //设置小数位
         Utils.setScale(buySz);
+        log.info("getBuySz——accountId:{},amountSettings:{},fallPercentSettings:{},ins:{}, buyUsdtAmout:{}",accountId,JSON.toJSONString(amountSettings),JSON.toJSONString(fallPercentSettings),ins, buyUsdtAmout);
         return buySz;
     }
-
 
     private TradeDto getSellDto (TradeDto tradeDto,OkxCoinTicker ticker,OkxCoin coin,OkxBuyRecord item) {
         TradeDto temp =  DtoUtils.transformBean(tradeDto, TradeDto.class);

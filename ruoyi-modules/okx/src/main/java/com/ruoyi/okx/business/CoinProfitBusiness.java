@@ -68,7 +68,7 @@ public class CoinProfitBusiness extends ServiceImpl<CoinProfitMapper, OkxCoinPro
     public void calculateProfit(OkxSellRecord sellRecord) {
         OkxCoinProfit profit = findOne(sellRecord.getAccountId(),sellRecord.getCoin());
         if (profit == null) {
-            profit = new OkxCoinProfit(null,sellRecord.getCoin(), sellRecord.getAccountId(),sellRecord.getProfit(),null,coinBusiness.getCoin(sellRecord.getCoin()).getUnit());
+            profit = new OkxCoinProfit(null,sellRecord.getCoin(), sellRecord.getAccountId(),sellRecord.getProfit(),null,coinBusiness.findOne(sellRecord.getCoin()).getUnit());
         } else {
             profit.setProfit(profit.getProfit().add(sellRecord.getProfit()));
         }

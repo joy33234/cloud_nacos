@@ -65,6 +65,15 @@ public class SellRecordController extends BaseController
     }
 
     /**
+     * 根据参数编号获取详细信息
+     */
+    @GetMapping(value = "/sync/{id}")
+    public AjaxResult sync(@PathVariable Long id)
+    {
+        return success(sellRecordBusiness.syncSellOrder(id));
+    }
+
+    /**
      * 修改参数配置
      */
     @RequiresPermissions("okx:account:edit")

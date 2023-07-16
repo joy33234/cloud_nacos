@@ -197,7 +197,7 @@ public class SyncCoinBusiness {
 //        }
 //    }
 
-    public OkxCoin updateCoinV2(OkxCoinTicker ticker, Date now) throws Exception {
+    public OkxCoin updateCoinV2(OkxCoinTicker ticker, Date now, Boolean updateCoin) throws Exception {
         try {
             BigDecimal usdt24h = new BigDecimal(settingService.selectSettingByKey(OkxConstants.USDT_24H));
 
@@ -227,11 +227,13 @@ public class SyncCoinBusiness {
             }
             obj.setStandard(standard);
 
-            //更新缓存 update last five minute each day
-            if (now.getTime() > (DateUtil.getMaxTime(now).getTime() - 300000)) {
-                if (coinBusiness.getCoin(ticker.getCoin()).getUpdateTime().getTime() > DateUtil.getMinTime(now).getTime()){
-                    coinBusiness.updateCache(Collections.singletonList(obj));
-                }
+            //每天前6分钟，清除买入记录
+            if (now.getTime() - DateUtil.getMinTime(now).getTime() < 300000) {
+                obj.setBoughtAccountIds("");
+            }
+            //更新缓存
+            if (updateCoin){
+                coinBusiness.updateCache(Collections.singletonList(obj));
             }
             return obj;
         } catch (Exception e) {
