@@ -63,6 +63,9 @@ public class CacheConstants
     public static final String OKX_COIN_KEY = "okx_coin:";
 
 
+    public static final String OKX_COIN_MARK = "OKX_COIN_MARK:";
+
+
     public static final String OKX_TICKER_KEY = "okx_ticker:";
 
     /**

@@ -75,12 +75,12 @@ public class TradeBusiness {
 
 
     //交易
-    public void tradeV2(Integer riseCount, Integer fallCount, List<OkxAccount> accountList, OkxCoin okxCoin, OkxCoinTicker ticker, Date now,Map<String, List<OkxSetting>> accountSettingMap,List<OkxBuyRecord> coinBuyRecords) {
+    public void tradeV2(List<OkxAccount> accountList, OkxCoin okxCoin, OkxCoinTicker ticker, Date now,Map<String, List<OkxSetting>> accountSettingMap,List<OkxBuyRecord> coinBuyRecords,List<RiseDto> riseDtos) {
         String lockKey = "";
         for (OkxAccount okxAccount: accountList) {
             try {
                 lockKey  = RedisConstants.OKX_TICKER_TRADE + "_" + okxAccount.getId() + "_" + ticker.getCoin();
-                boolean lock = redisLock.lock(lockKey,30,1,1000);
+                boolean lock = redisLock.lock(lockKey,600,1,1000);
                 if (lock == false) {
                     log.error("tradeV2获取锁失败，交易取消 lockKey:{}",lockKey);
                     return;
@@ -88,8 +88,9 @@ public class TradeBusiness {
                 List<OkxSetting> okxSettings  = accountSettingMap.get(Constant.OKX_ACCOUNT_SETTING + okxAccount.getId());
 
                 //更新行情缓存
-                RiseDto riseDto = refreshRiseCountV2(riseCount, fallCount, now, okxAccount, okxSettings);
-                if (riseDto != null) {
+                Optional<RiseDto> riseDtoOptional = riseDtos.stream().filter(item -> item.getAccountId().intValue() == okxAccount.getId()).findFirst();
+                if (riseDtoOptional.isPresent()) {
+                    RiseDto riseDto = riseDtoOptional.get();
                     //赋值用户订单类型和交易模式
                     okxSettings.stream().forEach(obj -> {
                         if (obj.getSettingKey().equals(OkxConstants.ORD_TYPE)) {
@@ -120,20 +121,21 @@ public class TradeBusiness {
     public RiseDto refreshRiseCountV2(Integer riseCount, Integer fallCount, Date now, OkxAccount okxAccount,List<OkxSetting> settingList){
         String modeType = settingList.stream().filter(item -> item.getSettingKey().equals(OkxConstants.MODE_TYPE)).findFirst().get().getSettingValue();
         if (!modeType.equals(ModeTypeEnum.MARKET.getValue())) {
-            return new RiseDto();
+            return null;
         }
         String key = getCacheMarketKey(okxAccount.getId());
 
-        if ((now.getTime() - DateUtil.getMinTime(now).getTime() < 300000) || newRedis == true) {
-            RiseDto riseDto = new RiseDto();
-            riseDto.setAccountId(okxAccount.getId());
-            riseDto.setAccountName(okxAccount.getName());
-            riseDto.setApikey(okxAccount.getApikey());
-            riseDto.setSecretkey(okxAccount.getSecretkey());
-            riseDto.setPassword(okxAccount.getPassword());
-            redisService.setCacheObject(key, riseDto);
-            return null;
-        }
+//        if ((now.getTime() - DateUtil.getMinTime(now).getTime() < 300000) || newRedis == true) {
+//            RiseDto riseDto = new RiseDto();
+//            riseDto.setAccountId(okxAccount.getId());
+//            riseDto.setAccountName(okxAccount.getName());
+//            riseDto.setApikey(okxAccount.getApikey());
+//            riseDto.setSecretkey(okxAccount.getSecretkey());
+//            riseDto.setPassword(okxAccount.getPassword());
+//            redisService.setCacheObject(key, riseDto);
+//
+//            return null;
+//        }
 
         RiseDto riseDto = redisService.getCacheObject(key);
         if (riseDto == null) {//redis异常 TODO

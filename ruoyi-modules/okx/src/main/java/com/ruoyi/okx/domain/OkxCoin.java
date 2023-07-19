@@ -43,6 +43,4 @@ public class OkxCoin extends CommonEntity {
     @TableField(exist = false)
     private BigDecimal last;
 
-    @TableField(exist = false)
-    private String boughtAccountIds;
 }

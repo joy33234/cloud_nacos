@@ -51,9 +51,6 @@ public class OkxTrandeBusiness {
     @Resource
     private SellRecordBusiness sellRecordBusiness;
 
-    @Autowired
-    private RedisLock redisLock;
-
     @Resource
     private CoinBusiness coinBusiness;
 
@@ -266,7 +263,10 @@ public class OkxTrandeBusiness {
             }
 
             //卖出 —— 大盘下跌时买入的
-            List<OkxBuyRecord> tempFallBuyRecords = marketBuyRecords.stream().filter(obj -> obj.getMarketStatus() == MarketStatusEnum.FALL.getStatus()).collect(Collectors.toList());
+            List<OkxBuyRecord> tempFallBuyRecords = marketBuyRecords.stream()
+                    .filter(obj -> obj.getMarketStatus().intValue() == MarketStatusEnum.FALL.getStatus())
+                    .filter(obj -> obj.getStatus().intValue() == OrderStatusEnum.SUCCESS.getStatus())
+                    .collect(Collectors.toList());
             if (CollectionUtils.isNotEmpty(tempFallBuyRecords)) {
                 tempFallBuyRecords.stream().forEach(item -> {
                     BigDecimal currentIns = ticker.getLast().subtract(item.getPrice()).divide(item.getPrice(),8,RoundingMode.DOWN);
@@ -359,7 +359,6 @@ public class OkxTrandeBusiness {
         BigDecimal buySz = buyUsdtAmout.divide(ticker.getLast(), Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN);
         //设置小数位
         Utils.setScale(buySz);
-        log.info("getBuySz——accountId:{},amountSettings:{},fallPercentSettings:{},ins:{}, buyUsdtAmout:{}",accountId,JSON.toJSONString(amountSettings),JSON.toJSONString(fallPercentSettings),ins, buyUsdtAmout);
         return buySz;
     }
 

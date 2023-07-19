@@ -99,4 +99,14 @@ public class SyncController extends BaseController
         return success();
     }
 
+    /**
+     * 根据参数获取详细信息
+     */
+    @GetMapping(value = "/init")
+    public AjaxResult init(){
+        syncBusiness.init();
+        return success();
+    }
+
+
 }

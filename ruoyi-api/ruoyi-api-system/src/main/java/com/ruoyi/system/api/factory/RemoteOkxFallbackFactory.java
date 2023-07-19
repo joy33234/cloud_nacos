@@ -77,6 +77,12 @@ public class RemoteOkxFallbackFactory implements FallbackFactory<RemoteOkxServic
             {
                 return R.fail("同步syncCoinTurnOver失败:" + throwable.getMessage());
             }
+
+            @Override
+            public R<Void> init(String source)
+            {
+                return R.fail("init失败:" + throwable.getMessage());
+            }
         };
     }
 }

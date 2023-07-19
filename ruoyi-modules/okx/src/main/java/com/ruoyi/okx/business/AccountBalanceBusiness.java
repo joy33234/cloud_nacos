@@ -100,7 +100,6 @@ public class AccountBalanceBusiness extends ServiceImpl<OkxAccountBalanceMapper,
                 subList.add(okxAccountBalance);
             }
         }
-        log.info("getBalance_subList:{}", JSON.toJSONString(subList));
         return subList;
     }
 

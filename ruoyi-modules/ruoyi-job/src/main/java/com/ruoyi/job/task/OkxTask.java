@@ -75,4 +75,10 @@ public class OkxTask
         System.out.println(DateUtil.formatForTime(new Date()) +  " - syncOrderSell-执行无参方法");
         remoteOkxService.syncSellOrder(SecurityConstants.INNER);
     }
+
+
+    public void init(){
+        System.out.println(DateUtil.formatForTime(new Date()) +  " - init-执行无参方法");
+        remoteOkxService.init(SecurityConstants.INNER);
+    }
 }

@@ -17,10 +17,12 @@ import com.ruoyi.common.core.utils.HttpUtil;
 import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.*;
 import com.ruoyi.okx.enums.CoinStatusEnum;
+import com.ruoyi.okx.params.dto.RiseDto;
 import com.ruoyi.okx.service.SettingService;
 import com.ruoyi.okx.utils.Constant;
 import com.ruoyi.okx.utils.DtoUtils;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.http.client.utils.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,6 +64,9 @@ public class SyncBusiness {
 
     @Resource
     private SettingService settingService;
+
+    @Resource
+    private TradeBusiness tradeBusiness;
 
     @Async
     public void syncCurrencies() {
@@ -199,12 +204,14 @@ public class SyncBusiness {
     public void syncTicker() {
         try {
             Long start = System.currentTimeMillis();
-            List<OkxAccount> accountList = accountBusiness.list().stream().filter(item -> item.getStatus().intValue() == Status.OK.getCode()).collect(Collectors.toList());
+            Date now = new Date();
 
-            Map<String, List<OkxSetting>> accountSettingMap = new ConcurrentHashMap<>(accountList.size());
-            for (OkxAccount account: accountList) {
-                accountSettingMap.put(Constant.OKX_ACCOUNT_SETTING+account.getId(), settingService.selectSettingByIds(DtoUtils.StringToLong(account.getSettingIds().split(","))));
+            //当天前5分钟禁止交易
+            if ((now.getTime() - DateUtil.getMinTime(now).getTime() < 300000) ) {
+                return ;
             }
+
+            List<OkxAccount> accountList = accountBusiness.list().stream().filter(item -> item.getStatus().intValue() == Status.OK.getCode()).collect(Collectors.toList());
             Map<String, String> accountMap = accountBusiness.getAccountMap(accountList.get(0));
 
             String tickerRes = HttpUtil.getOkx("/api/v5/market/tickers?instType=SPOT", null, accountMap);
@@ -213,7 +220,6 @@ public class SyncBusiness {
                 log.error("获取行情数据异常:{}",tickerRes);
                 return ;
             }
-
             //整体行情
             int riseCount = 0 ;
             int fallCount = 0 ;
@@ -231,10 +237,24 @@ public class SyncBusiness {
                 }
             }
 
+            Map<String, List<OkxSetting>> accountSettingMap = new ConcurrentHashMap<>(accountList.size());
+            List<RiseDto> riseDtos = Lists.newArrayList();
+            for (OkxAccount account: accountList) {
+                accountSettingMap.put(Constant.OKX_ACCOUNT_SETTING+account.getId(), settingService.selectSettingByIds(DtoUtils.StringToLong(account.getSettingIds().split(","))));
+                RiseDto riseDto = tradeBusiness.refreshRiseCountV2(riseCount, fallCount, now, account, accountSettingMap.get(Constant.OKX_ACCOUNT_SETTING+account.getId()));
+                if (ObjectUtils.isNotEmpty(riseDto)) {
+                    riseDtos.add(riseDto);
+                }
+            }
+            if (CollectionUtils.isEmpty(riseDtos)) {
+                log.error("更新整体行情数据异常");
+                return;
+            }
+
+
             //近期29天行情数据
             List<OkxCoinTicker> monthTickerList = org.apache.commons.compress.utils.Lists.newArrayList();
 
-            Date now = new Date();
             for (int i = 0; i < 30; i++) {
                 Date day =  DateUtil.getMinTime(DateUtil.addDate(now, i-30));
 
@@ -252,10 +272,8 @@ public class SyncBusiness {
                     monthTickerList.addAll(dayTickers);
                 }
             }
-            log.info("monthTickerList_size:{}" , monthTickerList.size());
 
             List<OkxBuyRecord> successBuyRecords = getPageDate();
-
             OkxCoin okxCoin = coinBusiness.findOne("BTC");
             Integer diffMin = DateUtil.diffMins(okxCoin.getUpdateTime(), now);
 
@@ -268,8 +286,8 @@ public class SyncBusiness {
                 }
                 String coin = arr[0];
                 List<OkxBuyRecord> coinBuyRecords = successBuyRecords.stream().filter(record -> record.getCoin().equals(coin)).collect(Collectors.toList());
-                List<OkxCoinTicker> coinTickerList = monthTickerList.stream().filter(okxCoinTicker -> okxCoinTicker.getCoin().equals(arr[0])).collect(Collectors.toList());
-                tickerBusiness.syncTicker(item,coinTickerList,  riseCount, fallCount, accountList, accountSettingMap, coinBuyRecords,diffMin >= 3);
+                List<OkxCoinTicker> coinTickerList = monthTickerList.stream().filter(okxCoinTicker -> okxCoinTicker.getCoin().equals(coin)).collect(Collectors.toList());
+                tickerBusiness.syncTicker(item,coinTickerList, accountList, accountSettingMap, coinBuyRecords,diffMin >= 3, riseDtos);
             }
             log.info("syncTicker_time :{}", System.currentTimeMillis() - start);
         } catch (Exception e) {
@@ -277,36 +295,6 @@ public class SyncBusiness {
             throw new ServiceException("syncTicker error");
         }
     }
-
-    public static void main(String[] args) {
-         Cache<String, List<OkxCoinTicker>> monthTickersCache = CacheUtil.newLRUCache(30);
-        List<OkxCoinTicker> monthTickerList = org.apache.commons.compress.utils.Lists.newArrayList();
-
-        Date now = new Date();
-        for (int i = 0; i < 29; i++) {
-            Date currentDay = DateUtil.addDate(now, i-29);
-            Date day =  DateUtil.getMinTime(currentDay);
-            log.info(DateUtil.getFormateDate(day,DateUtil.YYYY_MM_DD_HH_MM_SS));
-            List<OkxCoinTicker> dayTickers = monthTickersCache.get(day.toString());
-            if (CollectionUtils.isEmpty(dayTickers)) {
-                LambdaQueryWrapper<OkxCoinTicker> wrapper1 = new LambdaQueryWrapper<>();
-                wrapper1.ge(OkxCoinTicker::getCreateTime, DateUtil.getMinTime(day));
-                wrapper1.le(OkxCoinTicker::getCreateTime, DateUtil.getMaxTime(day));
-                OkxCoinTicker okxCoinTicker  =  new OkxCoinTicker();
-                okxCoinTicker.setId(i);
-                dayTickers = Arrays.asList(okxCoinTicker);
-                if (CollectionUtils.isNotEmpty(dayTickers)) {
-                    monthTickersCache.put(day.toString(),dayTickers);
-                }
-            }
-            if (CollectionUtils.isNotEmpty(dayTickers)) {
-                monthTickerList.addAll(dayTickers);
-            }
-            log.info("i:{}, monthTickerList_size:{}",i , monthTickerList.size());
-        }
-
-    }
-
 
     @Async
     public void syncTickerDb() {
@@ -329,5 +317,14 @@ public class SyncBusiness {
             buyRecords.addAll(tempRecords);
         }
         return buyRecords;
+    }
+
+    @Async
+    public void init() {
+        try {
+            coinBusiness.clearCoinMarkCache();
+        } catch (Exception e) {
+            log.error("同步订单异常", e);
+        }
     }
 }

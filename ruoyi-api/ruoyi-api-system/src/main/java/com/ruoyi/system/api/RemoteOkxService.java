@@ -95,13 +95,21 @@ public interface RemoteOkxService
 
 
     /**
-     * 同步coin standard
+     * inti coin turnover
      *
      * @param source 请求来源
      * @return 结果
     //     */
     @GetMapping("/sync/coin/turnover")
     public R<Void> syncCoinTurnOver(@RequestHeader(SecurityConstants.FROM_SOURCE) String source);
+
+    /**
+     *
+     * @param source 请求来源
+     * @return 结果
+    //     */
+    @GetMapping("/sync/init")
+    public R<Void> init(@RequestHeader(SecurityConstants.FROM_SOURCE) String source);
 
 
 }

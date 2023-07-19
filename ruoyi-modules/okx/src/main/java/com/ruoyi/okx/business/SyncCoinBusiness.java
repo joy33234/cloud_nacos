@@ -154,10 +154,6 @@ public class SyncCoinBusiness {
             }
             obj.setStandard(standard);
 
-            //每天前6分钟，清除买入记录
-            if (now.getTime() - DateUtil.getMinTime(now).getTime() < 300000) {
-                obj.setBoughtAccountIds("");
-            }
             //更新缓存
             if (updateCoin){
                 coinBusiness.updateCache(Collections.singletonList(obj));

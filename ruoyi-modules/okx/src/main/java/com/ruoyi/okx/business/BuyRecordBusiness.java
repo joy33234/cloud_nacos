@@ -180,7 +180,7 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
         try {
             //未完成订单
             List<OkxBuyRecord> list = getPageDate(Integer.valueOf(map.get("id")));
-            log.info("syncOrderStatus_list_size:{}",list.size());
+            log.info("syncOrderStatus_buy_list_size:{}",list.size());
 
             Date now = new Date();
             String lockKey = "";
@@ -188,7 +188,7 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
                 lockKey = RedisConstants.OKX_SYNC_BUY_ORDER + buyRecord.getId();
                 boolean lock = redisLock.lock(lockKey,30,3,2000);
                 if (lock == false) {
-                    log.error("tradeV2获取锁失败，交易取消 lockKey:{}",lockKey);
+                    log.error("syncOrderStatus获取锁失败，交易取消 lockKey:{}",lockKey);
                     continue;
                 }
                 String str = HttpUtil.getOkx("/api/v5/trade/order?instId=" + buyRecord.getInstId() + "&ordId=" + buyRecord.getOkxOrderId(), null, map);

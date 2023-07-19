@@ -7,16 +7,19 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 
 import com.ruoyi.common.core.constant.CacheConstants;
+import com.ruoyi.common.core.exception.GlobalException;
 import com.ruoyi.common.core.utils.DateUtil;
 import com.ruoyi.common.core.utils.StringUtils;
 import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.*;
 import com.ruoyi.okx.enums.OrderStatusEnum;
 import com.ruoyi.okx.mapper.CoinMapper;
+import com.ruoyi.okx.params.dto.CoinMark;
 import com.ruoyi.okx.utils.Constant;
 import io.swagger.models.auth.In;
 import org.apache.commons.collections4.CollectionUtils;
@@ -108,6 +111,8 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
         return okxCoin;
     }
 
+
+
     @Async
     public void updateCache(List<OkxCoin> coins) {
         for (OkxCoin coin : coins) {
@@ -115,40 +120,48 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
         }
     }
 
-    public void markBuy(String coin,Integer accountId) {
+    public void markBuy(String coin,Integer accountId) throws GlobalException {
         try {
-            OkxCoin okxCoin = getCoinCache(coin);
+            CoinMark coinMark = getCoinMark(coin);
+            coinMark.setAccountIds(coinMark.getAccountIds() + "," + accountId);
+
+            Date now = new Date();
+            int second = DateUtil.diffSecond(now, DateUtil.getMaxTime(now));
+            redisService.setCacheObject(CacheConstants.OKX_COIN_MARK + coin, coinMark, (long)second, TimeUnit.SECONDS);
+
+            CoinMark afterUpdateCoinMark = getCoinMark(coin);
             int times = 3;
-            while (okxCoin == null && times > 0) {
-                Thread.sleep(1500);
-                okxCoin = getCoinCache(coin);
+            while (!afterUpdateCoinMark.getAccountIds().contains(accountId.toString()) && times > 0) {
+                Thread.sleep(500);
+                afterUpdateCoinMark = getCoinMark(coin);
                 times--;
             }
-
-            String boughtAccountIds = StringUtils.isEmpty(okxCoin.getBoughtAccountIds()) ? accountId.toString() : okxCoin.getBoughtAccountIds() + "," + accountId;
-            okxCoin.setBoughtAccountIds(boughtAccountIds);
-            redisService.setCacheObject(CacheConstants.OKX_COIN_KEY + coin, okxCoin);
-            log.info("markBuy成功更新redis_coin :{} accountId:{}",coin,accountId);
+            if (afterUpdateCoinMark.getAccountIds().contains(accountId.toString())) {
+                log.error("markBuy更新成功coin :{} accountId:{}",coin,accountId);
+            } else {
+                log.info("markBuy更新失败coin :{} accountId:{}",coin,accountId);
+            }
         } catch (Exception e) {
-            log.error("tradeCoin 异常 ：{}" ,e.getMessage());
+            log.error("markBuy_异常 " ,e);
+            throw new GlobalException("markBuy异常");
         }
     }
 
     public void cancelBuy(String coin,Integer accountId) {
-        try {
-            OkxCoin okxCoin = getCoinCache(coin);
-            int times = 3;
-            while (okxCoin == null && times > 0) {
-                Thread.sleep(1500);
-                okxCoin = getCoinCache(coin);
-            }
-            String boughtAccountIds = okxCoin.getBoughtAccountIds().replace(accountId.toString(),"");
-            okxCoin.setBoughtAccountIds(boughtAccountIds);
-            redisService.setCacheObject(CacheConstants.OKX_COIN_KEY + coin, okxCoin);
-            log.info("cancelBuy成功更新redis_coin :{} accountId:{}",coin,accountId);
-        } catch (Exception e) {
-            log.error("tradeCoin 异常 ：{}" ,e.getMessage());
-        }
+//        try {
+//            OkxCoin okxCoin = getCoinCache(coin);
+//            int times = 3;
+//            while (okxCoin == null && times > 0) {
+//                Thread.sleep(1500);
+//                okxCoin = getCoinCache(coin);
+//            }
+//            String boughtAccountIds = okxCoin.getBoughtAccountIds().replace(accountId.toString(),"");
+//            okxCoin.setBoughtAccountIds(boughtAccountIds);
+//            redisService.setCacheObject(CacheConstants.OKX_COIN_KEY + coin, okxCoin);
+//            log.info("cancelBuy成功更新redis_coin :{} accountId:{}",coin,accountId);
+//        } catch (Exception e) {
+//            log.error("tradeCoin 异常 ：{}" ,e.getMessage());
+//        }
     }
 
     /**
@@ -160,20 +173,15 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
     public boolean checkBoughtCoin(String coin,Integer accountId,List<OkxBuyRecord> buyRecords, Date now) {
         if (buyRecords.stream().anyMatch(item -> item.getCreateTime().getTime() > DateUtil.getMinTime(now).getTime()
                 && (item.getStatus().intValue() == OrderStatusEnum.SUCCESS.getStatus()
-                || item.getStatus().intValue() == OrderStatusEnum.PENDING.getStatus()))) {
+                     || item.getStatus().intValue() == OrderStatusEnum.PENDING.getStatus()))) {
             return true;
         }
 
-        OkxCoin okxCoin = getCoinCache(coin);
-        //get from redis error
-        if (ObjectUtils.isEmpty(okxCoin)) {
-            return true;
-        }
-        if (StringUtils.isEmpty(okxCoin.getBoughtAccountIds())) {
+        CoinMark coinMark = getCoinMark(coin);
+        if (ObjectUtils.isEmpty(coinMark) || StringUtils.isEmpty(coinMark.getAccountIds())) {
             return false;
         }
-
-        return okxCoin.getBoughtAccountIds().contains(accountId.toString());
+        return coinMark.getAccountIds().contains(accountId.toString());
     }
 
 
@@ -207,6 +215,34 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
         } catch (Exception e) {
             log.error("initTurnOver error:{}", e.getMessage());
         }
+    }
+
+
+
+    public CoinMark getCoinMark(String coin) {
+        CoinMark coinMark = redisService.getCacheObject(CacheConstants.OKX_COIN_MARK + coin);
+        try {
+            int times = 3;
+            while (coinMark == null && times > 0) {
+                Thread.sleep(200);
+                coinMark = redisService.getCacheObject(CacheConstants.OKX_COIN_MARK + coin);
+                times--;
+            }
+            if (ObjectUtils.isEmpty(coinMark)) {
+                coinMark =  new CoinMark(coin,"");
+            }
+        } catch (Exception e) {
+            log.error("获取coinMark缓存异常" , e);
+        }
+        return coinMark;
+    }
+
+
+
+    public void clearCoinMarkCache()
+    {
+        Collection<String> keys = redisService.keys(CacheConstants.OKX_COIN_MARK + "*");
+        redisService.deleteObject(keys);
     }
 
 }
