@@ -13,6 +13,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.ruoyi.common.core.constant.CacheConstants;
 import com.ruoyi.common.core.constant.RedisConstants;
 import com.ruoyi.common.core.exception.ServiceException;
@@ -21,12 +23,14 @@ import com.ruoyi.common.core.utils.HttpUtil;
 import com.ruoyi.common.redis.service.RedisLock;
 import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.OkxBuyRecord;
+import com.ruoyi.okx.domain.OkxCoin;
 import com.ruoyi.okx.domain.OkxCoinProfit;
 import com.ruoyi.okx.domain.OkxCoinTicker;
 import com.ruoyi.okx.enums.OrderStatusEnum;
 import com.ruoyi.okx.mapper.BuyRecordMapper;
 import com.ruoyi.okx.params.DO.BuyRecordDO;
 import com.ruoyi.okx.utils.Constant;
+import io.swagger.models.auth.In;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang.StringUtils;
@@ -76,13 +80,9 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
         return list;
     }
 
-    public List<OkxBuyRecord> findSuccessRecord(String coin, Integer accountId, String modeType, Integer marketStatus) {
+    public List<OkxBuyRecord> findPendAndSucRecord() {
         LambdaQueryWrapper<OkxBuyRecord> wrapper = new LambdaQueryWrapper();
-        wrapper.in(OkxBuyRecord::getStatus, Arrays.asList(new Integer[] { OrderStatusEnum.SUCCESS.getStatus(), OrderStatusEnum.PARTIALLYFILLED.getStatus() }));
-        wrapper.eq((StringUtils.isNotEmpty(coin)), OkxBuyRecord::getCoin, coin);
-        wrapper.eq((accountId != null), OkxBuyRecord::getAccountId, accountId);
-        wrapper.eq((StringUtils.isNotEmpty(modeType)), OkxBuyRecord::getModeType, modeType);
-        wrapper.eq((marketStatus != null), OkxBuyRecord::getMarketStatus, marketStatus);
+        wrapper.in(OkxBuyRecord::getStatus, OrderStatusEnum.SUCCESS.getStatus(), OrderStatusEnum.PENDING.getStatus());
         return buyRecordMapper.selectList(wrapper);
     }
 
@@ -110,18 +110,25 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
         return count.intValue();
     }
 
-    public List<OkxBuyRecord> findPendings(Integer accountId) {
+    public List<OkxBuyRecord> findByAccountAndCoin(Integer accountId,String coin) {
         LambdaQueryWrapper<OkxBuyRecord> wrapper = new LambdaQueryWrapper();
-        wrapper.eq(OkxBuyRecord::getStatus, OrderStatusEnum.PENDING.getStatus());
-        if (accountId != null && accountId > 0) {
-            wrapper.eq(OkxBuyRecord::getAccountId, accountId);
-        }
+        wrapper.eq(accountId != null, OkxBuyRecord::getAccountId, accountId);
+        wrapper.eq(StringUtils.isNotEmpty(coin), OkxBuyRecord::getCoin, coin);
         return buyRecordMapper.selectList(wrapper);
     }
 
     public List<OkxBuyRecord> findPARTIALLYFILLED(Integer accountId) {
         LambdaQueryWrapper<OkxBuyRecord> wrapper = new LambdaQueryWrapper();
         wrapper.eq(OkxBuyRecord::getStatus, OrderStatusEnum.PARTIALLYFILLED.getStatus());
+        if (accountId != null && accountId > 0) {
+            wrapper.eq(OkxBuyRecord::getAccountId, accountId);
+        }
+        return buyRecordMapper.selectList(wrapper);
+    }
+
+    public List<OkxBuyRecord> findSyncList(Integer accountId) {
+        LambdaQueryWrapper<OkxBuyRecord> wrapper = new LambdaQueryWrapper();
+        wrapper.in(OkxBuyRecord::getStatus, OrderStatusEnum.PARTIALLYFILLED.getStatus(), OrderStatusEnum.PENDING.getStatus());
         if (accountId != null && accountId > 0) {
             wrapper.eq(OkxBuyRecord::getAccountId, accountId);
         }
@@ -148,13 +155,6 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
         return buyRecordMapper.selectList(wrapper);
     }
 
-//    public List<OkbBuyRecord> findByStatus(Integer accountId, List<Integer> status) {
-//        LambdaQueryWrapper<OkbBuyRecord> wrapper = new LambdaQueryWrapper();
-//        wrapper.in(OkbBuyRecord::getStatus, status);
-//        wrapper.eq(OkbBuyRecord::getAccountId, accountId);
-//        return this.buyRecordMapper.selectList((Wrapper)wrapper);
-//    }
-
     public boolean update(OkxBuyRecord record) {
         return buyRecordMapper.updateById(record) > 0 ? true : false;
     }
@@ -174,22 +174,21 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
     public void syncBuyOrder(Map<String, String> map) {
         this.syncOrderStatus(map);
     }
+
     @Transactional(rollbackFor = {Exception.class})
     public void syncOrderStatus(Map<String, String> map) throws ServiceException {
         try {
             //未完成订单
-            List<OkxBuyRecord> pendings = findPendings(Integer.valueOf(map.get("id")));
-            List<OkxBuyRecord> pARTIALLYFILLED = findPARTIALLYFILLED(Integer.valueOf(map.get("id")));
-            List<OkxBuyRecord> list = Lists.newArrayList();
-            list.addAll(pendings);
-            list.addAll(pARTIALLYFILLED);
+            List<OkxBuyRecord> list = getPageDate(Integer.valueOf(map.get("id")));
+            log.info("syncOrderStatus_buy_list_size:{}",list.size());
+
             Date now = new Date();
             String lockKey = "";
             for (OkxBuyRecord buyRecord:list) {
                 lockKey = RedisConstants.OKX_SYNC_BUY_ORDER + buyRecord.getId();
                 boolean lock = redisLock.lock(lockKey,30,3,2000);
                 if (lock == false) {
-                    log.error("tradeV2获取锁失败，交易取消 lockKey:{}",lockKey);
+                    log.error("syncOrderStatus获取锁失败，交易取消 lockKey:{}",lockKey);
                     continue;
                 }
                 String str = HttpUtil.getOkx("/api/v5/trade/order?instId=" + buyRecord.getInstId() + "&ordId=" + buyRecord.getOkxOrderId(), null, map);
@@ -217,7 +216,10 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
                 if (buyRecord.getStatus().intValue() == OrderStatusEnum.SUCCESS.getStatus()) {
                     //同步手续费
                     syncOrderFee(map, buyRecord);
-                    accountBalanceBusiness.addCount(buyRecord.getCoin(), buyRecord.getAccountId(), buyRecord.getQuantity());
+                    //同步余额
+                    accountBalanceBusiness.syncAccountBalance(map, buyRecord.getCoin(),  now);
+                    //计算换手率
+                    updateCoinTurnOver(buyRecord.getCoin());
                 }
                 Thread.sleep(50);
                 redisLock.releaseLock(lockKey);
@@ -226,6 +228,24 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
             log.error("同步订单异常", e);
             throw new ServiceException("同步订单异常");
         }
+    }
+
+    private List<OkxBuyRecord> getPageDate(Integer accountId) {
+        List<OkxBuyRecord> buyRecords = com.google.common.collect.Lists.newArrayList();
+
+        int page = 1;
+        PageHelper.startPage(page, 30, "create_time");
+
+        List<OkxBuyRecord> accountBuyRecords = findSyncList(accountId);
+        buyRecords.addAll(accountBuyRecords);
+        Integer pages = new PageInfo(accountBuyRecords).getPages();
+        while (pages > page) {
+            page++;
+            PageHelper.startPage(page, 30, "create_time");
+            accountBuyRecords = findSyncList(accountId);
+            buyRecords.addAll(accountBuyRecords);
+        }
+        return buyRecords;
     }
 
     public boolean syncOrderFee(Map<String, String> map,OkxBuyRecord buyRecord) {
@@ -280,7 +300,6 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
         }
     }
 
-
     @Async
     public void syncOrderFeeAgain( Map<String, String> map) {
         try {
@@ -319,5 +338,29 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
             return false;
         }
         return true;
+    }
+
+    @Async
+    public void updateCoinTurnOver (String coin) {
+        try {
+            Thread.sleep(3000);
+            OkxCoin okxCoin = coinBusiness.findOne(coin);
+            List<OkxBuyRecord> buyRecords = findByAccountAndCoin(null, coin).stream()
+                    .filter(item -> item.getStatus().intValue() != OrderStatusEnum.CANCEL.getStatus())
+                    .filter(item -> item.getStatus().intValue() != OrderStatusEnum.FAIL.getStatus())
+                    .collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(buyRecords)) {
+                return;
+            }
+            Integer finishCount = (int) buyRecords.stream().filter(item -> item.getStatus().intValue() == OrderStatusEnum.FINISH.getStatus()).count();
+            okxCoin.setTurnOver(new BigDecimal(finishCount).divide(new BigDecimal(buyRecords.size()), 4, RoundingMode.DOWN));
+            coinBusiness.updateById(okxCoin);
+
+            OkxCoin cache = coinBusiness.getCoinCache(coin);
+            cache.setTurnOver(okxCoin.getTurnOver());
+            coinBusiness.updateCache(Collections.singletonList(cache));
+        } catch (Exception e) {
+            log.error("updateCoinTurnOver error:{}", e.getMessage());
+        }
     }
 }

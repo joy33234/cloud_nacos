@@ -22,6 +22,7 @@ import com.ruoyi.common.core.enums.Status;
 import com.ruoyi.common.core.exception.ServiceException;
 import com.ruoyi.common.core.utils.DateUtil;
 import com.ruoyi.common.core.utils.HttpUtil;
+import com.ruoyi.common.core.utils.StringUtils;
 import com.ruoyi.common.redis.service.RedisLock;
 import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.*;
@@ -49,12 +50,6 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
     @Resource
     private CoinTickerMapper tickerMapper;
 
-    @Resource
-    private CoinBusiness coinBusiness;
-
-    @Resource
-    private AccountBusiness accountBusiness;
-
     @Autowired
     private RedisLock redisLock;
 
@@ -67,103 +62,13 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
     @Resource
     private TradeBusiness tradeBusiness;
 
-    @Resource
-    private AccountBalanceBusiness balanceBusiness;
-
-    @Resource
-    private SettingService settingService;
-
-
-//
-//    @Transactional(rollbackFor = Exception.class)
-//    public boolean syncTicker_v3() throws ServiceException{
-//        try {
-//            Map<String, String> accountMap = accountBusiness.getAccountMap();
-//            boolean result = redisLock.lock(RedisConstants.OKX_TICKER,30,3,5000);
-//            if (result == false) {
-//                log.error("syncTicker-syncTicker 获取锁异常");
-//                return false;
-//            }
-//
-//            String str = HttpUtil.getOkx("/api/v5/market/tickers?instType=SPOT", null, accountMap);
-//            JSONObject json = JSONObject.parseObject(str);
-//            if (json == null || !json.getString("code").equals("0")) {
-//                return false;
-//            }
-//            List<OkxCoinTicker> dbTickerList = Lists.newArrayList();
-//            Date now = new Date();
-//            for (int i = 0; i <= 29; i++) {
-//                LambdaQueryWrapper<OkxCoinTicker> wrapper1 = new LambdaQueryWrapper();
-//                Date day =  DateUtil.addDate(now, i-29);
-//                wrapper1.ge(OkxCoinTicker::getCreateTime, DateUtil.getMinTime(day));
-//                wrapper1.le(OkxCoinTicker::getCreateTime, DateUtil.getMaxTime(day));
-//                List<OkxCoinTicker> tempList = this.tickerMapper.selectList(wrapper1);
-//                dbTickerList.addAll(tempList);
-//            }
-//            JSONArray jsonArray = json.getJSONArray("data");
-//            List<OkxCoinTicker> tickerList = new LinkedList<>();
-//            List<JSONObject> jsonObjectList = new LinkedList<>();
-//            for (int i = 0; i < jsonArray.size(); i++) {
-//                JSONObject item = jsonArray.getJSONObject(i);
-//                OkxCoinTicker ticker = JSON.parseObject(item.toJSONString(), OkxCoinTicker.class);
-//                String[] arr = item.getString("instId").split("-");
-//                if (arr[1].equals("USDT")) {
-//                    ticker.setCoin(arr[0]);
-//                    ticker.setOpen24h(item.getBigDecimal("sodUtc8"));
-//
-//                    //ticker.setLast(ticker.getLast().add(ticker.getLast().multiply(new BigDecimal(0.018))));
-//
-//                    Optional<OkxCoinTicker> dbticker = dbTickerList.stream().filter(obj -> obj.getCoin().equals(ticker.getCoin()))
-//                            .filter(obj -> obj.getCreateTime().getTime() >= DateUtil.getMinTime(now).getTime()).findFirst();
-//                    if (dbticker.isPresent()) {
-//                        ticker.setId((dbticker.get().getId()));
-//                    } else {
-//                        ticker.setCreateTime(now);
-//                        //暂停止买入新发币
-////                            if (tickerList1.size() == 0) {
-////                                OkbCoin coin = this.coinBusiness.findOne(ticker.getCoin());
-////                                if (coin == null || DateUtil.diffMins(coin.getCreateTime(), coin.getUpdateTime()) < 1)
-////                                    this.tradeBusiness.buyNewCoin(ticker, accountMap);
-////                            }
-//                    }
-//                    ticker.setAverage(ticker.getHigh24h().add(ticker.getLow24h()).divide(new BigDecimal(2), 8, RoundingMode.HALF_UP));
-//                    ticker.setIns(ticker.getLast().subtract(ticker.getOpen24h()).divide(ticker.getOpen24h(), 8, RoundingMode.HALF_UP));
-//                    //计算月平均值
-//                    List<OkxCoinTicker> allTickerList = dbTickerList.stream().filter(obj -> obj.getCoin().equals(ticker.getCoin())).collect(Collectors.toList());
-//                    if (CollectionUtils.isNotEmpty(allTickerList)) {
-//                        BigDecimal monthAverage = (allTickerList.stream().map(OkxCoinTicker::getAverage).reduce(BigDecimal.ZERO, BigDecimal::add)).divide(new BigDecimal(allTickerList.size()), 8, RoundingMode.HALF_UP);
-//                        ticker.setMonthAverage(monthAverage);
-//                        BigDecimal monthIns = (allTickerList.stream().map(OkxCoinTicker::getIns).reduce(BigDecimal.ZERO, BigDecimal::add)).divide(new BigDecimal(allTickerList.size()), 8, RoundingMode.HALF_UP);
-//                        ticker.setMonthIns(monthIns);
-//                    } else {
-//                        ticker.setMonthAverage(BigDecimal.ZERO);
-//                        ticker.setMonthIns(BigDecimal.ZERO);
-//                    }
-//                    ticker.setUpdateTime(now);
-//
-//                    tickerList.add(ticker);
-//                    jsonObjectList.add(item);
-//                }
-//            }
-//            saveOrUpdateBatch(tickerList);
-//            syncCoinBusiness.updateCoin(jsonObjectList, tickerList, now);
-//
-//            redisLock.releaseLock(RedisConstants.OKX_TICKER);
-//        } catch (Exception e) {
-//            log.error("syncTicker error:", e);
-//            redisLock.releaseLock(RedisConstants.OKX_TICKER);
-//            throw new ServiceException("syncTicker error");
-//        }
-//        return true;
-//    }
-
     /**
      * new
      * @return
      * @throws ServiceException
      */
     @Async
-    public void syncTicker(JSONObject item, List<OkxCoinTicker> coinTickerList, Integer riseCount, Integer fallCount, List<OkxAccount> accountList,  Map<String, List<OkxSetting>> accountSettingMap) throws ServiceException{
+    public void syncTicker(JSONObject item, List<OkxCoinTicker> coinTickerList, List<OkxAccount> accountList,  Map<String, List<OkxSetting>> accountSettingMap,List<OkxBuyRecord> coinBuyRecords, boolean updateCoin,List<RiseDto> riseDtos) throws ServiceException{
         try {
             Date now = new Date();
             //遍历每个币种
@@ -175,12 +80,12 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
             OkxCoinTicker ticker = updateTicker( item,coinTickerList);
 
             //更新币种数据
-            OkxCoin okxCoin = syncCoinBusiness.updateCoinV2(ticker, now);
+            OkxCoin okxCoin = syncCoinBusiness.updateCoinV2(ticker, now, updateCoin);
             if (okxCoin == null) {
                 return;
             }
             //交易
-            tradeBusiness.tradeV2(riseCount, fallCount, accountList, okxCoin, ticker, now, accountSettingMap);
+            tradeBusiness.tradeV2(accountList, okxCoin, ticker, now, accountSettingMap, coinBuyRecords, riseDtos);
 
         } catch (Exception e) {
             log.error("syncTicker error:", e);
@@ -188,7 +93,7 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
         }
     }
 
-    public OkxCoinTicker updateTicker(JSONObject item,List<OkxCoinTicker> monthTickerList){
+    public OkxCoinTicker updateTicker(JSONObject item, List<OkxCoinTicker> monthTickerList){
         Date now = new Date();
 
         OkxCoinTicker ticker = JSON.parseObject(item.toJSONString(), OkxCoinTicker.class);
@@ -211,81 +116,15 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
             }
             ticker.setUpdateTime(now);
         }
-        updateCache(Arrays.asList(ticker));
+        //更新缓存 update last five minute each day
+//        if (now.getTime() > (DateUtil.getMaxTime(now).getTime() - 300000)) {
+//            if (findTodayTicker(ticker.getCoin()).getUpdateTime().getTime() > DateUtil.getMinTime(now).getTime()){
+                updateCache(Collections.singletonList(ticker));
+//            }
+//        }
         return ticker;
     }
 
-    public List<OkxCoinTicker> updateTickers(JSONObject json){
-        //近期30天行情数据
-        List<OkxCoinTicker> monthTickerList = Lists.newArrayList();
-        Cache<String, List<OkxCoinTicker>> monthTickersCache = CacheUtil.newLRUCache(30);
-
-        Date now = new Date();
-        for (int i = 0; i < 29; i++) {
-            Date day =  DateUtil.getMinTime(DateUtil.addDate(now, i-29));
-            List<OkxCoinTicker> dayTickers = monthTickersCache.get(day.toString());
-            if (CollectionUtils.isEmpty(dayTickers)) {
-                LambdaQueryWrapper<OkxCoinTicker> wrapper1 = new LambdaQueryWrapper();
-                wrapper1.ge(OkxCoinTicker::getCreateTime, DateUtil.getMinTime(day));
-                wrapper1.le(OkxCoinTicker::getCreateTime, DateUtil.getMaxTime(day));
-                dayTickers = this.tickerMapper.selectList(wrapper1);
-                if (CollectionUtils.isNotEmpty(dayTickers)) {
-                    monthTickersCache.put(day.toString(),dayTickers);
-                }
-            }
-            if (CollectionUtils.isNotEmpty(dayTickers)) {
-                monthTickerList.addAll(dayTickers);
-            }
-        }
-
-        JSONArray jsonArray = json.getJSONArray("data");
-        List<OkxCoinTicker> tickerList = new LinkedList<>();
-        for (int i = 0; i < jsonArray.size(); i++) {
-            JSONObject item = jsonArray.getJSONObject(i);
-            OkxCoinTicker ticker = JSON.parseObject(item.toJSONString(), OkxCoinTicker.class);
-            String[] arr = item.getString("instId").split("-");
-            if (arr[1].equals("USDT")) {
-                ticker.setCoin(arr[0]);
-                ticker.setOpen24h(item.getBigDecimal("sodUtc8"));
-
-//                Long start = System.currentTimeMillis();
-//                OkxCoinTicker todayCacheTicker = getTickerCache(ticker.getCoin());
-//                log.info("getTickerCache time :{}",System.currentTimeMillis() - start);
-
-//                if (ObjectUtils.isNotEmpty(todayCacheTicker) && ObjectUtils.isNotEmpty(todayCacheTicker.getId())) {
-//                    ticker.setId((todayCacheTicker.getId()));
-//                } else {
-//                    ticker.setCreateTime(now);
-//                    //暂停止买入新发币
-////                            if (tickerList1.size() == 0) {
-////                                OkbCoin coin = this.coinBusiness.findOne(ticker.getCoin());
-////                                if (coin == null || DateUtil.diffMins(coin.getCreateTime(), coin.getUpdateTime()) < 1)
-////                                    this.tradeBusiness.buyNewCoin(ticker, accountMap);
-////                            }
-//                }
-
-                ticker.setAverage(ticker.getHigh24h().add(ticker.getLow24h()).divide(new BigDecimal(2), 8, RoundingMode.HALF_UP));
-                ticker.setIns(ticker.getLast().subtract(ticker.getOpen24h()).divide(ticker.getOpen24h(), 8, RoundingMode.HALF_UP));
-                //计算月平均值
-                List<OkxCoinTicker> allTickerList = monthTickerList.stream().filter(obj -> obj.getCoin().equals(ticker.getCoin())).collect(Collectors.toList());
-                //币种低于30天行情数据不买入
-                if (CollectionUtils.isNotEmpty(allTickerList) && allTickerList.size() >= 29) {
-                    BigDecimal monthAverage = (allTickerList.stream().map(OkxCoinTicker::getAverage).reduce(BigDecimal.ZERO, BigDecimal::add)).divide(new BigDecimal(allTickerList.size()), 8, RoundingMode.HALF_UP);
-                    ticker.setMonthAverage(monthAverage);
-                    BigDecimal monthIns = (allTickerList.stream().map(OkxCoinTicker::getIns).reduce(BigDecimal.ZERO, BigDecimal::add)).divide(new BigDecimal(allTickerList.size()), 8, RoundingMode.HALF_UP);
-                    ticker.setMonthIns(monthIns);
-                } else {
-                    ticker.setMonthAverage(BigDecimal.ZERO);
-                    ticker.setMonthIns(BigDecimal.ZERO);
-                }
-                ticker.setUpdateTime(now);
-                tickerList.add(ticker);
-            }
-        }
-//        saveOrUpdateBatch(tickerList);
-        updateCache(tickerList);
-        return tickerList;
-    }
 
 
     public List<OkxCoinTicker> findTodayTicker() {
@@ -293,8 +132,6 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
         wrapper.ge(OkxCoinTicker::getCreateTime, DateUtil.getMinTime(new Date()));
         return tickerMapper.selectList(wrapper);
     }
-
-
 
     @Async
     public void updateCache(List<OkxCoinTicker> tickerList) {
@@ -332,6 +169,4 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
         }
         saveOrUpdateBatch(todayCacheTickers);
     }
-
-
 }

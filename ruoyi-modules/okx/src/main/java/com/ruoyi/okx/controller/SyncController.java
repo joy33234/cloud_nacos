@@ -28,6 +28,12 @@ public class SyncController extends BaseController
         return success();
     }
 
+    @GetMapping(value = "/coin/turnover")
+    public AjaxResult syncCoinTurnOver(){
+        syncBusiness.initCoinTurnOver();
+        return success();
+    }
+
     /**
      * 根据参数获取详细信息
      */
@@ -92,5 +98,15 @@ public class SyncController extends BaseController
         syncBusiness.syncCurrencies();
         return success();
     }
+
+    /**
+     * 根据参数获取详细信息
+     */
+    @GetMapping(value = "/init")
+    public AjaxResult init(){
+        syncBusiness.init();
+        return success();
+    }
+
 
 }

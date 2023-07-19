@@ -35,6 +35,11 @@ public class OkxTask
         remoteOkxService.syncCoin(SecurityConstants.INNER);
     }
 
+    public void syncCoinsTurnOver(){
+        System.out.println(DateUtil.formatForTime(new Date()) + " - syncCoinsTurnOver执行无参方法");
+        remoteOkxService.syncCoinTurnOver(SecurityConstants.INNER);
+    }
+
     public void syncCurrencies(){
         System.out.println(DateUtil.formatForTime(new Date()) +  " - syncCurrencies执行无参方法");
         remoteOkxService.syncCurrencies(SecurityConstants.INNER);
@@ -69,5 +74,11 @@ public class OkxTask
     public void syncOrderSell(){
         System.out.println(DateUtil.formatForTime(new Date()) +  " - syncOrderSell-执行无参方法");
         remoteOkxService.syncSellOrder(SecurityConstants.INNER);
+    }
+
+
+    public void init(){
+        System.out.println(DateUtil.formatForTime(new Date()) +  " - init-执行无参方法");
+        remoteOkxService.init(SecurityConstants.INNER);
     }
 }

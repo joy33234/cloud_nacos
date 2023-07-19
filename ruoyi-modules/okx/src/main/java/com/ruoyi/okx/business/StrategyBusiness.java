@@ -20,16 +20,8 @@ import java.util.List;
 @Component
 public class StrategyBusiness  {
     private static final Logger log = LoggerFactory.getLogger(StrategyBusiness.class);
-
-    @Resource
-    private SettingService settingService;
-
     @Resource
     private BuyRecordBusiness buyRecordBusiness;
-
-    @Resource
-    private CoinBusiness coinBusiness;
-
 
     public boolean checkBuy(OkxBuyRecord buyRecord, OkxCoin coin, List<OkxSetting> settingList,BigDecimal totalBuyAmount) {
 
@@ -61,7 +53,7 @@ public class StrategyBusiness  {
         BigDecimal buySumMaxUsdt = new BigDecimal(settingList.stream()
                 .filter(item -> item.getSettingKey().equalsIgnoreCase(OkxConstants.BUY_SUM_MAX_USDT)).findFirst().get().getSettingValue());
         if (totalUSDT.compareTo(buySumMaxUsdt) > 0) {
-            log.warn("订单总额不能高于最高买入USDT值 coin:{},count:{}", coin.getCoin(),totalUSDT);
+            log.warn("订单总额不能高于最高买入USDT值 accountId:{}, coin:{},count:{}", buyRecord.getAccountId(), coin.getCoin(),totalUSDT);
             return false;
         }
 

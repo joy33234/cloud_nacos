@@ -25,7 +25,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
-    private static final Logger log = LoggerFactory.getLogger(AccountBusiness.class);
 
     @Resource
     private OkxAccountMapper accountMapper;
@@ -33,9 +32,12 @@ public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
     @Resource
     private SettingService settingService;
 
+    @Resource
+    private AccountBalanceBusiness balanceBusiness;
+
 
     public List<OkxAccount> list(OkxAccountDO account) {
-        LambdaQueryWrapper<OkxAccount> wrapper = new LambdaQueryWrapper();
+        LambdaQueryWrapper<OkxAccount> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq((null != account.getApikey()), OkxAccount::getApikey, account.getApikey());
         wrapper.eq((null != account.getSecretkey()), OkxAccount::getSecretkey, account.getSecretkey());
         wrapper.eq((null != account.getPassword()), OkxAccount::getPassword, account.getPassword());
@@ -44,7 +46,11 @@ public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
     }
 
     public boolean save(OkxAccount account) {
-        return accountMapper.insert(account) > 0 ? true : false;
+        boolean result =  accountMapper.insert(account) > 0 ? true : false;
+        if (result) {
+            balanceBusiness.initBalance(account.getName());
+        }
+        return result;
     }
 
 
@@ -60,6 +66,12 @@ public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
         return accountMapper.selectById(accountId);
     }
 
+    public OkxAccount findByName(String name) {
+        LambdaQueryWrapper<OkxAccount> wrapper = new LambdaQueryWrapper();
+        wrapper.eq((StringUtils.isNotEmpty(name)), OkxAccount::getName, name);
+        return accountMapper.selectOne(wrapper);
+    }
+
 
     public Map<String, String> getAccountMap(OkxAccount account) {
         Map<String, String> accountMap = new ConcurrentHashMap<>(8);
@@ -71,21 +83,10 @@ public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
         return accountMap;
     }
 
-    public Map<String, String> getAccountMap() {
-        Map<String, String> accountMap = new ConcurrentHashMap<>(5);
-        try {
-            OkxAccount account = this.list().get(0);
-            accountMap.put("id", account.getId().toString());
-            accountMap.put("accountName", account.getName());
-            accountMap.put("apikey", account.getApikey());
-            accountMap.put("password", account.getPassword());
-            accountMap.put("secretkey", account.getSecretkey());
-        } catch (Exception e) {
-            throw new ServiceException("查询帐户异常");
-        }
-        return accountMap;
+    public Map<String, String> getAccountMap(String name) {
+        OkxAccount account = findByName(name);
+        return getAccountMap(account);
     }
-
 
 
     public String checkKeyUnique(OkxAccountDO accountDO)
