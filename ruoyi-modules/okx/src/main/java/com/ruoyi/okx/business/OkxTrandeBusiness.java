@@ -310,7 +310,7 @@ public class OkxTrandeBusiness {
 
             //买入- 大盘下跌
             if (coin.getStatus() == CoinStatusEnum.OPEN.getStatus() && ins.compareTo(BigDecimal.ZERO) <= 0 //当前价格小于等于标准值
-                    && coin.getTurnOver().compareTo(new BigDecimal(0.5)) > 0
+                    && (coin.getTurnOver().compareTo(new BigDecimal("0.5")) > 0 || coin.getTurnOver().compareTo(BigDecimal.ZERO) == 0)
                     && riseDto.getLowPercent().compareTo(new BigDecimal(okxSettings.stream().filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_LOW_BUY_PERCENT)).findFirst().get().getSettingValue())) > 0
                     && new BigDecimal(okxSettings.stream().filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_BTC_FALL_INS)).findFirst().get().getSettingValue()).compareTo(riseDto.getBTCIns()) > 0 ) {
                 //买入数量

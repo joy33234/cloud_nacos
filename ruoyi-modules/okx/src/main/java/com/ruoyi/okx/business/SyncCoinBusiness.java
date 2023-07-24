@@ -21,6 +21,7 @@ import com.ruoyi.okx.service.SettingService;
 import com.ruoyi.okx.utils.Constant;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.utils.Lists;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -129,7 +130,7 @@ public class SyncCoinBusiness {
             BigDecimal usdt24h = new BigDecimal(settingService.selectSettingByKey(OkxConstants.USDT_24H));
 
             OkxCoin obj = coinBusiness.getCoinCache(ticker.getCoin());
-            if (obj.getUnit().compareTo(BigDecimal.ZERO) <= 0) {
+            if (ObjectUtils.isEmpty(obj) || obj.getUnit().compareTo(BigDecimal.ZERO) <= 0) {
                 return null;
             }
 

@@ -9,7 +9,7 @@ import java.util.Map;
 
 public enum OrderStatusEnum {
     CREATED(Integer.valueOf(0), "创建", Boolean.valueOf(false)),
-    PENDING(Integer.valueOf(1), "处理中", Boolean.valueOf(false)),
+    PENDING(Integer.valueOf(1), "买入中", Boolean.valueOf(false)),
     FAIL(Integer.valueOf(2), "失败", Boolean.valueOf(true)),
     SUCCESS(Integer.valueOf(3), "成功", Boolean.valueOf(false)),
     PARTIALLYFILLED(Integer.valueOf(4), "部分成功", Boolean.valueOf(false)),

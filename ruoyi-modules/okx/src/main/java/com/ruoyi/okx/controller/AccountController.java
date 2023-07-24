@@ -23,6 +23,7 @@ import com.ruoyi.okx.params.DO.OkxAccountEditDO;
 import com.ruoyi.okx.params.DO.OkxCoinProfitDo;
 import com.ruoyi.okx.service.SettingService;
 import com.ruoyi.okx.utils.DtoUtils;
+import io.swagger.models.auth.In;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -181,11 +182,10 @@ public class AccountController extends BaseController
      */
     @RequiresPermissions("okx:account:remove")
     @Log(title = "参数管理", businessType = BusinessType.DELETE)
-    @DeleteMapping("/{settingIds}")
-    public AjaxResult remove(@PathVariable Long[] accountIds)
+    @DeleteMapping("/{accountId}")
+    public AjaxResult initRiseDto(@PathVariable Integer accountId)
     {
-        accountBusiness.removeBatchByIds(Arrays.asList(accountIds));
-        return success();
+        return toAjax(accountBusiness.initRiseDto(accountId));
     }
 
     /**

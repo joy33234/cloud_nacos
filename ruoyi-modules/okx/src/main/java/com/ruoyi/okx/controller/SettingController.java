@@ -16,6 +16,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -39,7 +40,7 @@ public class SettingController extends BaseController
     {
         startPage();
         List<OkxSetting> list = settingService.selectSettingList(setting);
-        list.stream().forEach(item -> item.setDesc(item.getSettingName() + "-" + item.getSettingValue()));
+        list.stream().sorted(Comparator.comparing(OkxSetting::getSettingKey)).forEach(item -> item.setDesc(item.getSettingName() + "-" + item.getSettingValue()));
         return getDataTable(list);
     }
 

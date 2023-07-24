@@ -3,15 +3,19 @@ package com.ruoyi.okx.business;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ruoyi.common.core.constant.CacheConstants;
 import com.ruoyi.common.core.constant.UserConstants;
 import com.ruoyi.common.core.exception.ServiceException;
 import com.ruoyi.common.core.utils.StringUtils;
+import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.okx.domain.*;
 import com.ruoyi.okx.mapper.OkxAccountMapper;
 import com.ruoyi.okx.params.DO.OkxAccountDO;
 import com.ruoyi.okx.params.dto.AccountProfitDto;
+import com.ruoyi.okx.params.dto.RiseDto;
 import com.ruoyi.okx.service.SettingService;
 import com.ruoyi.okx.utils.DtoUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -34,6 +38,9 @@ public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
 
     @Resource
     private AccountBalanceBusiness balanceBusiness;
+
+    @Resource
+    private RedisService redisService;
 
 
     public List<OkxAccount> list(OkxAccountDO account) {
@@ -108,4 +115,22 @@ public class AccountBusiness extends ServiceImpl<OkxAccountMapper, OkxAccount> {
         return settingService.selectSettingByIds(DtoUtils.StringToLong(settingIds.split(",")));
     }
 
+
+    public boolean initRiseDto(Integer accountId) {
+        OkxAccount okxAccount  = findOne(accountId);
+        if (ObjectUtils.isEmpty(okxAccount)) {
+            return false;
+        }
+        String key = CacheConstants.OKX_MARKET  + ":" + okxAccount.getId();
+
+        RiseDto riseDto = new RiseDto();
+        riseDto.setAccountId(okxAccount.getId());
+        riseDto.setAccountName(okxAccount.getName());
+        riseDto.setApikey(okxAccount.getApikey());
+        riseDto.setSecretkey(okxAccount.getSecretkey());
+        riseDto.setPassword(okxAccount.getPassword());
+        redisService.setCacheObject(key, riseDto);
+
+        return true;
+    }
 }
