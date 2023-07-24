@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.seektop.fund.mapper.GlPaymentMerchantAppMapper">
+    <resultMap id="BaseResultMap" type="com.seektop.fund.model.GlPaymentMerchantApp">
+        <result column="id" jdbcType="INTEGER" property="id"/>
+        <result column="payment_id" jdbcType="INTEGER" property="paymentId"/>
+        <result column="payment_name" jdbcType="VARCHAR" property="paymentName"/>
+        <result column="channel_id" jdbcType="INTEGER" property="channelId"/>
+        <result column="channel_name" jdbcType="VARCHAR" property="channelName"/>
+        <result column="merchant_id" jdbcType="INTEGER" property="merchantId"/>
+        <result column="merchant_code" jdbcType="VARCHAR" property="merchantCode"/>
+        <result column="level_id" jdbcType="VARCHAR" property="levelId"/>
+        <result column="limit_type" jdbcType="INTEGER" property="limitType"/>
+        <result column="client_type" jdbcType="INTEGER" property="clientType"/>
+        <result column="use_mode" jdbcType="INTEGER" property="useMode"/>
+        <result column="recommend_status" jdbcType="INTEGER" property="recommendStatus"/>
+        <result column="status" jdbcType="INTEGER" property="status"/>
+        <result column="top_status" jdbcType="INTEGER" property="topStatus"/>
+        <result column="top_date" jdbcType="TIMESTAMP" property="topDate"/>
+        <result column="open_status" jdbcType="INTEGER" property="openStatus"/>
+        <result column="remark" jdbcType="VARCHAR" property="remark"/>
+        <result column="cycle_count" jdbcType="INTEGER" property="cycleCount"/>
+        <result column="cycle_priority" jdbcType="INTEGER" property="cyclePriority"/>
+        <result column="create_date" jdbcType="TIMESTAMP" property="createDate"/>
+        <result column="creator" jdbcType="VARCHAR" property="creator"/>
+        <result column="last_update" jdbcType="TIMESTAMP" property="lastUpdate"/>
+        <result column="last_operator" jdbcType="VARCHAR" property="lastOperator"/>
+    </resultMap>
+
+
+    <select id="selectOneByEntity" resultMap="BaseResultMap" parameterType="map">
+        select * from gl_payment_merchant_app
+        where payment_id = #{paymentId}
+        and merchant_id = #{merchantId}
+        <if test="useMode != null"> and use_mode = #{useMode} </if>
+        and status = 0
+        and open_status = 0
+        order by use_mode
+        limit 1
+    </select>
+
+    <update id="SyncLimitType" parameterType="map">
+        update gl_payment_merchant_app set limit_type = #{limitType}, merchant_code = #{merchantCode}
+        where merchant_id = #{merchantId}
+    </update>
+
+    <update id="SyncStatus" parameterType="map">
+        update gl_payment_merchant_app set status = #{status}
+        where merchant_id = #{merchantId}
+    </update>
+
+    <update id="SyncOpenStatus" parameterType="map">
+        update gl_payment_merchant_app set open_status = #{openStatus}
+        <where>
+            <if test="merchantIds != null and merchantIds.size() >0">
+                and merchant_id in
+                <foreach item="merchantId" collection="merchantIds" index="index" open="(" separator="," close=")">
+                    #{merchantId}
+                </foreach>
+            </if>
+        </where>
+    </update>
+
+    <select id="getActivateMerchant" resultMap="BaseResultMap" parameterType="map">
+        select * from gl_payment_merchant_app where status = 0 and open_status =0 group by channel_id
+    </select>
+
+    <select id="getLevelMerchantCount" resultType="java.lang.Integer" parameterType="map">
+        select count(1) from gl_payment_merchant_app where status != 2 and find_in_set(#{levelId},level_id)
+    </select>
+
+    <select id="findByUseMode" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        select *
+        from gl_payment_merchant_app
+        where use_mode = #{useMode}
+        and status = 0
+        and open_status = 0
+    </select>
+</mapper>

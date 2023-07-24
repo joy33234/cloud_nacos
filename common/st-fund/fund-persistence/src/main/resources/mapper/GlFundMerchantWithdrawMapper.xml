@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.seektop.fund.mapper.GlFundMerchantWithdrawMapper">
+
+    <resultMap id="SucResultMap" type="com.seektop.fund.vo.WithdrawMerchantBalanceResult">
+        <id column="merchant_id" jdbcType="INTEGER" property="merchantId"/>
+        <result column="channel_id" jdbcType="INTEGER" property="channelId"/>
+        <result column="channel_name" jdbcType="VARCHAR" property="channelName"/>
+        <result column="coin" jdbcType="VARCHAR" property="coin"/>
+        <result column="merchant_code" jdbcType="VARCHAR" property="merchantCode"/>
+        <result column="status" jdbcType="INTEGER" property="status"/>
+        <result column="balance" jdbcType="DECIMAL" property="balance"/>
+        <result column="last_update" jdbcType="TIMESTAMP" property="updateTime"/>
+    </resultMap>
+
+    <select id="getTotalBalance" resultType="decimal">
+        select sum(fmr.balance)
+        from gl_fund_merchant_withdraw fmr
+        left join gl_withdraw_merchantaccount pm on pm.merchant_id = fmr.merchant_id
+        where pm.status != 2
+    </select>
+
+    <select id="findWithdrawMerchantBalanceList" parameterType="map" resultMap="SucResultMap">
+        select
+        fmr.merchant_id,
+        pm.channel_id,
+        pm.channel_name,
+        pm.coin,
+        pm.merchant_code,
+        pm.status,
+        fmr.balance,
+        fmr.last_update
+        from gl_fund_merchant_withdraw fmr
+        left join gl_withdraw_merchantaccount pm on pm.merchant_id = fmr.merchant_id
+        <where>
+            pm.status != 2
+            <if test="channelId != -1">
+                and pm.channel_id = #{channelId}
+            </if>
+            <if test="merchantCode != null and merchantCode != ''">
+                and pm.merchant_code = #{merchantCode}
+            </if>
+            <if test="coin != null and coin != ''">
+                and pm.coin = #{coin}
+            </if>
+            <if test="status != -1">
+                and pm.status = #{status}
+            </if>
+        </where>
+        order by pm.status, fmr.balance desc
+    </select>
+
+</mapper>

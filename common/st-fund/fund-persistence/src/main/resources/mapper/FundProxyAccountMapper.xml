@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.seektop.fund.mapper.FundProxyAccountMapper">
+  <resultMap id="BaseResultMap" type="com.seektop.fund.model.FundProxyAccount">
+    <!--
+      WARNING - @mbg.generated
+    -->
+    <id column="user_id" jdbcType="INTEGER" property="userId"/>
+    <result column="type" jdbcType="INTEGER" property="type"/>
+    <result column="credit_amount" jdbcType="DECIMAL" property="creditAmount"/>
+    <result column="valid_withdrawal" jdbcType="DECIMAL" property="validWithdrawal"/>
+    <result column="credit_amount" jdbcType="INTEGER" property="creditAmount"/>
+    <result column="payout_status" jdbcType="INTEGER" property="payoutStatus"/>
+    <result column="transfer_proxy_status" jdbcType="INTEGER" property="transferProxyStatus"/>
+    <result column="transfer_member_status" jdbcType="INTEGER" property="transferMemberStatus"/>
+    <result column="create_proxy_status" jdbcType="INTEGER" property="createProxyStatus"/>
+    <result column="last_update" jdbcType="TIMESTAMP" property="lastUpdate"/>
+  </resultMap>
+</mapper>

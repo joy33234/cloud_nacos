@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.seektop.fund.mapper.ProxyCreditPayoutLogMapper">
+    <resultMap id="BaseResultMap" type="com.seektop.fund.model.ProxyCreditPayoutLog">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="id" jdbcType="INTEGER" property="id"/>
+        <result column="order_id" jdbcType="VARCHAR" property="orderId"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="order_type" jdbcType="INTEGER" property="orderType"/>
+        <result column="amount" jdbcType="DECIMAL" property="amount"/>
+        <result column="fee" jdbcType="DECIMAL" property="fee"/>
+        <result column="rebate" jdbcType="DECIMAL" property="rebate"/>
+        <result column="proxy_id" jdbcType="INTEGER" property="proxyId"/>
+        <result column="proxy_name" jdbcType="VARCHAR" property="proxyName"/>
+        <result column="user_id" jdbcType="INTEGER" property="userId"/>
+        <result column="user_name" jdbcType="VARCHAR" property="userName"/>
+    </resultMap>
+
+    <select id="findByTime" resultMap="BaseResultMap" parameterType="map">
+        SELECT * from gl_proxy_credit_payout_log where create_time>=#{startTime} and create_time&lt;#{endTime}
+    </select>
+
+</mapper>

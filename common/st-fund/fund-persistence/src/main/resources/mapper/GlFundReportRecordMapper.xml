@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.seektop.fund.mapper.GlFundReportRecordMapper">
+    <resultMap id="BaseResultMap" type="com.seektop.fund.model.GlFundReportRecord">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="transaction_id" jdbcType="VARCHAR" property="transactionId"/>
+        <result column="event" jdbcType="INTEGER" property="event"/>
+        <result column="report_date" jdbcType="BIGINT" property="reportDate"/>
+        <result column="lastupdate" jdbcType="TIMESTAMP" property="lastupdate"/>
+        <result column="status" jdbcType="INTEGER" property="status"/>
+        <result column="callback_date" jdbcType="TIMESTAMP" property="callbackDate"/>
+        <result column="callback_text" jdbcType="LONGVARCHAR" property="callbackText"/>
+    </resultMap>
+</mapper>

@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.seektop.fund.mapper.GlRechargeBackUpMapper">
+    <resultMap id="BaseResultMap" type="com.seektop.fund.model.GlRechargeBackUp">
+        <id column="order_id" jdbcType="VARCHAR" property="orderId"/>
+        <result column="user_id" jdbcType="INTEGER" property="userId"/>
+        <result column="user_type" jdbcType="INTEGER" property="userType"/>
+        <result column="username" jdbcType="VARCHAR" property="username"/>
+        <result column="user_level" jdbcType="VARCHAR" property="userLevel"/>
+        <result column="amount" jdbcType="DECIMAL" property="amount"/>
+        <result column="fee" jdbcType="DECIMAL" property="fee"/>
+        <result column="keyword" jdbcType="VARCHAR" property="keyword"/>
+        <result column="payment_id" jdbcType="INTEGER" property="paymentId"/>
+        <result column="channel_id" jdbcType="INTEGER" property="channelId"/>
+        <result column="channel_name" jdbcType="VARCHAR" property="channelName"/>
+        <result column="merchant_id" jdbcType="INTEGER" property="merchantId"/>
+        <result column="merchant_code" jdbcType="VARCHAR" property="merchantCode"/>
+        <result column="merchant_name" jdbcType="VARCHAR" property="merchantName"/>
+        <result column="bank_id" jdbcType="INTEGER" property="bankId"/>
+        <result column="bank_name" jdbcType="VARCHAR" property="bankName"/>
+        <result column="client_type" jdbcType="INTEGER" property="clientType"/>
+        <result column="ip" jdbcType="VARCHAR" property="ip"/>
+        <result column="limit_type" jdbcType="INTEGER" property="limitType"/>
+        <result column="status" jdbcType="INTEGER" property="status"/>
+        <result column="sub_status" jdbcType="INTEGER" property="subStatus"/>
+        <result column="create_date" jdbcType="TIMESTAMP" property="createDate"/>
+        <result column="last_update" jdbcType="TIMESTAMP" property="lastUpdate"/>
+        <result column="app_type" jdbcType="INTEGER" property="appType"/>
+        <result column="card_no" jdbcType="VARCHAR" property="cardNo"/>
+        <result column="card_username" jdbcType="VARCHAR" property="cardUsername"/>
+        <result column="agent_type" jdbcType="INTEGER" property="agentType"/>
+    </resultMap>
+
+    <update id="createTable">
+        CREATE TABLE IF NOT EXISTS `gl_recharge_backup_${shard}` (
+        `order_id` VARCHAR(45) NOT NULL COMMENT '订单ID',
+        `user_id` INT(11) NOT NULL COMMENT '用户ID',
+        `user_type` INT(11) NOT NULL COMMENT '用户类型：0玩家，1代理',
+        `username` VARCHAR(45) NOT NULL COMMENT '用户名',
+        `user_level` VARCHAR(20) DEFAULT NULL,
+        `amount` DECIMAL(21 , 4 ) NOT NULL COMMENT '充值金额',
+        `fee` DECIMAL(21 , 4 ) NOT NULL COMMENT '手续费',
+        `keyword` VARCHAR(45) DEFAULT '' COMMENT '附言',
+        `payment_id` INT(11) NOT NULL COMMENT '支付方式ID',
+        `channel_id` INT(11) NOT NULL COMMENT '收款渠道ID或收款银行ID',
+        `channel_name` VARCHAR(45) NOT NULL COMMENT '收款渠道名称或收款银行名称',
+        `merchant_id` INT(11) NOT NULL COMMENT '收款账号ID或收款银行卡ID',
+        `merchant_code` VARCHAR(255) NOT NULL COMMENT '收款商户号或银行卡号',
+        `merchant_name` VARCHAR(100) NOT NULL COMMENT '收款账号姓名',
+        `bank_id` INT(11) NOT NULL COMMENT '银行ID：0其他',
+        `bank_name` VARCHAR(45) NOT NULL COMMENT '银行名称',
+        `client_type` INT(11) NOT NULL COMMENT '客户端类型：0PC，1H5，2安卓，3IOS，4PAD',
+        `ip` VARCHAR(45) NOT NULL COMMENT 'IP地址',
+        `limit_type` INT(11) DEFAULT '0' COMMENT '充值额度类型（0：普通充值，1：大额充值',
+        `status` INT(11) NOT NULL COMMENT '支付状态：0未支付，1支付成功，2支付失败，3补单审核中',
+        `sub_status` INT(11) DEFAULT NULL COMMENT '1: 支付成功，2：补单审核成功，3：补单审核拒绝，4：人工拒绝补单，5：用户撤销，6：超时撤销',
+        `create_date` DATETIME NOT NULL COMMENT '创建时间',
+        `last_update` DATETIME NOT NULL COMMENT '最后修改时间',
+        `app_type` INT(11) DEFAULT NULL COMMENT 'APP类型：0现金网，1体育，2代理',
+        `remark` TEXT COMMENT '充值订单额外备注',
+        `card_no` VARCHAR(45) DEFAULT NULL COMMENT '商户收款银行卡号',
+        `card_username` VARCHAR(45) DEFAULT NULL COMMENT '商户收款开户人姓名',
+        `agent_type` INT(11) DEFAULT '0' COMMENT '1代客充值 0普通充值',
+        PRIMARY KEY (`order_id`),
+        KEY `idx_gl_recharge_user_id_create_date` (`user_id` , `create_date`),
+        KEY `idx_gl_recharge_create_date` (`create_date`),
+        KEY `index4` (`payment_id` , `status`),
+        KEY `index5` (`status` , `create_date`),
+        KEY `index6` (`username`),
+        KEY `idx_channel_id` (`channel_id`) USING BTREE,
+        KEY `bank_name_index` (`bank_name`),
+        KEY `agent_type_index` (`agent_type`),
+        KEY `last_update_index` (`last_update`)
+        ) ENGINE=INNODB DEFAULT CHARSET=UTF8MB4 ROW_FORMAT=COMPACT COMMENT='充值订单记录备份表';
+    </update>
+
+    <select id="checkTable" parameterType="java.lang.String" resultType="java.lang.String">
+        SELECT
+        table_name
+        FROM
+        information_schema.TABLES
+        WHERE
+        table_name = 'gl_recharge_backup_${shard}'
+        AND table_schema = '${schema}'
+    </select>
+
+    <update id="insert">
+        insert into gl_recharge_backup_${shard}
+        (
+            order_id,
+            user_id,
+            user_type,
+            username,
+            user_level,
+            amount,
+            fee,
+            keyword,
+            payment_id,
+            channel_id,
+            channel_name,
+            merchant_id,
+            merchant_code,
+            merchant_name,
+            bank_id,
+            bank_name,
+            client_type,
+            ip,
+            status,
+            sub_status,
+            create_date,
+            last_update,
+            app_type,
+            remark,
+            limit_type,
+            card_no,
+            card_username,
+            agent_type
+        )
+        select
+            order_id,
+            user_id,
+            user_type,
+            username,
+            user_level,
+            amount,
+            fee,
+            keyword,
+            payment_id,
+            channel_id,
+            channel_name,
+            merchant_id,
+            merchant_code,
+            merchant_name,
+            bank_id,
+            bank_name,
+            client_type,
+            ip,
+            status,
+            sub_status,
+            create_date,
+            last_update,
+            app_type,
+            remark,
+            limit_type,
+            card_no,
+            card_username,
+            agent_type
+        from gl_recharge
+        where <![CDATA[create_date >= #{startTime} and create_date <= #{endTime}]]>
+        ON DUPLICATE KEY UPDATE
+        amount = values(amount),
+        fee = values(fee),
+        status = values(status),
+        sub_status = values(sub_status),
+        last_update = values(last_update),
+        remark = values(remark)
+    </update>
+
+    <select id="getMaxRechargeDate" resultType="java.lang.String" parameterType="java.lang.String">
+        select max(create_date) from gl_recharge_backup_${shard}
+    </select>
+</mapper>

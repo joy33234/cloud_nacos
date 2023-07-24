@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.seektop.fund.mapper.GlFundPaymentRecommendAmountMapper">
+    <resultMap id="BaseResultMap" type="com.seektop.fund.model.GlFundPaymentRecommendAmount">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="payment_id" jdbcType="INTEGER" property="paymentId"/>
+        <result column="payment_name" jdbcType="VARCHAR" property="paymentName"/>
+        <result column="recommend_amounts" jdbcType="INTEGER" property="recommendAmounts"/>
+        <result column="last_update" jdbcType="TIMESTAMP" property="lastUpdate"/>
+        <result column="operator" jdbcType="VARCHAR" property="operator"/>
+    </resultMap>
+</mapper>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.seektop.fund.mapper.WithdrawUserBankCardApplyMapper">
+    <resultMap id="BaseResultMap" type="com.seektop.fund.model.WithdrawUserBankCardApply">
+        <id column="card_id" jdbcType="INTEGER" property="cardId"/>
+        <result column="user_id" jdbcType="INTEGER" property="userId"/>
+        <result column="bank_id" jdbcType="INTEGER" property="bankId"/>
+        <result column="bank_name" jdbcType="VARCHAR" property="bankName"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="card_no" jdbcType="VARCHAR" property="cardNo"/>
+        <result column="address" jdbcType="VARCHAR" property="address"/>
+        <result column="status" jdbcType="INTEGER" property="status"/>
+        <result column="create_date" jdbcType="TIMESTAMP" property="createDate"/>
+        <result column="last_update" jdbcType="TIMESTAMP" property="lastUpdate"/>
+    </resultMap>
+
+    <insert id="insertApply" parameterType="com.seektop.fund.model.WithdrawUserBankCardApply" useGeneratedKeys="true"
+            keyProperty="cardId">
+        insert into gl_withdraw_userbankcard_apply(user_id, name, card_no, image_path, status, create_date, last_update)
+        values (#{userId}, #{name}, #{cardNo}, #{imagePath}, #{status}, #{createDate}, #{lastUpdate})
+    </insert>
+
+    <select id="findBy" resultMap="BaseResultMap">
+        SELECT *
+        FROM gl_withdraw_userbankcard_apply
+        <where>
+            <if test="userId != null">AND user_id = #{userId}</if>
+            <if test="cardNo != null">AND card_no = #{cardNo}</if>
+            <if test="status != null">AND status = #{status}</if>
+        </where>
+    </select>
+</mapper>

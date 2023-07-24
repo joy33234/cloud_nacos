@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.seektop.fund.mapper.ProxyRechargeFeeMapper">
+
+  <resultMap id="BaseResultMap" type="com.seektop.fund.model.ProxyRechargeFee">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="order_id" jdbcType="INTEGER" property="orderId" />
+    <result column="rule_id" jdbcType="INTEGER" property="ruleId" />
+    <result column="user_id" jdbcType="INTEGER" property="userId" />
+    <result column="fee_rate" jdbcType="DECIMAL" property="feeRate" />
+    <result column="fee" jdbcType="DECIMAL" property="fee" />
+    <result column="rebate_rate" jdbcType="DECIMAL" property="rebateRate" />
+    <result column="rebate" jdbcType="DECIMAL" property="rebate" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+  </resultMap>
+
+</mapper>

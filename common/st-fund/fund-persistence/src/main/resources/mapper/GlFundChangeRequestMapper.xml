@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.seektop.fund.mapper.GlFundChangeRequestMapper">
+    <resultMap id="BaseResultMap" type="com.seektop.fund.model.GlFundChangeRequest">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="order_id" jdbcType="VARCHAR" property="orderId"/>
+        <result column="user_id" jdbcType="INTEGER" property="userId"/>
+        <result column="username" jdbcType="VARCHAR" property="username"/>
+        <result column="user_type" jdbcType="INTEGER" property="userType"/>
+        <result column="change_type" jdbcType="INTEGER" property="changeType"/>
+        <result column="sub_type" jdbcType="INTEGER" property="subType"/>
+        <result column="amount" jdbcType="DECIMAL" property="amount"/>
+        <result column="remark" jdbcType="VARCHAR" property="remark"/>
+        <result column="status" jdbcType="INTEGER" property="status"/>
+        <result column="creator" jdbcType="VARCHAR" property="creator"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="first_approver" jdbcType="VARCHAR" property="firstApprover"/>
+        <result column="first_time" jdbcType="TIMESTAMP" property="firstTime"/>
+        <result column="first_remark" jdbcType="VARCHAR" property="firstRemark"/>
+        <result column="second_approver" jdbcType="VARCHAR" property="secondApprover"/>
+        <result column="second_time" jdbcType="TIMESTAMP" property="secondTime"/>
+        <result column="second_remark" jdbcType="VARCHAR" property="secondRemark"/>
+        <result column="freeze_amount" jdbcType="DECIMAL" property="freezeAmount"/>
+        <result column="valid_withdraw" jdbcType="DECIMAL" property="validWithdraw"/>
+    </resultMap>
+
+
+    <resultMap id="FundsCheckReport" type="com.seektop.fund.vo.FundsCheckReport">
+        <result column="second_time" jdbcType="VARCHAR" property="secondTime"/>
+        <result column="change_type" jdbcType="INTEGER" property="changeType"/>
+        <result column="sub_type" jdbcType="VARCHAR" property="subType"/>
+        <result column="sumAmount" jdbcType="DECIMAL" property="sumAmount"/>
+        <result column="sumNum" jdbcType="INTEGER" property="sumNum"/>
+    </resultMap>
+
+    <resultMap id="FundsExcelReport" type="com.seektop.fund.vo.FundsExcelReport">
+        <result column="order_id" jdbcType="VARCHAR" property="orderId"/>
+        <result column="relation_recharge_order_id" jdbcType="INTEGER" property="relationRechargeOrderId"/>
+        <result column="user_type" jdbcType="INTEGER" property="userType"/>
+        <result column="username" jdbcType="DECIMAL" property="userName"/>
+        <result column="change_type" jdbcType="INTEGER" property="changeType"/>
+        <result column="sub_type" jdbcType="INTEGER" property="subType"/>
+        <result column="amount" jdbcType="INTEGER" property="amount"/>
+        <result column="freeze_amount" jdbcType="INTEGER" property="freezeAmount"/>
+        <result column="creator" jdbcType="INTEGER" property="creator"/>
+    </resultMap>
+
+    <select id="sumAllAmountByUserId" resultType="java.math.BigDecimal">
+        SELECT
+        sum( amount )
+        FROM
+        `gl_fund_changereq`
+        WHERE
+        1 = 1
+        and user_id = #{userId} and change_type= #{changeType} and status= #{status} and sub_type = #{subType}
+        AND second_time >= #{startDate} AND second_time &lt;= #{endDate}
+    </select>
+
+    <select id="findFundsCheckReportList" resultMap="FundsCheckReport">
+        SELECT
+        DATE_FORMAT( gfc.second_time, '%Y-%m-%d' ) as second_time,
+        change_type as change_type,
+        sub_type as sub_type,
+        sum(gfc.amount) as sumAmount,
+        count(1) as sumNum
+        FROM
+        `gl_fund_changereq` gfc
+        WHERE
+        gfc.`STATUS` = 3
+        AND gfc.second_time > #{startDate} and gfc.second_time &lt; #{endDate}
+        <if test="changeType != null and changeType != '' and changeType != -1">
+            and gfc.change_type = #{changeType}
+        </if>
+        <if test="subType != null and subType.size() > 0">
+            and gfc.sub_type in
+            <foreach item="item" index="index" collection="subType" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        GROUP BY gfc.change_type,gfc.sub_type
+        ORDER BY
+        gfc.change_type DESC,gfc.sub_type DESC
+    </select>
+
+    <select id="findFundsExcelReportList" resultMap="FundsExcelReport">
+        SELECT
+        gfc.order_id, fcr.relation_recharge_order_id,gfc.user_type,gfc.username,gfc.change_type,gfc.sub_type
+        ,gfc.amount,gfc.freeze_amount,gfc.creator
+        FROM
+        `gl_fund_changereq` gfc left join gl_fund_change_relation fcr on gfc.order_id = fcr.order_id
+        WHERE
+        gfc.`STATUS` = 3
+        AND gfc.second_time > #{startDate} and gfc.second_time &lt; #{endDate}
+        <if test="changeType != null and changeType != '' and changeType != -1">
+            and gfc.change_type = #{changeType}
+        </if>
+        <if test="subType != null and subType.size() > 0">
+            and gfc.sub_type in
+            <foreach item="item" index="index" collection="subType" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        ORDER BY
+        second_time DESC
+
+    </select>
+
+    <select id="findByGlFundChangeRequest" resultMap="BaseResultMap">
+        select fc.*,fcr.relation_recharge_order_id as relationOrderId,fcr.third_order_id as thirdOrderId from gl_fund_changereq fc
+        left join gl_fund_change_relation fcr on fcr.order_id = fc.order_id where 1 = 1
+        <choose>
+            <when test="relationOrderId != null or orderId != null">
+                <if test="relationOrderId != null">
+                    and fcr.relation_recharge_order_id = #{relationOrderId}
+                </if>
+                <if test="orderId != null">
+                    and fc.order_id = #{orderId}
+                </if>
+            </when>
+            <otherwise>
+                <if test="dateType != null and dateType ==1">
+                    <if test="startDate != null">
+                        and create_time >= #{startDate}
+                    </if>
+                    <if test="endDate != null">
+                        and create_time &lt;= #{endDate}
+                    </if>
+                </if>
+                <if test="dateType != null and dateType ==2">
+                    and status = 3
+                    <if test="startDate != null">
+                        and second_time >= #{startDate}
+                    </if>
+                    <if test="endDate != null">
+                        and second_time &lt;= #{endDate}
+                    </if>
+                </if>
+                <if test="minAmount != null">
+                    and amount >= #{minAmount}
+                </if>
+                <if test="maxAmount != null">
+                    and amount &lt;= #{maxAmount}
+                </if>
+                <if test="username != null">
+                    and username = #{username}
+                </if>
+                <if test="userType != null and userType != -1 ">
+                    and user_type = #{userType}
+                </if>
+                <if test="changeTypes != null and changeTypes.size() > 0">
+                    and change_type in
+                    <foreach collection="changeTypes" item="item" index="index" open="(" separator="," close=")">
+                        #{item}
+                    </foreach>
+                </if>
+                <if test="status != null  and status.size() > 0 ">
+                    and status in
+                    <foreach collection="status" item="item" index="index" open="(" separator="," close=")">
+                        #{item}
+                    </foreach>
+                </if>
+                <if test="creator != null">
+                    and creator = #{creator}
+                </if>
+                <if test="firstApprover != null">
+                    and first_approver = #{firstApprover}
+                </if>
+                <if test="secondApprover != null">
+                    and second_approver = #{secondApprover}
+                </if>
+                <if test="subTypes != null and subTypes.size() > 0">
+                    and sub_type in
+                    <foreach collection="subTypes" item="item" index="index" open="(" separator="," close=")">
+                        #{item}
+                    </foreach>
+                </if>
+            </otherwise>
+        </choose>
+        order by fc.create_time desc
+    </select>
+
+    <select id="sumWrongRechargeTotal" resultType="java.math.BigDecimal">
+        SELECT
+        sum( amount )
+        FROM
+        `gl_fund_changereq`
+        WHERE
+        1 = 1
+        and user_id = #{userId} and change_type= 1018 and status= 3 and sub_type = 15
+        AND create_time >= #{startDate} AND create_time &lt;= #{endDate}
+    </select>
+</mapper>
