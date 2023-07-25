@@ -44,7 +44,7 @@ public class Common {
             bos.close(); // 关闭输出流
             is.close(); // 关闭输入流
         } catch (Exception e) {
-            log.error("download error :{}" ,e);
+            log.error("download error :" ,e);
         }
         return list;
     }

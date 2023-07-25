@@ -122,7 +122,7 @@ public class OpenAiBusiness extends ServiceImpl<PandoraOpenaiUserMapper, Pandora
             }
 
         } catch (Exception e) {
-            log.error("imagesUpload error:{} ",e);
+            log.error("imagesUpload error: ",e);
         }
         return R.ok(url);
     }
@@ -172,7 +172,7 @@ public class OpenAiBusiness extends ServiceImpl<PandoraOpenaiUserMapper, Pandora
             String message =  jsonArray.getJSONObject(0).getString("message");
             result = JSONObject.parseObject(message).getString("content");
         } catch (Exception e) {
-            log.error("getChatGptRes error:{} ",e);
+            log.error("getChatGptRes error: ",e);
         }
         log.info("getChatGptRes result:{}", result);
         return result;
@@ -197,7 +197,7 @@ public class OpenAiBusiness extends ServiceImpl<PandoraOpenaiUserMapper, Pandora
             JSONArray jsonArray = resJSON.getJSONArray("choices");
             result =  jsonArray.getJSONObject(0).getString("text");
         } catch (Exception e) {
-            log.error("getChatGptRes error:{} ",e);
+            log.error("getChatGptRes error: ",e);
         }
         return result;
     }
@@ -225,7 +225,7 @@ public class OpenAiBusiness extends ServiceImpl<PandoraOpenaiUserMapper, Pandora
                 urls.addAll(downloadUrls);
             }
         } catch (Exception e) {
-            log.error("getChatGptRes error:{} ",e);
+            log.error("getChatGptRes error: ",e);
         }
         return urls;
     }
@@ -253,7 +253,7 @@ public class OpenAiBusiness extends ServiceImpl<PandoraOpenaiUserMapper, Pandora
                 urls.addAll(downloadUrls);
             }
         } catch (Exception e) {
-            log.error("getImagesResWithOriginal error:{} ",e);
+            log.error("getImagesResWithOriginal error:",e);
         }
         return urls;
     }
@@ -266,7 +266,7 @@ public class OpenAiBusiness extends ServiceImpl<PandoraOpenaiUserMapper, Pandora
             log.info("getChatGptRes request Response:{}", result);
             resJSON = JSONObject.parseObject(result);
         } catch (Exception e) {
-            log.error("getChatGptRes error:{} ",e);
+            log.error("getChatGptRes error: ",e);
         }
         return resJSON;
 

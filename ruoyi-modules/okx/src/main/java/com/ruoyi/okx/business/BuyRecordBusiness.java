@@ -138,7 +138,7 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
     public boolean updateBySell(Integer buyRecordId, Integer status) {
         OkxBuyRecord buyRecord = getById(buyRecordId);
         if (buyRecord == null) {
-            log.error("更新买入记录异常:{}", buyRecordId);
+            log.error("更新买入记录异常buyRecordId:{}", buyRecordId);
             return false;
         }
         buyRecord.setStatus(status);
@@ -283,7 +283,7 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
             buyRecord.setAmount(amount);
             updateById(buyRecord);
         } catch (Exception e) {
-            log.error("syncOrderFee error {}",e);
+            log.error("syncOrderFee error ",e);
         }
         return true;
     }

@@ -106,7 +106,7 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
                 times--;
             }
         } catch (Exception e) {
-            log.error("获取coin缓存异常:{}" , e);
+            log.error("获取coin缓存异常:" , e);
         }
         return okxCoin;
     }
@@ -137,7 +137,7 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
                 times--;
             }
             if (afterUpdateCoinMark.getAccountIds().contains(accountId.toString())) {
-                log.error("markBuy更新成功coin :{} accountId:{}",coin,accountId);
+                log.error("markBuy更新成功coin :{} accountId:{}",coin, accountId);
             } else {
                 log.info("markBuy更新失败coin :{} accountId:{}",coin,accountId);
             }
@@ -204,7 +204,7 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
                 if (CollectionUtils.isEmpty(buyRecords)) {
                     continue;
                 }
-                Integer finishCount = buyRecords.stream().filter(item -> item.getStatus().intValue() == OrderStatusEnum.FINISH.getStatus()).collect(Collectors.toList()).size();
+                int finishCount = (int) buyRecords.stream().filter(item -> item.getStatus().intValue() == OrderStatusEnum.FINISH.getStatus()).count();
                 coin.setTurnOver(new BigDecimal(finishCount).divide(new BigDecimal(buyRecords.size()), 4, RoundingMode.DOWN));
 
                 OkxCoin cache = getCoinCache(coin.getCoin());
@@ -213,7 +213,7 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
             }
             saveOrUpdateBatch(okxCoins);
         } catch (Exception e) {
-            log.error("initTurnOver error:{}", e.getMessage());
+            log.error("initTurnOver error", e);
         }
     }
 

@@ -140,7 +140,7 @@ public class AccountBalanceBusiness extends ServiceImpl<OkxAccountBalanceMapper,
 
             saveBatch(balanceList);
         } catch (Exception e) {
-            log.error("帐号余额初始化异常 {}",e);
+            log.error("帐号余额初始化异常 ",e);
         }
     }
 

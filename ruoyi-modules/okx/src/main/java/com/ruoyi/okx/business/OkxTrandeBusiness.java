@@ -62,7 +62,7 @@ public class OkxTrandeBusiness {
      * @throws Exception
      */
     @Transactional(rollbackFor = Exception.class)
-    public void okxTradeV2(OkxCoin coin,  OkxCoinTicker ticker, List<OkxSetting> okxSettings, List<OkxBuyRecord> buyRecords, RiseDto riseDto, Date now) throws ServiceException {
+    public void okxTradeV2(OkxCoin coin,  OkxCoinTicker ticker, List<OkxSetting> okxSettings, List<OkxBuyRecord> buyRecords, RiseDto riseDto, Date now) {
         try {
             Integer accountId = riseDto.getAccountId();
             String accountName = riseDto.getAccountName();
@@ -122,8 +122,7 @@ public class OkxTrandeBusiness {
                 }
             }
         } catch (Exception e) {
-            log.error("trade error",e);
-            throw new ServiceException("交易异常", 500);
+            log.error("okx coin:{},accountId:{} trade error",coin.getCoin(), riseDto.getAccountId(), e);
         }
     }
 
@@ -310,7 +309,7 @@ public class OkxTrandeBusiness {
 
             //买入- 大盘下跌
             if (coin.getStatus() == CoinStatusEnum.OPEN.getStatus() && ins.compareTo(BigDecimal.ZERO) <= 0 //当前价格小于等于标准值
-                    && (coin.getTurnOver().compareTo(new BigDecimal("0.5")) > 0 || coin.getTurnOver().compareTo(BigDecimal.ZERO) == 0)
+                    && (ObjectUtils.isEmpty(coin.getTurnOver()) || coin.getTurnOver().compareTo(new BigDecimal(0.5)) > 0 || coin.getTurnOver().compareTo(BigDecimal.ZERO) <= 0)
                     && riseDto.getLowPercent().compareTo(new BigDecimal(okxSettings.stream().filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_LOW_BUY_PERCENT)).findFirst().get().getSettingValue())) > 0
                     && new BigDecimal(okxSettings.stream().filter(obj -> obj.getSettingKey().equals(OkxConstants.MARKET_BTC_FALL_INS)).findFirst().get().getSettingValue()).compareTo(riseDto.getBTCIns()) > 0 ) {
                 //买入数量
@@ -334,6 +333,14 @@ public class OkxTrandeBusiness {
         }
         return list.size() <= 1 ? list : list.stream().collect(Collectors.collectingAndThen(
                 Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(TradeDto::getBuyRecordId))), ArrayList::new ));
+    }
+
+
+    public static void main(String[] args) {
+        OkxCoin coin = new OkxCoin();
+        coin.setTurnOver(new BigDecimal(0.4));
+        boolean result =    (coin.getTurnOver().compareTo(new BigDecimal("0.5")) > 0 || coin.getTurnOver().compareTo(BigDecimal.ZERO) == 0);
+        log.info(result + "");
     }
 
     /**

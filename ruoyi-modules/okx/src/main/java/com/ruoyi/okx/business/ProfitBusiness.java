@@ -72,7 +72,7 @@ public class ProfitBusiness extends ServiceImpl<OkxProfitMapper, OkxCoinProfit> 
             profitDto.setUnFinishProfit(cf3.get());
             profitDto.setProfit(profitDto.getFinishProfit().add(cf3.get()));
         } catch (Exception e) {
-            log.error("profit error :{}" ,e.getMessage());
+            log.error("profit error" ,e);
         }
         return profitDto;
     }

@@ -107,7 +107,7 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
             log.info("syncSellOrder_okxCoinProfit:{}",JSON.toJSONString(okxCoinProfit));
             coinProfitBusiness.updateById(okxCoinProfit);
         } catch (Exception  e) {
-            log.error("syncSellOrder_error: {}",e);
+            log.error("syncSellOrder_error: ",e);
             return false;
         }
         return true;
@@ -238,7 +238,7 @@ public class SellRecordBusiness extends ServiceImpl<SellRecordMapper, OkxSellRec
             sellRecord.setPrice(price);
             sellRecord.setAmount(amount);
         } catch (Exception e) {
-            log.error("syncOrderDetail error {}",e);
+            log.error("syncOrderDetail error ",e);
         }
         return sellRecord;
     }
