@@ -43,7 +43,7 @@ public class SysPasswordService
     {
         String username = user.getUserName();
 
-        Integer retryCount = redisService.getCacheObject(getCacheKey(username));
+        Integer retryCount = redisService.getCacheObject(getCacheKey(username), Integer.class);
 
         if (retryCount == null)
         {

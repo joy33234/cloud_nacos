@@ -40,7 +40,7 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
     @Resource
     private CoinMapper coinMapper;
 
-    @Autowired
+    @Resource
     private RedisService redisService;
 
     @Resource
@@ -73,7 +73,7 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
         Collection<String> keys = redisService.keys(CacheConstants.OKX_COIN_KEY + "*");
         Date now = new Date();
         for (String key:keys) {
-            OkxCoin coin = redisService.getCacheObject(key);
+            OkxCoin coin = redisService.getCacheObject(key, OkxCoin.class);
             coin.setUpdateTime(now);
             if (coin != null) {
                 coinMapper.updateById(coin);
@@ -85,7 +85,7 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
         if (coin == null) {
             return list();
         }
-        LambdaQueryWrapper<OkxCoin> wrapper = new LambdaQueryWrapper();
+        LambdaQueryWrapper<OkxCoin> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(coin.getCoin() != null, OkxCoin::getCoin, coin.getCoin());
         List<OkxCoin> list =  coinMapper.selectList(wrapper);
 
@@ -97,12 +97,12 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
     }
 
     public OkxCoin getCoinCache(String coin) {
-        OkxCoin okxCoin = redisService.getCacheObject(CacheConstants.OKX_COIN_KEY + coin);
+        OkxCoin okxCoin = redisService.getCacheObject(CacheConstants.OKX_COIN_KEY + coin, OkxCoin.class);
         try {
             int times = 3;
             while (okxCoin == null && times > 0) {
                 Thread.sleep(1500);
-                okxCoin = redisService.getCacheObject(CacheConstants.OKX_COIN_KEY + coin);
+                okxCoin = redisService.getCacheObject(CacheConstants.OKX_COIN_KEY + coin, OkxCoin.class);
                 times--;
             }
         } catch (Exception e) {
@@ -205,10 +205,14 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
                     continue;
                 }
                 int finishCount = (int) buyRecords.stream().filter(item -> item.getStatus().intValue() == OrderStatusEnum.FINISH.getStatus()).count();
-                coin.setTurnOver(new BigDecimal(finishCount).divide(new BigDecimal(buyRecords.size()), 4, RoundingMode.DOWN));
+                BigDecimal turnOver =new BigDecimal(finishCount).divide(new BigDecimal(buyRecords.size()), 4, RoundingMode.DOWN);
+                coin.setTurnOver(turnOver);
 
                 OkxCoin cache = getCoinCache(coin.getCoin());
-                cache.setTurnOver(coin.getTurnOver());
+                if (ObjectUtils.isEmpty(cache)) {
+                    continue;
+                }
+                cache.setTurnOver(turnOver);
                 updateCache(Collections.singletonList(cache));
             }
             saveOrUpdateBatch(okxCoins);
@@ -220,12 +224,12 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
 
 
     public CoinMark getCoinMark(String coin) {
-        CoinMark coinMark = redisService.getCacheObject(CacheConstants.OKX_COIN_MARK + coin);
+        CoinMark coinMark = redisService.getCacheObject(CacheConstants.OKX_COIN_MARK + coin, CoinMark.class);
         try {
             int times = 3;
             while (coinMark == null && times > 0) {
                 Thread.sleep(200);
-                coinMark = redisService.getCacheObject(CacheConstants.OKX_COIN_MARK + coin);
+                coinMark = redisService.getCacheObject(CacheConstants.OKX_COIN_MARK + coin, CoinMark.class);
                 times--;
             }
             if (ObjectUtils.isEmpty(coinMark)) {

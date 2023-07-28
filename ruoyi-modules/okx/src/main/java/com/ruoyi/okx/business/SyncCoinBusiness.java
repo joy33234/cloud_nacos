@@ -59,9 +59,6 @@ public class SyncCoinBusiness {
     @Resource
     private RedisService redisService;
 
-    @Autowired
-    private RedisLock redisLock;
-
     @Resource
     private AccountBalanceBusiness balanceBusiness;
 
@@ -130,6 +127,9 @@ public class SyncCoinBusiness {
             BigDecimal usdt24h = new BigDecimal(settingService.selectSettingByKey(OkxConstants.USDT_24H));
 
             OkxCoin obj = coinBusiness.getCoinCache(ticker.getCoin());
+            if (ObjectUtils.isEmpty(obj)) {
+                obj = coinBusiness.findOne(ticker.getCoin());
+            }
             if (ObjectUtils.isEmpty(obj) || obj.getUnit().compareTo(BigDecimal.ZERO) <= 0) {
                 return null;
             }

@@ -137,7 +137,7 @@ public class TradeBusiness {
 //            return null;
 //        }
 
-        RiseDto riseDto = redisService.getCacheObject(key);
+        RiseDto riseDto = redisService.getCacheObject(key, RiseDto.class);
         if (riseDto == null) {//redis异常 TODO
             return null;
         }
@@ -189,7 +189,7 @@ public class TradeBusiness {
             return null;
         }
 
-        RiseDto riseDto = redisService.getCacheObject(key);
+        RiseDto riseDto = redisService.getCacheObject(key,RiseDto.class);
         if (riseDto == null) {//redis异常 TODO
             return null;
         }

@@ -83,7 +83,7 @@ public class SettingServiceImpl implements SettingService
     @Override
     public String selectSettingByKey(String settingKey)
     {
-        String configValue = Convert.toStr(redisService.getCacheObject(getCacheKey(settingKey)));
+        String configValue = Convert.toStr(redisService.getCacheObject(getCacheKey(settingKey),String.class));
         if (StringUtils.isNotEmpty(configValue))
         {
             return configValue;

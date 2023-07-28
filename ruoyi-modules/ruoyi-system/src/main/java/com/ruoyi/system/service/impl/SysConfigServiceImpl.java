@@ -61,7 +61,7 @@ public class SysConfigServiceImpl implements ISysConfigService
     @Override
     public String selectConfigByKey(String configKey)
     {
-        String configValue = Convert.toStr(redisService.getCacheObject(getCacheKey(configKey)));
+        String configValue = Convert.toStr(redisService.getCacheObject(getCacheKey(configKey),String.class));
         if (StringUtils.isNotEmpty(configValue))
         {
             return configValue;

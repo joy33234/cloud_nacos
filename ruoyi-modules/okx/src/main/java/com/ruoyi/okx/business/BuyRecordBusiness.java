@@ -306,7 +306,7 @@ public class BuyRecordBusiness extends ServiceImpl<BuyRecordMapper, OkxBuyRecord
             Collection<String> keys = redisService.keys(CacheConstants.OKX_BUY_ORDER_AGAIN + "*");
             if (CollectionUtils.isNotEmpty(keys)) {
                 for (String key:keys) {
-                    OkxBuyRecord buyRecord = redisService.getCacheObject(key);
+                    OkxBuyRecord buyRecord = redisService.getCacheObject(key, OkxBuyRecord.class);
                     if (buyRecord.getAccountId().equals(map.get("id"))) {
                         if(syncOrderFee(map, buyRecord)) {
                             redisService.deleteObject(key);

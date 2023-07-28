@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -42,10 +43,11 @@ public class CoinProfitBusiness extends ServiceImpl<CoinProfitMapper, OkxCoinPro
         wrapper.eq(profitDo.getId() != null ,OkxCoinProfit::getId, profitDo.getId());
         wrapper.orderByDesc(OkxCoinProfit::getUpdateTime);
         List<OkxCoinProfit> profits =  mapper.selectList(wrapper);
+        profits.add(new OkxCoinProfit(0,"USDT",profitDo.getAccountId(), BigDecimal.ZERO,BigDecimal.ZERO,BigDecimal.ONE));
 
         List<OkxAccountBalance> balances = accountBalanceBusiness.list(new OkxAccountBalanceDO(null,null,null,profitDo.getAccountId(),null));
         for (OkxCoinProfit profit:profits) {
-            balances.stream().filter(item -> item.getCoin().equals(profit.getCoin())).findFirst().ifPresent(obj -> {
+            balances.stream().filter(item -> item.getCoin().equalsIgnoreCase(profit.getCoin())).findFirst().ifPresent(obj -> {
                 profit.setBalance(obj.getBalance());
             });
         }

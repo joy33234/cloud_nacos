@@ -9,6 +9,8 @@ import com.ruoyi.common.core.web.domain.AjaxResult;
 import com.ruoyi.common.core.web.page.TableDataInfo;
 import com.ruoyi.common.log.annotation.Log;
 import com.ruoyi.common.log.enums.BusinessType;
+import com.ruoyi.common.redis.service.RedisLock;
+import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.common.security.annotation.RequiresPermissions;
 import com.ruoyi.common.security.utils.SecurityUtils;
 import com.ruoyi.okx.business.AccountBusiness;
@@ -24,6 +26,7 @@ import com.ruoyi.okx.params.DO.OkxCoinProfitDo;
 import com.ruoyi.okx.service.SettingService;
 import com.ruoyi.okx.utils.DtoUtils;
 import io.swagger.models.auth.In;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -34,6 +37,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -45,13 +49,11 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/account")
+@Slf4j
 public class AccountController extends BaseController
 {
     @Autowired
     private AccountBusiness accountBusiness;
-
-    @Autowired
-    private StrategyBusiness strategyBusiness;
 
     @Autowired
     private SettingService settingService;
@@ -61,6 +63,32 @@ public class AccountController extends BaseController
 
     @Resource
     private CoinProfitBusiness coinProfitBusiness;
+
+    @Resource
+    private RedisService redisService;
+
+    @Resource
+    private RedisLock redisLock;
+
+
+//    @GetMapping("/test")
+//    public AjaxResult list2(OkxAccountDO account) throws Exception
+//    {
+//        boolean lock = redisLock.lock("lockkey-aaa", 10000, 3, 2000);
+//        if (lock == false) {
+//            log.error("获取锁失败");
+//        }
+//        account.setApikey("ldldd");
+//        redisService.setCacheObject("a",account);
+//
+//        Thread.sleep(1000);
+//        account = redisService.getCacheObject("a", OkxAccountDO.class);
+//        AjaxResult ajax = AjaxResult.success();
+//        ajax.put("account", account);
+//        return ajax;
+//    }
+
+
     /**
      * 获取参数配置列表
      */
@@ -95,7 +123,7 @@ public class AccountController extends BaseController
     public AjaxResult getInfo(@PathVariable Long accountId)
     {
         AjaxResult ajax = AjaxResult.success();
-        List<OkxSetting> settingList = settingService.selectSettingList(new OkxSetting());
+        List<OkxSetting> settingList = settingService.selectSettingList(new OkxSetting()).stream().sorted(Comparator.comparing(OkxSetting::getSettingKey)).collect(Collectors.toList());
         settingList.stream().forEach(item -> item.setDesc(item.getSettingName() + "-" + item.getSettingValue()));
         ajax.put("settings", settingList);
         if (ObjectUtils.isNotEmpty(accountId)) {

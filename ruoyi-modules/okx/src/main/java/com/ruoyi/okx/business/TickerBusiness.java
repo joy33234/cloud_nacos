@@ -50,9 +50,6 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
     @Resource
     private CoinTickerMapper tickerMapper;
 
-    @Autowired
-    private RedisLock redisLock;
-
     @Resource
     private RedisService redisService;
 
@@ -145,13 +142,13 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
         List<OkxCoinTicker> list = Lists.newArrayList();
         Collection<String> keys = redisService.keys(CacheConstants.OKX_TICKER_KEY + "*");
         for (String key:keys) {
-            list.add(redisService.getCacheObject(key));
+            list.add(redisService.getCacheObject(key,OkxCoinTicker.class));
         }
         return list;
     }
 
     public OkxCoinTicker getTickerCache(String coin) {
-        return redisService.getCacheObject(CacheConstants.OKX_TICKER_KEY + coin);
+        return redisService.getCacheObject(CacheConstants.OKX_TICKER_KEY + coin, OkxCoinTicker.class);
     }
 
 
