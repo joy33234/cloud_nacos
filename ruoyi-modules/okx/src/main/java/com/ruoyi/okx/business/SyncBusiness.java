@@ -234,8 +234,11 @@ public class SyncBusiness {
                     } else {
                         fallCount++;
                     }
+                } else {
+                    jsonArray.remove(item);
                 }
             }
+            jsonArray.sort(Comparator.comparing(obj -> ((JSONObject)obj).getString("instId")));
 
             Map<String, List<OkxSetting>> accountSettingMap = new ConcurrentHashMap<>(accountList.size());
             List<RiseDto> riseDtos = Lists.newArrayList();
@@ -250,7 +253,6 @@ public class SyncBusiness {
                 log.error("更新整体行情数据异常");
                 return;
             }
-
 
             //近期29天行情数据
             List<OkxCoinTicker> monthTickerList = org.apache.commons.compress.utils.Lists.newArrayList();

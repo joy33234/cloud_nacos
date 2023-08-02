@@ -91,7 +91,7 @@ public class CoinBusiness extends ServiceImpl<CoinMapper, OkxCoin> {
 
         list.stream().forEach(item -> {
             item.setTradeMinAmount(item.getStandard().multiply(item.getUnit()).setScale(Constant.OKX_BIG_DECIMAL, RoundingMode.DOWN));
-            item.setVolUsdt24h(item.getVolUsdt24h().setScale(Constant.OKX_BIG_DECIMAL,RoundingMode.DOWN));
+            item.setVolUsdt24h(item.getVolUsdt24h().setScale(0,RoundingMode.DOWN));
         });
         return list;
     }

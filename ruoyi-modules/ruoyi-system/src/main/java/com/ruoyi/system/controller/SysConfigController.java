@@ -2,6 +2,9 @@ package com.ruoyi.system.controller;
 
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
+
+import com.alibaba.fastjson.JSON;
+import com.ruoyi.system.api.domain.SysUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -35,6 +38,25 @@ public class SysConfigController extends BaseController
 {
     @Autowired
     private ISysConfigService configService;
+
+
+    @GetMapping("/test")
+    public AjaxResult list2() throws Exception
+    {
+        AjaxResult ajax = AjaxResult.success();
+
+
+//        log.info("rabbitModuleProperties:{}", JSON.toJSONString(rabbitModuleProperties));
+
+        SysUser coin = new SysUser();
+//        coin.setCoin("BTC");
+//
+//        producerService.send(coin);
+        ajax.put("coin",coin);
+        return ajax;
+    }
+
+
 
     /**
      * 获取参数配置列表

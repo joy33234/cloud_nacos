@@ -56,7 +56,7 @@ public class ProfitBusiness extends ServiceImpl<OkxProfitMapper, OkxCoinProfit> 
                 return buyRecordBusiness.findUnfinish(accountId,10000);
             });
             CompletableFuture<List<OkxCoinTicker>> cf2 = CompletableFuture.supplyAsync(() -> {
-                return tickerBusiness.findTodayTicker();
+                return tickerBusiness.getTickerCache();
             });
             final BigDecimal[] unFinishPorfit = {BigDecimal.ZERO};
             CompletableFuture<BigDecimal> cf3 = cf1.thenCombine(cf2, (a, b)  -> {

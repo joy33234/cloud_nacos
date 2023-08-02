@@ -7,4 +7,7 @@ public interface ProducerService {
      * @param message
      */
     void send(Object message);
+
+
+    void send(Object message, String routingKey);
 }

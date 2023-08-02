@@ -99,7 +99,6 @@ public class RedisConfig extends CachingConfigurerSupport
     @SuppressWarnings(value = { "unchecked", "rawtypes" })
     public RedisTemplate<Object, Object> redisTemplate(RedisConnectionFactory connectionFactory)
     {
-        System.out.println("redisTemplate--------========" + connectionFactory.getConnection().getNativeConnection().toString());
         RedisTemplate<Object, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
 

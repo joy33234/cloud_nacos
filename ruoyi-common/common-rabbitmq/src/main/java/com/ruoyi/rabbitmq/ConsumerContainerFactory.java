@@ -10,9 +10,6 @@ import org.springframework.amqp.core.Exchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.config.RetryInterceptorBuilder;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
-//import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
-import org.springframework.amqp.rabbit.core.RabbitAdmin;
-//import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.retry.RejectAndDontRequeueRecoverer;
 import org.springframework.beans.factory.FactoryBean;
@@ -48,8 +45,6 @@ public class ConsumerContainerFactory implements FactoryBean<SimpleMessageListen
     private AmqpAdmin amqpAdmin;
 
 
-//    private RabbitAdmin rabbitAdmin;
-
     /**
      * 队列
      */
@@ -83,8 +78,7 @@ public class ConsumerContainerFactory implements FactoryBean<SimpleMessageListen
     @Override
     public SimpleMessageListenerContainer getObject() throws Exception {
         SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
-//        container.setAmqpAdmin(getAmqpAdmin());
-//        container.setRabbitAdmin(rabbitAdmin);
+        container.setAmqpAdmin(amqpAdmin);
         container.setConnectionFactory(connectionFactory);
         container.setQueues(queue);
         container.setPrefetchCount(20);

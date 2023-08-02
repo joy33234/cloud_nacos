@@ -237,6 +237,13 @@
                 <version>${ruoyi.version}</version>
             </dependency>
 
+            <!-- 缓存服务 -->
+            <dependency>
+                <groupId>com.ruoyi</groupId>
+                <artifactId>common-rabbitmq</artifactId>
+                <version>${ruoyi.version}</version>
+            </dependency>
+
 
 
 
@@ -262,6 +269,7 @@
         <module>ruoyi-modules</module>
         <module>ruoyi-api</module>
         <module>ruoyi-common</module>
+        <module>ruoyi-modules/Test/mqtest</module>
     </modules>
     <packaging>pom</packaging>
 

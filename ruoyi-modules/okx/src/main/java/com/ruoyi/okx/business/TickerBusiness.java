@@ -66,6 +66,8 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
      */
     @Async
     public void syncTicker(JSONObject item, List<OkxCoinTicker> coinTickerList, List<OkxAccount> accountList,  Map<String, List<OkxSetting>> accountSettingMap,List<OkxBuyRecord> coinBuyRecords, boolean updateCoin,List<RiseDto> riseDtos) throws ServiceException{
+
+        Long start = System.currentTimeMillis();
         try {
             Date now = new Date();
             //遍历每个币种
@@ -84,6 +86,9 @@ public class TickerBusiness extends ServiceImpl<CoinTickerMapper, OkxCoinTicker>
             //交易
             tradeBusiness.tradeV2(accountList, okxCoin, ticker, now, accountSettingMap, coinBuyRecords, riseDtos);
 
+            if (ticker.getCoin().equals("BTC")) {
+                log.info("syncTicker_coin_time:{}",System.currentTimeMillis() - start);
+            }
         } catch (Exception e) {
             log.error("syncTicker error:", e);
             throw new ServiceException("syncTicker error");

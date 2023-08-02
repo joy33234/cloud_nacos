@@ -9,15 +9,14 @@ import com.ruoyi.common.core.web.domain.AjaxResult;
 import com.ruoyi.common.core.web.page.TableDataInfo;
 import com.ruoyi.common.log.annotation.Log;
 import com.ruoyi.common.log.enums.BusinessType;
-import com.ruoyi.common.redis.service.RedisLock;
-import com.ruoyi.common.redis.service.RedisService;
 import com.ruoyi.common.security.annotation.RequiresPermissions;
 import com.ruoyi.common.security.utils.SecurityUtils;
+import com.ruoyi.okx.OkxApplication;
 import com.ruoyi.okx.business.AccountBusiness;
 import com.ruoyi.okx.business.CoinProfitBusiness;
 import com.ruoyi.okx.business.ProfitBusiness;
-import com.ruoyi.okx.business.StrategyBusiness;
 import com.ruoyi.okx.domain.OkxAccount;
+import com.ruoyi.okx.domain.OkxCoin;
 import com.ruoyi.okx.domain.OkxCoinProfit;
 import com.ruoyi.okx.domain.OkxSetting;
 import com.ruoyi.okx.params.DO.OkxAccountDO;
@@ -25,12 +24,14 @@ import com.ruoyi.okx.params.DO.OkxAccountEditDO;
 import com.ruoyi.okx.params.DO.OkxCoinProfitDo;
 import com.ruoyi.okx.service.SettingService;
 import com.ruoyi.okx.utils.DtoUtils;
-import io.swagger.models.auth.In;
+import com.ruoyi.rabbitmq.ProducerService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -64,29 +65,35 @@ public class AccountController extends BaseController
     @Resource
     private CoinProfitBusiness coinProfitBusiness;
 
-    @Resource
-    private RedisService redisService;
+    @Resource(name = "coinProducerService")
+    private ProducerService producerService;
 
-    @Resource
-    private RedisLock redisLock;
+    @GetMapping("/test")
+    public AjaxResult list2() throws Exception
+    {
+
+        ApplicationContext applicationContext = new AnnotationConfigApplicationContext(OkxApplication.class);
+        // ApplicationContext applicationContext = new ClassPathXmlApplicationContext("beans.xml");
 
 
-//    @GetMapping("/test")
-//    public AjaxResult list2(OkxAccountDO account) throws Exception
-//    {
-//        boolean lock = redisLock.lock("lockkey-aaa", 10000, 3, 2000);
-//        if (lock == false) {
-//            log.error("获取锁失败");
-//        }
-//        account.setApikey("ldldd");
-//        redisService.setCacheObject("a",account);
-//
-//        Thread.sleep(1000);
-//        account = redisService.getCacheObject("a", OkxAccountDO.class);
-//        AjaxResult ajax = AjaxResult.success();
-//        ajax.put("account", account);
-//        return ajax;
-//    }
+
+        // 打印 IOC 容器中所有 bean 的名称
+        String[] namesForType = applicationContext.getBeanDefinitionNames();
+        for (String name : namesForType) {
+            System.out.println(name);
+        }
+
+
+        AjaxResult ajax = AjaxResult.success();
+
+
+        OkxCoin coin = new OkxCoin();
+        coin.setCoin("BTC");
+
+        producerService.send(coin);
+        ajax.put("coin",coin);
+        return ajax;
+    }
 
 
     /**
@@ -96,6 +103,10 @@ public class AccountController extends BaseController
     @GetMapping("/list")
     public TableDataInfo list(OkxAccountDO account)
     {
+        OkxCoin coin = new OkxCoin();
+        coin.setCoin("BTC");
+        producerService.send(coin);
+
         startPage();
         List<OkxAccount> list = accountBusiness.list(account);
         list.stream().forEach(item -> {

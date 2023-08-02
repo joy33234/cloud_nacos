@@ -27,6 +27,9 @@ public class OkxCoinProfit extends CommonEntity {
     @TableField(exist = false)
     private BigDecimal balance;
 
+    @TableField(exist = false)
+    private BigDecimal balanceUsdt = BigDecimal.ZERO;
+
     private BigDecimal unit;
 
 }

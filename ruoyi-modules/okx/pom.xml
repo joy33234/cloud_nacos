@@ -83,14 +83,11 @@
             <artifactId>ruoyi-common-redis</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.ruoyi</groupId>
+            <artifactId>common-rabbitmq</artifactId>
+        </dependency>
 
-
-
-        <!--        <dependency>-->
-<!--            <groupId>org.projectlombok</groupId>-->
-<!--            <artifactId>lombok</artifactId>-->
-<!--            <version>${lombok.version}</version>-->
-<!--        </dependency>-->
 
         <dependency>
             <groupId>commons-lang</groupId>
@@ -99,11 +96,6 @@
             <scope>compile</scope>
         </dependency>
 
-<!--        <dependency>-->
-<!--            <groupId>cn.hutool</groupId>-->
-<!--            <artifactId>hutool-all</artifactId>-->
-<!--            <version>5.7.20</version>-->
-<!--        </dependency>-->
 
         <dependency>
             <groupId>com.baomidou</groupId>

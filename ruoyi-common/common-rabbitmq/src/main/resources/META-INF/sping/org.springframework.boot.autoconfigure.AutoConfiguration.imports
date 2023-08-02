@@ -1,0 +1,4 @@
+com.ruoyi.rabbitmq.AbsProducerService
+com.ruoyi.rabbitmq.AbsConsumerService
+com.ruoyi.rabbitmq.RabbitModuleProperties
+

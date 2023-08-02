@@ -35,7 +35,7 @@ public class DictUtils
      */
     public static List<SysDictData> getDictCache(String key)
     {
-        JSONArray arrayCache = SpringUtils.getBean(RedisService.class).getCacheObject(getCacheKey(key));
+        JSONArray arrayCache = SpringUtils.getBean(RedisService.class).getCacheObject(getCacheKey(key),JSONArray.class);
         if (StringUtils.isNotNull(arrayCache))
         {
             return arrayCache.toList(SysDictData.class);

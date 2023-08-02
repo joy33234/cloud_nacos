@@ -45,7 +45,7 @@ public class StrategyBusiness  {
 
         if (buyRecord.getAmount().compareTo(new BigDecimal(settingList.stream()
                         .filter(item -> item.getSettingKey().equals(OkxConstants.BUY_MAX_USDT)).findFirst().get().getSettingValue())) > 0) {
-            log.warn("买入金额高于最高买入值 accountId{}, amount:{}", buyRecord.getAccountId(), buyRecord.getAmount());
+            log.warn("买入金额高于最高买入值 accountId{},coin:{}, amount:{}", buyRecord.getAccountId(), buyRecord.getCoin(), buyRecord.getAmount());
             return false;
         }
 

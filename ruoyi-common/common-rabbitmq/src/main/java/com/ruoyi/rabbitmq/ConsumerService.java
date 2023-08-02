@@ -1,6 +1,7 @@
 package com.ruoyi.rabbitmq;
 
-import org.springframework.amqp.rabbit.core.ChannelAwareMessageListener;
+
+import org.springframework.amqp.rabbit.listener.api.ChannelAwareMessageListener;
 
 /**
  * 消费者接口

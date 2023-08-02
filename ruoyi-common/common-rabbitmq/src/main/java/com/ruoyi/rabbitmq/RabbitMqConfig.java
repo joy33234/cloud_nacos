@@ -5,6 +5,7 @@ import cn.hutool.core.date.StopWatch;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.spring.SpringUtil;
+import com.alibaba.fastjson.JSON;
 import com.ruoyi.common.core.text.Convert;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.*;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +44,7 @@ public class RabbitMqConfig implements SmartInitializingSingleton {
     /**
      * YML配置
      */
+    @Resource
     private RabbitModuleProperties rabbitModuleProperties;
 
     @Autowired
@@ -55,7 +58,7 @@ public class RabbitMqConfig implements SmartInitializingSingleton {
     public void afterSingletonsInstantiated() {
         StopWatch stopWatch = StopWatch.create("MQ");
         stopWatch.start();
-        log.debug("初始化MQ配置");
+        log.info("初始化MQ配置");
         List<ModuleProperties> modules = rabbitModuleProperties.getModules();
         if (CollUtil.isEmpty(modules)) {
             log.warn("未配置MQ");
@@ -63,6 +66,7 @@ public class RabbitMqConfig implements SmartInitializingSingleton {
         }
         for (ModuleProperties module : modules) {
             try {
+                log.info("module:{}", JSON.toJSONString(module));
                 Queue queue = genQueue(module);
                 Exchange exchange = genQueueExchange(module);
                 queueBindExchange(queue, exchange, module);
@@ -82,12 +86,14 @@ public class RabbitMqConfig implements SmartInitializingSingleton {
      */
     private void bindProducer(ModuleProperties module) {
         try {
+            log.info("module:produce:{}, exchange:{}, routeKey:{}",module.getProducer(),module.getExchange().getName(),module.getRoutingKey());
             AbsProducerService producerService = SpringUtil.getBean(module.getProducer());
             producerService.setExchange(module.getExchange().getName());
             producerService.setRoutingKey(module.getRoutingKey());
             log.debug("绑定生产者: {}", module.getProducer());
         } catch (Exception e) {
-            log.warn("无法在容器中找到该生产者[{}]，若需要此生产者则需要做具体实现", module.getConsumer());
+            log.error("bindProducer:",e);
+            log.warn("无法在容器中找到该生产者[{}]，若需要此生产者则需要做具体实现", module.getProducer());
         }
     }
 

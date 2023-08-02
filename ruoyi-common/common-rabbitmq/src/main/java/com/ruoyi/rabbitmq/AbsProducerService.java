@@ -49,6 +49,14 @@ public class AbsProducerService implements ProducerService {
         String data = JSONUtil.toJsonStr(msg);
         Message message = new Message(data.getBytes(StandardCharsets.UTF_8), messageProperties);
         rabbitTemplate.convertAndSend(this.exchange, this.routingKey, message, messagePostProcessor);
+        log.info("produce-send message:{}",message);
+
+    }
+
+    @Override
+    public void send(Object msg, String routingKey) {
+        this.routingKey = routingKey;
+        send(msg);
     }
 
     public void setExchange(String exchange) {
